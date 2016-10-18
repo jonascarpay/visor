@@ -20,4 +20,5 @@ executable visor
                      , filepath
                      , repa
                      , repa-devil
+                     , directory
   ghc-options:         -Wall
