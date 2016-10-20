@@ -21,4 +21,4 @@ executable visor
                      , repa
                      , repa-devil
                      , directory
-  ghc-options:         -Wall
+  ghc-options:         -O -threaded -rtsopts
