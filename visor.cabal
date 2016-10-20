@@ -21,4 +21,4 @@ executable visor
                      , repa
                      , repa-devil
                      , directory
-  ghc-options:         -O -threaded -rtsopts
+  ghc-options:         -O2 -threaded -rtsopts -fllvm -fforce-recomp

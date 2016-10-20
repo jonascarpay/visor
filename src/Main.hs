@@ -1,10 +1,13 @@
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 
 import Prelude hiding (words)
 import Data.Word
 import Data.Array.Repa as R
+import Data.Array.Repa.Stencil.Dim2
+import Data.Array.Repa.Stencil
 import Data.Array.Repa.Repr.ForeignPtr
 import Data.Array.Repa.IO.DevIL
 import Control.Monad (when)
@@ -29,12 +32,17 @@ toGrey a = R.traverse a flat grey
             g = fromIntegral $ f (sh:.1)
             b = fromIntegral $ f (sh:.2)
 
-toRgba :: Array D DIM2 Int -> Array D DIM3 Word8
+toRgba :: Array PC5 DIM2 Int -> Array D DIM3 Word8
 toRgba a = R.traverse a expand rgba
   where expand sh = sh:.4 :: DIM3
         rgba _ (_ :.3) = 255
         rgba f (sh:._) = fromIntegral . f $ sh
 
+stenciled :: Array D DIM2 Int -> Array PC5 DIM2 Int
+stenciled = mapStencil2 BoundClamp s
+  where s = [stencil2| 0  1 0
+                       1 -1 1
+                       0  1 0|]
 
 delete :: FilePath -> IO ()
 delete f = do exists <- doesFileExist f
@@ -45,5 +53,5 @@ main = do
   delete output
   runIL $ do
     (RGBA i) <- readImage input
-    ts <- computeP $ toRgba . toGrey $ i
+    ts <- computeP $ toRgba . stenciled . toGrey $ i
     writeImage output (RGBA ts)
