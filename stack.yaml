@@ -64,8 +64,11 @@ extra-package-dbs: []
 # Extra directories used by stack for building
 extra-include-dirs:
   - /usr/local/Cellar/devil/1.7.8_3/include
+    # - /usr/local/opt/llvm35/lib/llvm-3.5/include
 extra-lib-dirs:
   - /usr/local/Cellar/devil/1.7.8_3/lib
+    # - /usr/local/opt/llvm35/lib/llvm-3.5/lib
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
+#

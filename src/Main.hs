@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Main where
 
@@ -38,7 +39,7 @@ toRgba a = R.traverse a expand rgba
         rgba _ (_ :.3) = 255
         rgba f (sh:._) = fromIntegral . f $ sh
 
-stenciled :: Array D DIM2 Int -> Array PC5 DIM2 Int
+stenciled :: (Source r Int) => Array r DIM2 Int -> Array PC5 DIM2 Int
 stenciled = mapStencil2 BoundClamp s
   where s = [stencil2| 0  1 0
                        1 -1 1
