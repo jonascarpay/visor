@@ -43,6 +43,7 @@ extra-deps:
   - ratio-int-0.1.2
   - repa-devil-0.3.2.6
   - transformers-0.4.3.0
+  - accelerate-io-0.15.1.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
