@@ -22,3 +22,4 @@ executable visor
                      , repa-devil
                      , directory
   ghc-options:         -threaded -rtsopts -fllvm -Odph -optlo-O3 -funfolding-use-threshold100 -funfolding-keeness-factor100
+  -- ghc-options:         -threaded -rtsopts -Odph -funfolding-use-threshold100 -funfolding-keeness-factor100
