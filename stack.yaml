@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-6.19
+resolver: lts-6.23
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -36,14 +36,31 @@ resolver: lts-6.19
 # non-dependency (i.e. a user package), and its test suites and benchmarks
 # will not be run. This is useful for tweaking upstream packages.
 packages:
-- .
+  - .
+  - location:
+      git: https://github.com/AccelerateHS/accelerate
+      commit: 7f419367b303af021fb4b7d29bc296f04b462e31
+    extra-dep: true
+  - location:
+      git: https://github.com/tmcdonell/cuda
+      commit: bfa5b024fbf10a312f58c5d46d766d6bd2d01e04
+    extra-dep: true
+  - location:
+      git: https://github.com/AccelerateHS/accelerate-cuda
+      commit: ee9c4c13e9ef5d364f476f97c5ced05645d0a919
+    extra-dep: true
+  - location:
+      git: https://github.com/AccelerateHS/accelerate-io
+      commit: 4e3637469972993a4b160af39b00ea7a7ec6f1e2
+    extra-dep: true
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - ratio-int-0.1.2
   - repa-devil-0.3.2.6
   - transformers-0.4.3.0
-  - accelerate-io-0.15.1.0
+  - unique-0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
