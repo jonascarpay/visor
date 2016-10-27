@@ -38,19 +38,19 @@ resolver: lts-6.23
 packages:
   - .
   - location:
-      git: https://github.com/AccelerateHS/accelerate
+      git: https://github.com/AccelerateHS/accelerate.git
       commit: 7f419367b303af021fb4b7d29bc296f04b462e31
     extra-dep: true
   - location:
-      git: https://github.com/tmcdonell/cuda
+      git: https://github.com/tmcdonell/cuda.git
       commit: bfa5b024fbf10a312f58c5d46d766d6bd2d01e04
     extra-dep: true
   - location:
-      git: https://github.com/AccelerateHS/accelerate-cuda
+      git: https://github.com/AccelerateHS/accelerate-cuda.git
       commit: ee9c4c13e9ef5d364f476f97c5ced05645d0a919
     extra-dep: true
   - location:
-      git: https://github.com/AccelerateHS/accelerate-io
+      git: https://github.com/AccelerateHS/accelerate-io.git
       commit: 4e3637469972993a4b160af39b00ea7a7ec6f1e2
     extra-dep: true
 
