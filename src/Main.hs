@@ -3,7 +3,6 @@
 
 module Main where
 
-
 import Prelude hiding (words)
 import Data.Word
 import qualified Data.Array.Repa as R
@@ -20,6 +19,7 @@ import ImageProcessing
 delete :: FilePath -> IO ()
 delete f = do exists <- doesFileExist f
               when exists $ removeFile f
+
 
 main :: IO ()
 main = do
