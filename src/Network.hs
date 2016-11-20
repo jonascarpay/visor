@@ -1,19 +1,19 @@
+{-# LANGUAGE TypeOperators #-}
+
 module Network where
 
+import Data.Array.Repa
+import Layer
+
 -- | A convolutional neural network for extracting features
--- from an image
-data Network shIn shOut =
+--   from an image. May be unnecessary, only constrains
+--   types on top layer and adds hyperparameters
+data Network sIn =
   Network
     { -- | The regularization loss factor
       lambda :: Double,
       -- | The step size or learning rate
       delta :: Double,
-      -- | Convolutional part of the network
-      convLayers :: [Layer3],
-      -- | Neural part of the network
-      neurLayers :: [Layer2]
+      -- | Top layer of the network
+      topLayer :: Layer (sIn:.Int:.Int:.Int) (sIn:.Int)
     }
-
-data Layer3
-data Layer2
-
