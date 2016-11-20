@@ -1,35 +1,7 @@
-resolver: lts-6.23
+resolver: lts-6.25
 packages:
-  - .
-  - location:
-      git: https://github.com/AccelerateHS/accelerate.git
-      commit: 7f419367b303af021fb4b7d29bc296f04b462e31
-    extra-dep: true
-  - location:
-      git: https://github.com/tmcdonell/cuda.git
-      commit: bfa5b024fbf10a312f58c5d46d766d6bd2d01e04
-    extra-dep: true
-  - location:
-      git: https://github.com/AccelerateHS/accelerate-cuda.git
-      commit: ee9c4c13e9ef5d364f476f97c5ced05645d0a919
-    extra-dep: true
-  - location:
-      git: https://github.com/AccelerateHS/accelerate-io.git
-      commit: 4e3637469972993a4b160af39b00ea7a7ec6f1e2
-    extra-dep: true
 extra-deps:
-  - ratio-int-0.1.2
-  - repa-devil-0.3.2.6
-  - transformers-0.4.3.0
-  - unique-0
-
 flags: {}
-
 extra-package-dbs: []
-
 extra-include-dirs:
-  - /usr/local/Cellar/devil/1.7.8_3/include
-    # - /usr/local/opt/llvm35/lib/llvm-3.5/include
 extra-lib-dirs:
-  - /usr/local/Cellar/devil/1.7.8_3/lib
-    # - /usr/local/opt/llvm35/lib/llvm-3.5/lib
