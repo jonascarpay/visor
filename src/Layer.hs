@@ -1,15 +1,18 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE Strict #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Layer where
 
 import Data.Array.Repa
 
-type Data r s = Array r s Double
-type Vector r = Array r DIM1 Double
-type Matrix r = Array r DIM2 Double
-type Volume r = Array r DIM3 Double
+type Data r s = Shape s => Array r s Double
+type Vector r = Data r DIM1
+type Matrix r = Data r DIM2
+type Volume r = Data r DIM3
 
 data Layer sIn sOut where
   FC :: { weights :: Matrix U,
@@ -18,7 +21,9 @@ data Layer sIn sOut where
         } -> Layer (s:.Int) sOut
 
   SoftMax :: Layer (s:.Int) (s:.Int)
-  Flatten :: Layer (s:.Int) s
+  Flatten :: Layer (q:.Int:.Int) sOut -> Layer (q:.Int) sOut
 
-forward :: Data U sIn -> Layer sIn sOut -> Data D sOut
-forward = undefined
+forward :: ( Shape s
+           )=>
+  Data U (s:.Int:.Int) -> Layer (s:.Int:.Int) sOut -> Data D sOut
+forward x (Flatten l') = let (sh:.n:.m) = extent x in undefined

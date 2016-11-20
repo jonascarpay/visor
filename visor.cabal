@@ -28,3 +28,4 @@ library
                        -funfolding-keeness-factor1000
                        -fllvm
                        -optlo-O3
+                       -Wall
