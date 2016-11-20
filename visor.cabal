@@ -12,9 +12,19 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
-executable visor
+library
   hs-source-dirs:      src
-  main-is:             Main.hs
   default-language:    Haskell2010
-  other-modules:       ImageProcessing
-  build-depends:       base >= 4.7 && < 5
+  exposed-modules:     Game
+                     , Dataset
+                     , Network
+  build-depends:       base
+                     , repa
+  ghc-options:         -Odph
+                       -rtsopts
+                       -threaded
+                       -fno-liberate-case
+                       -funfolding-use-threshold1000
+                       -funfolding-keeness-factor1000
+                       -fllvm
+                       -optlo-O3
