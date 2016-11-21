@@ -19,13 +19,3 @@ library
                      , Dataset
                      , Network
   build-depends:       base
-                     , repa
-  ghc-options:         -Odph
-                       -rtsopts
-                       -threaded
-                       -fno-liberate-case
-                       -funfolding-use-threshold1000
-                       -funfolding-keeness-factor1000
-                       -fllvm
-                       -optlo-O3
-                       -Wall
