@@ -2,7 +2,6 @@
 
 module Network where
 
-import Data.Array.Repa
 import Layer
 
 -- | A convolutional neural network for extracting features

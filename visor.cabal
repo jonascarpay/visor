@@ -19,3 +19,4 @@ library
                      , Dataset
                      , Network
   build-depends:       base
+                     , hmatrix
