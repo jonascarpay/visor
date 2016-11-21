@@ -18,5 +18,7 @@ library
   exposed-modules:     Game
                      , Dataset
                      , Network
+                     , Util
   build-depends:       base
                      , hmatrix
+  ghc-options:         -Wall
