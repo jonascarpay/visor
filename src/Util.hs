@@ -8,3 +8,10 @@ colSums m = konst 1 (rows m) <# m
 
 normalizeRows :: Matrix R -> Matrix R
 normalizeRows m = m / asColumn (rowSums m)
+
+-- | Gives the average of the sum of the rows of
+--   some matrix. This is mostly used to take the
+--   average output of a matrix where there is only
+--   one non-zero value in every row
+avgRowSum :: Matrix R -> Double
+avgRowSum m = sumElements m / fromIntegral (rows m)

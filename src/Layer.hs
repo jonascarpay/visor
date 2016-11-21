@@ -102,12 +102,8 @@ regularizationLoss r (L w _ _) = 0.5 * r * sumElements (w*w)
 dataLoss :: Matrix R -- ^ Network output
          -> Matrix R -- ^ Desired network output
          -> Double -- ^ Data loss
-dataLoss p y = avgCorrect . mask . negLog $ p
+dataLoss p y = avgRowSum . mask . negLog $ p
   where
-    -- Average output of the correct classes. Assumes that
-    -- all other values are zero, due to masking operation
-    avgCorrect :: Matrix R -> Double
-    avgCorrect m = sumElements m / fromIntegral (rows m)
     -- Sets all non-correct class scores to 0. Assumes y is
     -- 0 of incorrect classses and 1 for correct classes
     mask = (*y)
