@@ -13,8 +13,8 @@ data Batch = Batch { input  :: Matrix R
 -- | A dummy batch generator. Consists of k arms of n points each,
 --   arranged in a spiral around (0,0).
 spiral :: Int -> Int -> IO Batch
-spiral n k = do t' <- (*0.2) . flatten <$> randn (n*k) 1
-                let r = vjoin . replicate k $ linspace n (0,1)
+spiral n k = do t' <- (*0.01) . flatten <$> randn (n*k) 1
+                let r = vjoin . replicate k $ linspace n (0.1,1)
                     t = t' + linspace (n*k) (0,fromIntegral k*4)
                     s = r * cmap sin t
                     c = r * cmap cos t

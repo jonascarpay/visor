@@ -19,6 +19,8 @@ library
                      , Dataset
                      , Network
                      , Util
+                     , Batch
+                     , Layer
   build-depends:       base
                      , hmatrix
   ghc-options:         -Wall
