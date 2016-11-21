@@ -61,8 +61,30 @@ accuracy net x y = avgRowSum $ p' * y
     p = feed net x
     p' = step $ p - 0.5
 
-initNet :: Int
-        -> Int
-        -> [Int]
+-- | Initialize a new network with given parameters. The weights
+--   are normally distributed with mu = 0 and sigma = 0.01.
+--   Hidden layers are given a ReLU activation function, while
+--   the output layer has a SoftMax activation function.
+initNet :: Int -- ^ Input dimensionality, or, equivalently,
+               --   number of features
+        -> Int -- ^ Output dimensionality, or number of classes
+        -> [Int] -- ^ List of neurons in hidden layers. Giving
+                 --   an empty list means the network is a simple
+                 --   linear classifier.
+
+        -> Double -- Lambda, or regularization loss
+        -> Double -- Delta, or learning rate/step size
         -> IO Network
-initNet = undefined
+initNet d k h lambda delta = Network lambda delta <$> sequence (go d h k)
+  where
+    go :: Int -> [Int] -> Int -> [IO Layer]
+    go d []     k = [lInit d k SoftMax]
+    go d (h:hs) k =  lInit d h ReLU : go h hs k
+
+    wInit :: Int -> Int -> IO (Matrix Double)
+    wInit d k = (*0.01) <$> randn d k
+
+    lInit :: Int -> Int -> ActivationFunction -> IO Layer
+    lInit d k af = do w <- wInit d k
+                      return $ L w (konst 0 k) af
+
