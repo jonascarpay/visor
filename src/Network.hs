@@ -4,6 +4,7 @@ module Network where
 
 import Layer
 import Util
+import Batch
 import Numeric.LinearAlgebra
 
 -- | A convolutional neural network for extracting features
@@ -20,32 +21,38 @@ data Network =
     }
 
 -- | Feed a network some matrix n * d where n is the number of
---   sample and d is the dimensionality of the network input.
+--   samples and d is the dimensionality of the network input.
 --   The output has shape n * k, where each sample has a row of
 --   class scores that sums to 1.
 feed :: Network -> Matrix R -> Matrix R
 feed (Network _ _ ls) x = foldl forward x ls
 
 -- | Train a network with one forward/backward pass cycle.
+--   May need to be updated to incorporate dropout.
 train :: Network -- ^ Network to train
-      -> Matrix R -- ^ Input to the network
-      -> Matrix R -- ^ Desired output given this input
+      -> Batch -- ^ Dataset to train on
       -> Network -- ^ Network with updated weights
-train (Network r d ls) x y = let (_, ls') = go ls x y
-                              in Network r d ls'
+train (Network r d ls) (Batch x y) =
+  let (_, ls') = go ls x y
+   in Network r d ls'
   where
     go :: [Layer] -> Matrix R -> Matrix R -> (Matrix R, [Layer])
-    go []     x y = (y, [])
+    go []     _ y = (y, [])
     go (l:ls) x y = let p = forward x l
                         (dp, ls') = go ls p y
                         (l', dx) = backward l x p dp d r
                      in (dx, l':ls')
 
+-- | Calculate loss for a given network and input. The loss is
+--   the sum of the data loss and regularization loss. The data
+--   loss is a function of the difference between the network
+--   output and desired output. The regularization loss is
+--   proportional to the sum of the squares of all weights. It
+--   is used to prevent overfitting.
 loss :: Network
-     -> Matrix R
-     -> Matrix R
+     -> Batch
      -> Double
-loss n@(Network r _ ls) x y = dLoss + rLoss
+loss n@(Network r _ ls) (Batch x y) = dLoss + rLoss
   where dLoss = dataLoss (feed n x) y
         rLoss = sum . map (regularizationLoss r) $ ls
 
@@ -53,10 +60,9 @@ loss n@(Network r _ ls) x y = dLoss + rLoss
 --   A class is considered the guess for some sample if the
 --   it has a probability of at least 0.5.
 accuracy :: Network -- ^ Network to test
-         -> Matrix R -- ^ Input data
-         -> Matrix R -- ^ Desired output
+         -> Batch -- ^ Batch to test on
          -> Double -- ^ Probability of a correct classification
-accuracy net x y = avgRowSum $ p' * y
+accuracy net (Batch x y) = avgRowSum $ p' * y
   where
     p = feed net x
     p' = step $ p - 0.5
@@ -87,4 +93,3 @@ initNet d k h lambda delta = Network lambda delta <$> sequence (go d h k)
     lInit :: Int -> Int -> ActivationFunction -> IO Layer
     lInit d k af = do w <- wInit d k
                       return $ L w (konst 0 k) af
-
