@@ -10,6 +10,12 @@ data Batch = Batch { input  :: Matrix R
                    , output :: Matrix R
                    }
 
+-- | A sample consists of an input vecor and its
+--   classification vector
+data Sample = Sample { features :: Vector R
+                     , classes  :: Vector R
+                     }
+
 -- | A dummy batch generator. Consists of k arms of n points each,
 --   arranged in a spiral around (0,0).
 spiral :: Int -> Int -> IO Batch

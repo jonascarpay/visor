@@ -1,6 +1,7 @@
 module Util where
 
 import Numeric.LinearAlgebra
+import Data.Word
 
 colSums, rowSums :: Matrix R -> Vector R
 rowSums m = m #> konst 1 (cols m)
@@ -19,3 +20,6 @@ avgRowSum m = sumElements m / fromIntegral (rows m)
 merge :: [a] -> [a] -> [a]
 merge [] ys     = ys
 merge (x:xs) ys = x:merge ys xs
+
+scaleWord8 :: Double -> Word8 -> Word8
+scaleWord8 c = min 255 . max 0 . round . min 255 . max 0 . (*c) . fromIntegral

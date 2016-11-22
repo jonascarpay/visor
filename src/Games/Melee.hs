@@ -14,7 +14,8 @@ melee = Game { title = "SSBM"
                           , percentageTens
                           , percentagHundreds
                           ]
-             , datasets = []
+             , datasets = [ dolphin_sets
+                          ]
              }
 
 percentageOnes :: Feature
@@ -87,7 +88,7 @@ dolphin_sets =
                                p1p' = take 3 (asDigits p1p)
                                p2p' = take 3 (asDigits p2p)
                             in return $ merge p1p' p2p'
-          , crop = Rect 335 50 1251 1027
+          , cropRect = Rect 335 50 1251 1027
           , wiggle = 20
           , distort = True
           }

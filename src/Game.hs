@@ -1,6 +1,9 @@
 module Game where
 
 import Dataset
+import Vision.Image
+import Vision.Primitive.Shape
+import Numeric.LinearAlgebra
 
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
@@ -27,3 +30,6 @@ data Feature =
       -- better performance
       resolution :: (Int, Int)
     }
+
+extractFeature :: RGB -> Feature -> [Vector R]
+extractFeature img (Feature _ pos (fw,fh) (rx, ry)) = undefined

@@ -28,6 +28,9 @@ library
                      , filepath
                      , split
                      , friday
+                     , friday-devil
+                     , random
+                     , unix
   ghc-options:         -Wall
                        -fno-warn-name-shadowing
                        -O2
