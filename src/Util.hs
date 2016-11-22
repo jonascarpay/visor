@@ -15,3 +15,7 @@ normalizeRows m = m / asColumn (rowSums m)
 --   one non-zero value in every row
 avgRowSum :: Matrix R -> Double
 avgRowSum m = sumElements m / fromIntegral (rows m)
+
+merge :: [a] -> [a] -> [a]
+merge [] ys     = ys
+merge (x:xs) ys = x:merge ys xs

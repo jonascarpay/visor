@@ -21,16 +21,23 @@ library
                      , Util
                      , Batch
                      , Layer
+                     , Games.Melee
   build-depends:       base
                      , hmatrix
+                     , directory
+                     , filepath
+                     , split
+                     , friday
   ghc-options:         -Wall
                        -fno-warn-name-shadowing
+                       -O2
 
 executable visor-app
   hs-source-dirs:      app
   default-language:    Haskell2010
   ghc-options:         -Wall
                        -fno-warn-name-shadowing
+                       -O2
   main-is:             main.hs
   build-depends:       base
                      , visor

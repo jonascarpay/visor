@@ -1,6 +1,9 @@
 resolver: lts-6.25
 packages:
 extra-deps:
+  - friday-0.2.2.0
+  - ratio-int-0.1.2
+  - friday-devil-0.1.1.1
 flags: {}
 extra-package-dbs: []
 extra-include-dirs:
