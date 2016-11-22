@@ -87,10 +87,15 @@ activate :: ActivationFunction
 activate ReLU    m = m * step m
 activate SoftMax m = normalizeRows . cmap exp $ m
 
-diff :: ActivationFunction
-     -> Matrix R
-     -> Matrix R
-     -> Matrix R
+-- | Derivative of an activation function
+diff :: ActivationFunction -- ^ Activation function in question
+     -> Matrix R -- ^ Output of the activation function. For most
+                 --   commonly used activation functions the output
+                 --   occurs in the derivative, so supplying this
+                 --   directly makes computation more efficient
+                 --   then it would be if we recalculate it.
+     -> Matrix R -- ^ Error gradient on the output
+     -> Matrix R -- ^ Error gradient on the output of the weights
 diff SoftMax p dp = (p - dp) / fromIntegral (rows p)
 diff ReLU    p dp = dp * step p
 
