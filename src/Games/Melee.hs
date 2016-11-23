@@ -12,7 +12,7 @@ melee :: Game
 melee = Game { title = "SSBM"
              , features = [ percentageOnes
                           , percentageTens
-                          , percentagHundreds
+                          , percentageHundreds
                           ]
              , datasets = [ dolphin_sets
                           ]
@@ -36,8 +36,8 @@ percentageTens = Feature { name = "Percentage ones digit"
                          , resolution = (16,16)
                          }
 
-percentagHundreds :: Feature
-percentagHundreds = Feature { name = "Percentage ones digit"
+percentageHundreds :: Feature
+percentageHundreds = Feature { name = "Percentage ones digit"
                             , positions = [ (94/width, 914/height)
                                           , (394/width, 914/height)
                                           ]

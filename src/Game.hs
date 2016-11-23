@@ -3,7 +3,8 @@ module Game where
 import Dataset
 import Vision.Image
 import Vision.Primitive.Shape
-import Numeric.LinearAlgebra
+import Vision.Primitive
+import Vision.Image.Storage.DevIL
 
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
@@ -31,5 +32,40 @@ data Feature =
       resolution :: (Int, Int)
     }
 
-extractFeature :: RGB -> Feature -> [Vector R]
-extractFeature img (Feature _ pos (fw,fh) (rx, ry)) = undefined
+-- | Extracts samples for some feature from an image
+extractFeature :: RGB -> Feature -> [RGB]
+extractFeature img (Feature _ pos (fw,fh) (rx, ry)) = resized
+  where
+    (Z:.ih:.iw) = shape img
+
+    toArea :: Double -> Double -> Double -> Double -> Int -> Int -> Rect
+    toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
+                                   yRel = cy - fh / 2
+                                   wRel = fw
+                                   hRel = fh
+                                   x = round $ fromIntegral iw * xRel
+                                   y = round $ fromIntegral ih * yRel
+                                   w = round $ fromIntegral iw * wRel
+                                   h = round $ fromIntegral ih * hRel
+                                in Rect x y w h
+
+    cropAreas :: [Rect]
+    cropAreas = fmap (\(cx, cy) -> toArea cx cy fw fh iw ih) pos
+    crops :: [RGB]
+    crops = fmap (`crop` img) cropAreas
+    resized :: [RGB]
+    resized = fmap (resize Bilinear $ ix2 ry rx) crops
+
+testFile :: FilePath
+testFile = "/Users/jmc/Desktop/testout.png"
+
+test :: Game -> IO (Maybe StorageError)
+test (Game _ (feat:_) (set:_)) =
+  do let (Dataset fs _ cr wig dist) = set
+     f <- head <$> fs
+     img <- loadImage f cr wig dist
+     let feats = img `extractFeature` feat
+         fnames = [ "/Users/jmc/Desktop/test" ++ show n ++ ".png" | n <- [(1::Int)..] ]
+         saveIOs = zipWith (save PNG) fnames feats
+     sequence_ saveIOs
+     save PNG testFile img

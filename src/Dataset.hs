@@ -7,10 +7,7 @@ import Data.Word
 import Vision.Primitive
 import Vision.Image as I
 import Vision.Image.Storage.DevIL
-import Control.Monad
 import System.Random
-import System.Directory
-import System.Posix.Files
 
 -- | A data set defines a set of samples for some game
 data Dataset =
@@ -57,14 +54,3 @@ loadImage f (Rect x y w h) wig dis = do Right (img :: RGB) <- load Autodetect f
                                             (discolored :: RGB) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
                                         if dis then return discolored
                                                else return translated
-
-testFile :: FilePath
-testFile = "/Users/jmc/Desktop/testout.png"
-
-test :: Dataset -> IO (Maybe StorageError)
-test (Dataset fs _ cr wig dist) =
-  do f <- head <$> fs
-     exists <- fileExist testFile
-     when exists $ removeFile testFile
-     img <- loadImage f cr wig dist
-     save PNG "/Users/jmc/Desktop/testout.png" img
