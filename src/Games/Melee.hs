@@ -84,7 +84,7 @@ dolphin_sets =
                            paths = concat $ zipWith prepend subdirs' imgs'
                        return paths
 
-          , labels = \f -> let (_:_:_:p1p:_:_:p2p:_) = splitOn "_" f
+          , labels = \f -> let (_:_:_:p1p:_:_:p2p:_) = splitOn "_" (takeBaseName f)
                                p1p' = take 3 (asDigits p1p)
                                p2p' = take 3 (asDigits p2p)
                             in return $ merge p1p' p2p'

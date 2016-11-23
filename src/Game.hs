@@ -33,8 +33,8 @@ data Feature =
     }
 
 -- | Extracts samples for some feature from an image
-extractFeature :: Feature -> RGB -> [RGB]
-extractFeature (Feature _ pos (fw,fh) (rx, ry)) img = resized
+extractFeature :: RGB -> Feature -> [RGB]
+extractFeature img (Feature _ pos (fw,fh) (rx, ry)) = resized
   where
     (Z:.ih:.iw) = shape img
 
@@ -64,7 +64,7 @@ test (Game _ (feat:_) (set:_)) =
   do let (Dataset fs _ cr wig dist) = set
      f <- head <$> fs
      img <- loadImage f cr wig dist
-     let feats = feat `extractFeature` img
+     let feats = img `extractFeature` feat
          fnames = [ "/Users/jmc/Desktop/test" ++ show n ++ ".png" | n <- [(1::Int)..] ]
          saveIOs = zipWith (save PNG) fnames feats
      sequence_ saveIOs
