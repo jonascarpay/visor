@@ -29,12 +29,14 @@ data Feature =
       -- Higher values mean more downsampling can be
       -- done during preprocessing, which leads to
       -- better performance
-      resolution :: (Int, Int)
+      resolution :: (Int, Int),
+      -- | The number of different values this feature can take
+      cardinality :: Int
     }
 
 -- | Extracts samples for some feature from an image
 extractFeature :: RGB -> Feature -> [RGB]
-extractFeature img (Feature _ pos (fw,fh) (rx, ry)) = resized
+extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = resized
   where
     (Z:.ih:.iw) = shape img
 

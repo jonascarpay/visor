@@ -25,6 +25,7 @@ percentageOnes = Feature { name = "Percentage ones digit"
                                        ]
                          , dimensions = (100/width,120/height)
                          , resolution = (16,16)
+                         , cardinality = 10
                          }
 
 percentageTens :: Feature
@@ -34,6 +35,7 @@ percentageTens = Feature { name = "Percentage ones digit"
                                        ]
                          , dimensions = (100/width,120/height)
                          , resolution = (16,16)
+                         , cardinality = 10
                          }
 
 percentageHundreds :: Feature
@@ -43,6 +45,7 @@ percentageHundreds = Feature { name = "Percentage ones digit"
                                           ]
                             , dimensions = (100/width,120/height)
                             , resolution = (16,16)
+                            , cardinality = 10
                             }
 
 width, height :: Double
