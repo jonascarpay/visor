@@ -90,7 +90,7 @@ dolphin_sets =
           , labels = \f -> let (_:_:_:p1p:_:_:p2p:_) = splitOn "_" (takeBaseName f)
                                p1p' = take 3 (asDigits p1p)
                                p2p' = take 3 (asDigits p2p)
-                            in return $ merge p1p' p2p'
+                            in merge p1p' p2p'
           , cropRect = Rect 335 50 1251 1027
           , wiggle = 20
           , distort = True

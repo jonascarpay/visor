@@ -17,7 +17,7 @@ data Dataset =
       -- | The labels to extract from an image. The order and length
       --   of the labels should be the same as the total number of
       --   feature positions for the given game. Paths are absolute.
-      labels :: FilePath -> IO [Maybe Int],
+      labels :: FilePath -> [Maybe Int],
       -- | The rectangle to crop the images to. This should be the
       --   largest area that still captures the game screen.
       cropRect :: Rect,
@@ -54,8 +54,3 @@ loadImage f (Rect x y w h) wig dis = do Right (img :: RGB) <- load Autodetect f
                                             (discolored :: RGB) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
                                         if dis then return discolored
                                                else return translated
-
-testParse :: Dataset -> IO [Maybe Int]
-testParse (Dataset fs ls _ _ _) = do f <- head <$> fs
-                                     print f
-                                     ls f
