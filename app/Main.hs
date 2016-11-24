@@ -8,7 +8,7 @@ import Game
 import Games.Melee
 
 main :: IO ()
-main = genBatches melee
+main = genBatch melee dolphin_sets
 
 main' :: [String] -> IO ()
 
