@@ -33,6 +33,7 @@ library
                      , random
                      , unix
                      , bytestring
+                     , cereal
   ghc-options:         -Wall
                        -fno-warn-name-shadowing
                        -O2

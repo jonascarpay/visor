@@ -38,7 +38,8 @@ loadImage :: FilePath -- ^ Path to the image to load
                  --  translation to the image.
           -> Bool -- ^ Wether or not to apply color distortions to the image
           -> IO RGB
-loadImage f (Rect x y w h) wig dis = do Right (img :: RGB) <- load Autodetect f
+loadImage f (Rect x y w h) wig dis = do putStrLn $ "Loading " ++ f
+                                        Right (img :: RGB) <- load Autodetect f
                                         dx <- randomRIO (0, wig `div` 2)
                                         dy <- randomRIO (0, wig `div` 2)
                                         dw <- randomRIO (0, wig `div` 2)
@@ -54,3 +55,9 @@ loadImage f (Rect x y w h) wig dis = do Right (img :: RGB) <- load Autodetect f
                                             (discolored :: RGB) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
                                         if dis then return discolored
                                                else return translated
+
+loadFromSet :: Dataset -> IO [(RGB, [Maybe Int])]
+loadFromSet (Dataset fs lblFn rect wig dist) =
+  do files <- fs
+     images <- traverse (\f -> loadImage f rect wig dist) files
+     return $ zip images $ fmap lblFn files

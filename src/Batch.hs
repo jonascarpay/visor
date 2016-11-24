@@ -1,8 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 module Batch where
 
 import Game
 import Dataset
+import qualified Data.ByteString as BS
+import Data.Serialize
 import Numeric.LinearAlgebra
 import Vision.Image
 import System.Directory
@@ -59,10 +62,64 @@ toIndexMatrix y k = (length y><k) $ y >>= toIndex
 toIndexMatrix' :: [Int] -> Int -> Matrix R
 toIndexMatrix' = toIndexMatrix . fmap Just
 
+-- | A MiniBatch is a batch that only contains information for a single
+--   feature of a single image
+type MiniBatch = (Matrix R, Matrix R)
+
+-- | MiniBatchF is a list of minibatches that each correspond to a different feature
+type MiniBatchF = [MiniBatch]
+type BatchF = [Batch]
+
+-- | If we have an image and the labels associated with that image, we
+--   need a list of features to interpret both the image and the labels.
+--   Labels need to be interpreted because they do not contain any information
+--   about their cardinality themselves, that information is included in the
+--   feature definition.
+interpret :: (RGB, [Maybe Int]) -> [Feature] -> [MiniBatch]
+interpret (img, lbls) feats = zipWith (,) inputMatrices outputMatrices
+  where
+
+    extractions :: [[RGB]]
+    extractions = fmap (extractFeature img) feats
+
+    -- Take a flattened list of labels, group them by feature they
+    -- correspond to, and turn labels for the same feature into a matrix
+    group :: [Maybe Int] -> [Feature] -> [Matrix R]
+    group lbls (Feature _ (length -> l) _ _ c:fs) =
+      toIndexMatrix (take l lbls) c : group (drop l lbls) fs
+
+    inputMatrices :: [Matrix R]
+    inputMatrices = fmap (fromRows . fmap imageToSample) extractions
+
+    outputMatrices :: [Matrix R]
+    outputMatrices = group lbls feats
+
+mergeBatches :: Batch -> Batch -> Batch
+mergeBatches (Batch x1 y1) (Batch x2 y2) = Batch (x1 === x2) (y1 === y2)
+
+-- | The outer lists corresponds to images, the inner list corresponds to
+--   features. In the output, different images are collected and the elemens
+--   of the list correspond to diffent features.
+consolidate :: [[MiniBatch]] -> [Batch]
+consolidate = foldr1 (zipWith mergeBatches) . (fmap.fmap) (uncurry Batch)
+
+add :: MiniBatchF -> BatchF -> BatchF
+add = zipWith (\(x1, y1) (Batch x2 y2) -> Batch (x2 === x1) (y2 === y1))
+
 genBatches :: Game
-           -> Int -- ^ Number of images used for a single batch
            -> IO ()
-genBatches (Game title feats [Dataset files lblFn rect wig dis]) n =
-  do createDirectoryIfMissing True $ "data" </> title
-     inputFiles <- files
-     undefined
+genBatches (Game title feats sets) =
+  do createDirectoryIfMissing True "data"
+     setImgs <- loadFromSet (head sets)
+     let batchify :: [Batch]
+         batchify = consolidate . fmap (`interpret` feats) $ setImgs
+         tagged :: [(String, Batch)]
+         tagged = zipWith (\f b -> (name f, b)) feats batchify
+
+     traverse (\(s,b) -> saveBatch b ("data"</>title ++ s)) tagged
+     return ()
+
+saveBatch :: Batch -> FilePath -> IO ()
+saveBatch (Batch im om) f = BS.writeFile f encoded
+  where
+    encoded = encode (toLists im, toLists om)

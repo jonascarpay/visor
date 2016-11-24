@@ -58,12 +58,6 @@ extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = resized
     resized :: [RGB]
     resized = fmap (resize Bilinear $ ix2 ry rx) crops
 
-extractFeatures :: RGB -> [Feature] -> [[RGB]]
-extractFeatures = fmap . extractFeature
-
-
-
-
 testFile :: FilePath
 testFile = "/Users/jmc/Desktop/testout.png"
 

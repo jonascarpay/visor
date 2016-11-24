@@ -4,9 +4,11 @@ import System.Environment
 import Control.Monad
 import Network
 import Batch
+import Game
+import Games.Melee
 
 main :: IO ()
-main = getArgs >>= main'
+main = genBatches melee
 
 main' :: [String] -> IO ()
 
