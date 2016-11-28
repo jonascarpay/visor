@@ -36,6 +36,8 @@ library
                      , cereal
                      , conduit
                      , conduit-extra
+                     , resourcet
+                     , transformers
   ghc-options:         -Wall
                        -fno-warn-name-shadowing
                        -O2

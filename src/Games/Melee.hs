@@ -67,13 +67,7 @@ asDigits cs = fmap readDigit (reverse cs) ++ repeat Nothing
 
 dolphin_sets :: Dataset
 dolphin_sets =
-  Dataset { files = do subdirs <- getDirectoryContents ssbm_root
-                       let subdirs' = prepend ssbm_root . filterHidden $ subdirs
-                       imgs <- traverse getDirectoryContents subdirs'
-                       let imgs' = fmap filterHidden imgs
-                           paths = concat $ zipWith prepend subdirs' imgs'
-                       return paths
-
+  Dataset { rootDir = "/Users/jmc/tmp/"
           , labels = \f -> let (_:_:_:p1p:_:_:p2p:_) = splitOn "_" (takeBaseName f)
                                p1p' = take 3 (asDigits p1p)
                                p2p' = take 3 (asDigits p2p)
