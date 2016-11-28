@@ -64,19 +64,7 @@ prepend fBase = fmap (fBase</>)
 -- Gives the digits in cs in order of increasing significance
 -- "123" -> [Just 3, Just 2, Just 1, Nothing, Nothing..
 asDigits :: String -> [Maybe Int]
-asDigits cs = fmap read' (reverse cs) ++ repeat Nothing
-  where read' '1' = Just 1
-        read' '2' = Just 2
-        read' '3' = Just 3
-        read' '4' = Just 4
-        read' '5' = Just 5
-        read' '6' = Just 6
-        read' '7' = Just 7
-        read' '8' = Just 8
-        read' '9' = Just 9
-        read' '0' = Just 0
-        read' _   = Nothing
-
+asDigits cs = fmap readDigit (reverse cs) ++ repeat Nothing
 
 dolphin_sets :: Dataset
 dolphin_sets =
