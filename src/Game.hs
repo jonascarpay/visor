@@ -66,7 +66,7 @@ loadImage :: FilePath -- ^ Path to the image to load
                  --  in all directions. This is used to apply a random
                  --  translation to the image.
           -> Bool -- ^ Wether or not to apply color distortions to the image
-          -> IO RGB
+          -> IO RGBDelayed
 loadImage f (Rect x y w h) wig dis = do putStrLn $ "Loading " ++ f
                                         Right (img :: RGB) <- load Autodetect f
                                         dx <- randomRIO (0, wig `div` 2)
@@ -76,11 +76,11 @@ loadImage f (Rect x y w h) wig dis = do putStrLn $ "Loading " ++ f
                                         dr <- randomRIO (0.9, 1.1 :: Double)
                                         dg <- randomRIO (0.9, 1.1 :: Double)
                                         db <- randomRIO (0.9, 1.1 :: Double)
-                                        let (translated :: RGB) = crop (Rect (x+dx) (y+dy) (w-wig-dw) (h-wig-dh)) img
+                                        let (translated :: RGBDelayed) = crop (Rect (x+dx) (y+dy) (w-wig-dw) (h-wig-dh)) img
                                             tr, tg, tb :: Word8 -> Word8
                                             tr = scaleWord8 dr
                                             tg = scaleWord8 dg
                                             tb = scaleWord8 db
-                                            (discolored :: RGB) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
+                                            (discolored :: RGBDelayed) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
                                         if dis then return discolored
                                                else return translated

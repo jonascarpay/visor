@@ -35,8 +35,8 @@ spiral n k = do t' <- (*0.01) . flatten <$> randn (n*k) 1
 --   0-1 normalized values in hmatrix's vector format.
 --   Even though I think both are the same Data.Vector
 --   underneath.
-imageToSample :: RGB -> Vector R
-imageToSample = fromList . (>>= unpackPixel) . V.toList . IC.vector
+imageToVector :: RGB -> Vector R
+imageToVector = fromList . (>>= unpackPixel) . V.toList . IC.vector
   where norm i = fromIntegral i / 255
         unpackPixel (RGBPixel r g b) = [norm r, norm g, norm b]
 
