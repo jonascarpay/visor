@@ -34,6 +34,8 @@ library
                      , unix
                      , bytestring
                      , cereal
+                     , conduit
+                     , conduit-extra
   ghc-options:         -Wall
                        -fno-warn-name-shadowing
                        -O2

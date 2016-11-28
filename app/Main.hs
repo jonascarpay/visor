@@ -1,14 +1,11 @@
 module Main where
 
-import System.Environment
 import Control.Monad
 import Network
 import Batch
-import Game
-import Games.Melee
 
 main :: IO ()
-main = genBatch melee dolphin_sets
+main = undefined
 
 main' :: [String] -> IO ()
 

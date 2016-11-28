@@ -19,7 +19,7 @@ melee = Game { title = "SSBM"
              }
 
 percentageOnes :: Feature
-percentageOnes = Feature { name = "Percentage ones digit"
+percentageOnes = Feature { name = "onesDigit"
                          , positions = [ (214/width, 914/height)
                                        , (518/width, 914/height)
                                        ]
@@ -29,7 +29,7 @@ percentageOnes = Feature { name = "Percentage ones digit"
                          }
 
 percentageTens :: Feature
-percentageTens = Feature { name = "Percentage ones digit"
+percentageTens = Feature { name = "tensDigit"
                          , positions = [ (149/width, 914/height)
                                        , (442/width, 914/height)
                                        ]
@@ -39,7 +39,7 @@ percentageTens = Feature { name = "Percentage ones digit"
                          }
 
 percentageHundreds :: Feature
-percentageHundreds = Feature { name = "Percentage ones digit"
+percentageHundreds = Feature { name = "hundredsDigit"
                             , positions = [ (94/width, 914/height)
                                           , (394/width, 914/height)
                                           ]

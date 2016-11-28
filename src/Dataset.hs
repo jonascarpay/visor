@@ -55,9 +55,3 @@ loadImage f (Rect x y w h) wig dis = do putStrLn $ "Loading " ++ f
                                             (discolored :: RGB) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
                                         if dis then return discolored
                                                else return translated
-
-loadFromSet :: Dataset -> IO [(RGB, [Maybe Int])]
-loadFromSet (Dataset fs lblFn rect wig dist) =
-  do files <- fs
-     images <- traverse (\f -> loadImage f rect wig dist) files
-     return $ zip images $ fmap lblFn files
