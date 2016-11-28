@@ -1,7 +1,6 @@
 module Games.Melee where
 
 import Game
-import Dataset
 import Util
 import System.Directory
 import System.FilePath.Posix

@@ -1,10 +1,14 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Game where
 
-import Dataset
-import Vision.Image
-import Vision.Primitive.Shape
+import Util
+import Data.Word
 import Vision.Primitive
+import Vision.Image as I
 import Vision.Image.Storage.DevIL
+import System.Random
+
 
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
@@ -34,40 +38,49 @@ data Feature =
       cardinality :: Int
     }
 
--- | Extracts samples for some feature from an image
-extractFeature :: RGB -> Feature -> [RGB]
-extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = resized
-  where
-    (Z:.ih:.iw) = shape img
+-- | A data set defines a set of samples for some game
+data Dataset =
+  Dataset
+    { -- Absolute paths to the images in the data set
+      files :: IO [FilePath],
+      -- | The labels to extract from an image. The order and length
+      --   of the labels should be the same as the total number of
+      --   feature positions for the given game. Paths are absolute.
+      labels :: FilePath -> [Maybe Int],
+      -- | The rectangle to crop the images to. This should be the
+      --   largest area that still captures the game screen.
+      cropRect :: Rect,
+      -- | Indicates the number of extra pixels we can crop off
+      --  in all directions. This is used to apply a random
+      --  translation to the image.
+      wiggle :: Int,
+      -- | Whether or not to apply random color distortion to the
+      --   sample images
+      distort :: Bool
+    }
 
-    toArea :: Double -> Double -> Double -> Double -> Int -> Int -> Rect
-    toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
-                                   yRel = cy - fh / 2
-                                   wRel = fw
-                                   hRel = fh
-                                   x = round $ fromIntegral iw * xRel
-                                   y = round $ fromIntegral ih * yRel
-                                   w = round $ fromIntegral iw * wRel
-                                   h = round $ fromIntegral ih * hRel
-                                in Rect x y w h
-
-    cropAreas :: [Rect]
-    cropAreas = fmap (\(cx, cy) -> toArea cx cy fw fh iw ih) pos
-    crops :: [RGB]
-    crops = fmap (`crop` img) cropAreas
-    resized :: [RGB]
-    resized = fmap (resize Bilinear $ ix2 ry rx) crops
-
-testFile :: FilePath
-testFile = "/Users/jmc/Desktop/testout.png"
-
-test :: Game -> IO (Maybe StorageError)
-test (Game _ (feat:_) (set:_)) =
-  do let (Dataset fs _ cr wig dist) = set
-     f <- head <$> fs
-     img <- loadImage f cr wig dist
-     let feats = img `extractFeature` feat
-         fnames = [ "/Users/jmc/Desktop/test" ++ show n ++ ".png" | n <- [(1::Int)..] ]
-         saveIOs = zipWith (save PNG) fnames feats
-     sequence_ saveIOs
-     save PNG testFile img
+-- | Loads an image and applies desired transformations
+loadImage :: FilePath -- ^ Path to the image to load
+          -> Rect -- ^ Cropping rectangle
+          -> Int -- ^ Indicates the number of extra pixels we can crop off
+                 --  in all directions. This is used to apply a random
+                 --  translation to the image.
+          -> Bool -- ^ Wether or not to apply color distortions to the image
+          -> IO RGB
+loadImage f (Rect x y w h) wig dis = do putStrLn $ "Loading " ++ f
+                                        Right (img :: RGB) <- load Autodetect f
+                                        dx <- randomRIO (0, wig `div` 2)
+                                        dy <- randomRIO (0, wig `div` 2)
+                                        dw <- randomRIO (0, wig `div` 2)
+                                        dh <- randomRIO (0, wig `div` 2)
+                                        dr <- randomRIO (0.9, 1.1 :: Double)
+                                        dg <- randomRIO (0.9, 1.1 :: Double)
+                                        db <- randomRIO (0.9, 1.1 :: Double)
+                                        let (translated :: RGB) = crop (Rect (x+dx) (y+dy) (w-wig-dw) (h-wig-dh)) img
+                                            tr, tg, tb :: Word8 -> Word8
+                                            tr = scaleWord8 dr
+                                            tg = scaleWord8 dg
+                                            tb = scaleWord8 db
+                                            (discolored :: RGB) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
+                                        if dis then return discolored
+                                               else return translated
