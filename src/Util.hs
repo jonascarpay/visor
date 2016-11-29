@@ -36,4 +36,3 @@ readDigit '8' = Just 8
 readDigit '9' = Just 9
 readDigit '0' = Just 0
 readDigit _   = Nothing
-

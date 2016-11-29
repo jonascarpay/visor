@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 module Game where
 
@@ -67,13 +68,13 @@ data Dataset =
       distort :: Bool
     }
 
-imageSource :: Dataset -> Source (ResourceT IO) RGBDelayed
-imageSource (Dataset root _ rect wig dis) =
-  paths $= imageFilter =$= toBS =$= toRGB
-  where paths = sourceDirectoryDeep False root
-        imageFilter = CL.filter ((==".png") . takeExtension)
-        toBS = awaitForever sourceFile
-        toRGB = CL.mapM $ \bs -> loadImage bs rect wig dis
+asSource :: Dataset -> Source (ResourceT IO) (RGBDelayed, [Maybe Int])
+asSource (Dataset root lFn rect wig dis) = paths $= pair
+  where
+    paths = sourceDirectoryDeep True root $= CL.filter ((==".png") . takeExtension)
+    imgSource p = sourceFile p $= toRGB
+    pair = awaitForever $ \p -> imgSource p =$= CL.map (,lFn p)
+    toRGB = CL.mapM $ \bs -> loadImage bs rect wig dis
 
 -- | Loads an image and applies desired transformations
 loadImage :: ByteString -- ^ ByteString of the image to load. We use a

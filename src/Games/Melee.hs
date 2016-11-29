@@ -2,7 +2,6 @@ module Games.Melee where
 
 import Game
 import Util
-import System.Directory
 import System.FilePath.Posix
 import Data.List.Split
 import Vision.Primitive
