@@ -10,6 +10,7 @@ import Data.Conduit
 import qualified Data.Conduit.List as CL
 import Data.Conduit.Filesystem
 import Data.Conduit.Binary
+import Control.Monad
 import Control.Monad.Trans.Resource
 import Control.Monad.IO.Class
 import Vision.Primitive
@@ -87,8 +88,8 @@ loadImage :: ByteString -- ^ ByteString of the image to load. We use a
           -> Bool -- ^ Wether or not to apply color distortions to the image
           -> ResIO RGBDelayed
 loadImage bs (Rect x y w h) wig dis =
-  do dx <- rOffset; dy <- rOffset; dw <- rOffset; dh <- rOffset;
-     dr <- rFactor; dg <- rFactor; db <- rFactor;
+  do [dx, dy, dw, dh] <- replicateM 4 (liftIO $ randomRIO (0, wig `div` 2))
+     [dr, dg, db]     <- replicateM 3 (liftIO $ randomRIO (0.9, 1.1 :: Double))
      let Right (img :: RGB) = loadBS Autodetect bs
          (translated :: RGBDelayed) = crop (Rect (x+dx) (y+dy) (w-wig-dw) (h-wig-dh)) img
          tr, tg, tb :: Word8 -> Word8
@@ -98,6 +99,3 @@ loadImage bs (Rect x y w h) wig dis =
          (discolored :: RGBDelayed) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
      if dis then return discolored
             else return translated
- where
-   rOffset = liftIO $ randomRIO (0, wig `div` 2)
-   rFactor = liftIO $ randomRIO (0.9, 1.1 :: Double)
