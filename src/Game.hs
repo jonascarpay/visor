@@ -4,7 +4,7 @@
 module Game where
 
 import Util
-import Data.ByteString
+import Data.ByteString hiding (putStrLn)
 import Data.Word
 import Data.Conduit
 import qualified Data.Conduit.List as CL
@@ -69,11 +69,11 @@ data Dataset =
       distort :: Bool
     }
 
-asSource :: Dataset -> Source (ResourceT IO) (RGBDelayed, [Maybe Int])
+asSource :: Dataset -> IOSrc (RGBDelayed, [Maybe Int])
 asSource (Dataset root lFn rect wig dis) = paths $= pair
   where
     paths = sourceDirectoryDeep True root $= CL.filter ((==".png") . takeExtension)
-    imgSource p = sourceFile p $= toRGB
+    imgSource p = (liftIO . putStrLn $ "Loading " ++ p) >> sourceFile p $= toRGB
     pair = awaitForever $ \p -> imgSource p =$= CL.map (,lFn p)
     toRGB = CL.mapM $ \bs -> loadImage bs rect wig dis
 
@@ -90,7 +90,11 @@ loadImage :: ByteString -- ^ ByteString of the image to load. We use a
 loadImage bs (Rect x y w h) wig dis =
   do [dx, dy, dw, dh] <- replicateM 4 (liftIO $ randomRIO (0, wig `div` 2))
      [dr, dg, db]     <- replicateM 3 (liftIO $ randomRIO (0.9, 1.1 :: Double))
-     let Right (img :: RGB) = loadBS Autodetect bs
+     liftIO $ print "wat"
+     let eimg :: Either StorageError RGB = loadBS Autodetect bs
+         img = case eimg of
+                 Right x -> x
+                 Left err -> error $ show err
          (translated :: RGBDelayed) = crop (Rect (x+dx) (y+dy) (w-wig-dw) (h-wig-dh)) img
          tr, tg, tb :: Word8 -> Word8
          tr = scaleWord8 dr

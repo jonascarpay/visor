@@ -3,6 +3,9 @@ module Util where
 import Numeric.LinearAlgebra
 import Data.Word
 
+import Data.Conduit
+import Control.Monad.Trans.Resource
+
 colSums, rowSums :: Matrix R -> Vector R
 rowSums m = m #> konst 1 (cols m)
 colSums m = konst 1 (rows m) <# m
@@ -36,3 +39,7 @@ readDigit '8' = Just 8
 readDigit '9' = Just 9
 readDigit '0' = Just 0
 readDigit _   = Nothing
+
+type IOSrc a       = Source (ResourceT IO) a
+type IOConduit a b = Conduit a (ResourceT IO) b
+type IOSink a      = Sink a (ResourceT IO) ()

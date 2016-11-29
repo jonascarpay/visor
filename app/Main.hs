@@ -16,10 +16,10 @@ main' ["spiral"] =
 
 main' _ = putStrLn "Main"
 
-tla :: Network -> Batch -> (Network, Double, Double)
+tla :: Network -> NetBatch -> (Network, Double, Double)
 tla n b = (train n b, loss n b, accuracy n b)
 
-testNetwork :: Batch -> Network -> IO ()
+testNetwork :: NetBatch -> Network -> IO ()
 testNetwork b n =
   do let n'  = train n b
          l   = loss n b
@@ -27,7 +27,7 @@ testNetwork b n =
      print l
      unless (acc > 0.95) $ testNetwork b n'
 
-trainNtimes :: Batch -> Network -> Int -> IO ()
+trainNtimes :: NetBatch -> Network -> Int -> IO ()
 trainNtimes b net n = do let (net', l, a) = tla net b
                          putStrLn $ show n ++ ": " ++ show l ++ "  " ++ show a
                          if n == 0 then print $ feed net (input b)

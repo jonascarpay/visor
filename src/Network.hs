@@ -30,9 +30,9 @@ feed (Network _ _ ls) x = foldl forward x ls
 -- | Train a network with one forward/backward pass cycle.
 --   May need to be updated to incorporate dropout.
 train :: Network -- ^ Network to train
-      -> Batch -- ^ Dataset to train on
+      -> NetBatch -- ^ Dataset to train on
       -> Network -- ^ Network with updated weights
-train (Network r d ls) (Batch x y) =
+train (Network r d ls) (NetBatch x y) =
   let (_, ls') = go ls x y
    in Network r d ls'
   where
@@ -50,9 +50,9 @@ train (Network r d ls) (Batch x y) =
 --   proportional to the sum of the squares of all weights. It
 --   is used to prevent overfitting.
 loss :: Network
-     -> Batch
+     -> NetBatch
      -> Double
-loss n@(Network r _ ls) (Batch x y) = dLoss + rLoss
+loss n@(Network r _ ls) (NetBatch x y) = dLoss + rLoss
   where dLoss = dataLoss (feed n x) y
         rLoss = sum . map (regularizationLoss r) $ ls
 
@@ -60,9 +60,9 @@ loss n@(Network r _ ls) (Batch x y) = dLoss + rLoss
 --   A class is considered the guess for some sample if the
 --   it has a probability of at least 0.5.
 accuracy :: Network -- ^ Network to test
-         -> Batch -- ^ Batch to test on
+         -> NetBatch -- ^ NetBatch to test on
          -> Double -- ^ Probability of a correct classification
-accuracy net (Batch x y) = avgRowSum $ p' * y
+accuracy net (NetBatch x y) = avgRowSum $ p' * y
   where
     p = feed net x
     p' = step $ p - 0.5

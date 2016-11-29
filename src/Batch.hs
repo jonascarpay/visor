@@ -6,24 +6,24 @@ import Vision.Image
 import qualified Data.Vector.Storable as V
 import qualified Vision.Image.Class as IC
 
--- | A batch consists of a set of samples, and a
+-- | A NetBatch consists of a set of samples, and a
 --   corresponding matrix of correct
---   classifications. A batch is used to train a
+--   classifications. They are used to train a
 --   network and evaluate performance.
-data Batch = Batch { input  :: Matrix R
-                   , output :: Matrix R
-                   }
+data NetBatch = NetBatch { input  :: Matrix R
+                         , output :: Matrix R
+                         }
 
 -- | A dummy batch generator. Consists of k arms of n points each,
 --   arranged in a spiral around (0,0).
-spiral :: Int -> Int -> IO Batch
+spiral :: Int -> Int -> IO NetBatch
 spiral n k = do t' <- (*0.01) . flatten <$> randn (n*k) 1
                 let r = vjoin . replicate k $ linspace n (0.1,1)
                     t = t' + linspace (n*k) (0,fromIntegral k*4)
                     s = r * cmap sin t
                     c = r * cmap cos t
                     y = toIndexMatrix' ([0..(k-1)] >>= replicate n) k
-                return $ Batch (fromColumns [s,c]) y
+                return $ NetBatch (fromColumns [s,c]) y
 
 -- | Converts an image in friday's format to a vector of
 --   0-1 normalized values in hmatrix's vector format.
