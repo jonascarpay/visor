@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, TypeOperators #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Visor where
 
@@ -7,17 +7,13 @@ import Game
 import Games.Melee
 import Batch
 import Util
+import Conduit
 import Data.List
-import Data.Conduit
-import Data.Conduit.Binary
 import Data.Serialize
 import qualified Data.ByteString   as BS
-import qualified Data.Conduit.List as CL
 import Numeric.LinearAlgebra
 import System.FilePath
 import System.Directory
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Resource
 import Vision.Image
 import Vision.Primitive.Shape
 import Vision.Primitive
@@ -58,15 +54,15 @@ genBatch n set visor = runResourceT $ batchSrc $$ batchSink
  where
    batchSrc :: IOSrc ViBatch
    batchSrc = asSource set $= interpret =$= consConduit
-   interpret = CL.map (toViBatch visor)
-   consConduit = do bs <- CL.take n
+   interpret = mapC (toViBatch visor)
+   consConduit = do bs <- takeC n .| sinkList
                     yield $ consolidate bs
 
    dir = "data" </> "batch" </> (title . game $ visor)
 
    batchSink :: IOSink ViBatch
    batchSink = do liftIO $ createDirectoryIfMissing True dir
-                  CL.map encodeVB =$ iterWrite 0
+                  mapC encodeVB =$ iterWrite 0
 
    iterWrite :: Int -> IOSink BS.ByteString
    iterWrite i = do liftIO . putStrLn $ "Loading batch " ++ show i

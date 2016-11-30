@@ -2,9 +2,7 @@ module Util where
 
 import Numeric.LinearAlgebra
 import Data.Word
-
-import Data.Conduit
-import Control.Monad.Trans.Resource
+import Conduit
 
 colSums, rowSums :: Matrix R -> Vector R
 rowSums m = m #> konst 1 (cols m)

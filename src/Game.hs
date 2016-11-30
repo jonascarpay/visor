@@ -6,13 +6,9 @@ module Game where
 import Util
 import Data.ByteString hiding (putStrLn)
 import Data.Word
-import Data.Conduit
-import qualified Data.Conduit.List as CL
-import Data.Conduit.Filesystem
-import Data.Conduit.Binary
+import Conduit
 import Control.Monad
 import Control.Monad.Trans.Resource
-import Control.Monad.IO.Class
 import Vision.Primitive
 import Vision.Image as I
 import Vision.Image.Storage.DevIL
@@ -70,12 +66,12 @@ data Dataset =
     }
 
 asSource :: Dataset -> IOSrc (RGBDelayed, [Maybe Int])
-asSource (Dataset root lFn rect wig dis) = paths $= pair
+asSource (Dataset root lFn rect wig dis) = paths .| pair
   where
-    paths = sourceDirectoryDeep True root $= CL.filter ((==".png") . takeExtension)
+    paths = sourceDirectoryDeep True root .| filterC ((==".png") . takeExtension)
     imgSource p = (liftIO . putStrLn $ "Loading " ++ p) >> sourceFile p $= toRGB
-    pair = awaitForever $ \p -> imgSource p =$= CL.map (,lFn p)
-    toRGB = CL.mapM $ \bs -> loadImage bs rect wig dis
+    pair = awaitForever $ \p -> imgSource p =$= mapC (,lFn p)
+    toRGB = mapMC $ \bs -> loadImage bs rect wig dis
 
 -- | Loads an image and applies desired transformations
 loadImage :: ByteString -- ^ ByteString of the image to load. We use a
