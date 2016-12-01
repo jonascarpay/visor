@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeOperators #-}
-
 module Visor where
 
 import Network
@@ -49,16 +47,14 @@ consolidate vis = zipWith NetBatch xStack yStack
     xStack = fmap stack xs
     yStack = fmap stack ys
 
+stack (NetBatch i1 o1) (NetBatch i2 o2) = NetBatch (i1 === i2) (o1 === o2)
+
 genBatch :: Int -> Dataset -> Visor -> IO ()
 genBatch n set visor = runConduitRes $ batchSrc .| batchSink
  where
-   batchSrc = asSource set .| interpret .| consViBatch
+   batchSrc = asSource set .| interpret .| cvb'
    interpret = mapC (toViBatch visor)
-   consViBatch = do bs <- takeC n .| sinkList
-                    case bs of
-                      [] -> return ()
-                      _  -> do yield $ consolidate bs
-                               consViBatch
+   cvb' = awaitForever $ \x -> takeC (n-1) .| foldlC (zipWith stack) x
 
    dir = "data" </> "batch" </> (title . game $ visor)
 
@@ -78,7 +74,7 @@ genBatch n set visor = runConduitRes $ batchSrc .| batchSink
 
 test :: IO ()
 test = do v <- fromGame melee
-          l <- genBatch maxBound dolphin_sets v
+          l <- genBatch 256 dolphin_sets v
           print l
 
 -- | For a given visor, split an image and a set of labels into
