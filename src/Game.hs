@@ -4,7 +4,7 @@
 module Game where
 
 import Util
-import Data.ByteString hiding (putStrLn)
+import Data.ByteString as BS hiding (putStrLn)
 import Data.Word
 import Conduit
 import Control.Monad
@@ -68,10 +68,12 @@ data Dataset =
 asSource :: Dataset -> IOSrc (RGBDelayed, [Maybe Int])
 asSource (Dataset root lFn rect wig dis) = paths .| pair
   where
-    paths = sourceDirectoryDeep True root .| filterC ((==".png") . takeExtension)
-    imgSource p = (liftIO . putStrLn $ "Loading " ++ p) >> sourceFile p $= toRGB
-    pair = awaitForever $ \p -> imgSource p =$= mapC (,lFn p)
-    toRGB = mapMC $ \bs -> loadImage bs rect wig dis
+    paths       = sourceDirectoryDeep True root .| filterC ((==".png") . takeExtension)
+    imgSource p = do liftIO . putStrLn $ "Loading " ++ p
+                     bs <- sourceFileBS p .| foldC
+                     yield bs
+    pair        = awaitForever $ \p -> imgSource p .| toRGB .| mapC (,lFn p)
+    toRGB       = mapMC $ \bs -> loadImage bs rect wig dis
 
 -- | Loads an image and applies desired transformations
 loadImage :: ByteString -- ^ ByteString of the image to load. We use a
@@ -86,7 +88,6 @@ loadImage :: ByteString -- ^ ByteString of the image to load. We use a
 loadImage bs (Rect x y w h) wig dis =
   do [dx, dy, dw, dh] <- replicateM 4 (liftIO $ randomRIO (0, wig `div` 2))
      [dr, dg, db]     <- replicateM 3 (liftIO $ randomRIO (0.9, 1.1 :: Double))
-     liftIO $ print "wat"
      let eimg :: Either StorageError RGB = loadBS Autodetect bs
          img = case eimg of
                  Right x -> x

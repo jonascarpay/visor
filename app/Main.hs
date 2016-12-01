@@ -3,9 +3,10 @@ module Main where
 import Control.Monad
 import Network
 import Batch
+import Visor
 
 main :: IO ()
-main = undefined
+main = test
 
 main' :: [String] -> IO ()
 

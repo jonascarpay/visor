@@ -50,29 +50,36 @@ consolidate vis = zipWith NetBatch xStack yStack
     yStack = fmap stack ys
 
 genBatch :: Int -> Dataset -> Visor -> IO ()
-genBatch n set visor = runResourceT $ batchSrc $$ batchSink
+genBatch n set visor = runConduitRes $ batchSrc .| batchSink
  where
-   batchSrc :: IOSrc ViBatch
-   batchSrc = asSource set $= interpret =$= consConduit
+   batchSrc = asSource set .| interpret .| consViBatch
    interpret = mapC (toViBatch visor)
-   consConduit = do bs <- takeC n .| sinkList
-                    yield $ consolidate bs
+   consViBatch = do bs <- takeC n .| sinkList
+                    case bs of
+                      [] -> return ()
+                      _  -> do yield $ consolidate bs
+                               consViBatch
 
    dir = "data" </> "batch" </> (title . game $ visor)
 
    batchSink :: IOSink ViBatch
    batchSink = do liftIO $ createDirectoryIfMissing True dir
-                  mapC encodeVB =$ iterWrite 0
+                  mapC encodeVB .| iterWrite 0
 
    iterWrite :: Int -> IOSink BS.ByteString
    iterWrite i = do liftIO . putStrLn $ "Loading batch " ++ show i
-                    sinkFile (dir </> show i)
-                    liftIO . putStrLn $ "Wrote batch " ++ show i
-                    iterWrite (n+1)
+                    mbs <- await
+                    case mbs of
+                      Just bs -> do yield bs .| sinkFileBS (dir</>show i)
+                                    liftIO . putStrLn $ "Wrote batch " ++ show i
+                                    iterWrite (i+1)
+                      Nothing -> do return ()
+                                    liftIO . putStrLn $ "Pipeline exhausted, exiting"
 
 test :: IO ()
 test = do v <- fromGame melee
-          genBatch 40 dolphin_sets v
+          l <- genBatch maxBound dolphin_sets v
+          print l
 
 -- | For a given visor, split an image and a set of labels into
 --   NetBatches corresponding to each feature.
