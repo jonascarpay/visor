@@ -22,9 +22,9 @@ data Visor = Visor { game :: Game
                    }
 
 -- | A visor consists of multiple networks. A network is fed
---   batches. A ViBatch is a collection of these batches
+--   batches. A VBatch is a collection of these batches
 --   that can be fed to a visor.
-type ViBatch = [NetBatch]
+type VBatch = [NetBatch]
 
 fromGame :: Game -> IO Visor
 fromGame game =
@@ -37,7 +37,7 @@ fromGame game =
     forFeature :: Feature -> IO Network
     forFeature (Feature _ _ _ (rw,rh) k) = initNet (rw*rh) (k+1) [100] 1 1
 
-consolidate :: [ViBatch] -> ViBatch
+consolidate :: [VBatch] -> VBatch
 consolidate vis = zipWith NetBatch xStack yStack
   where
     stack :: [Matrix R] -> Matrix R
@@ -55,13 +55,13 @@ genBatch :: Int -> Dataset -> Visor -> IO ()
 genBatch n set visor = runConduitRes $ batchSrc .| batchSink
  where
    batchSrc = asSource set .| interpret .| cvb'
-   interpret = mapC (toViBatch visor)
+   interpret = mapC (toVBatch . features . game $ visor)
    cvb' = awaitForever $ \x -> do stacked <- takeC (n-1) .| foldlC (zipWith stack) x
                                   yield stacked
 
    dir = "data" </> "batch" </> (title . game $ visor)
 
-   batchSink :: IOSink ViBatch
+   batchSink :: IOSink VBatch
    batchSink = do liftIO $ createDirectoryIfMissing True dir
                   mapC encodeVB .| iterWrite 0
 
@@ -82,8 +82,8 @@ test = do v <- fromGame melee
 
 -- | For a given visor, split an image and a set of labels into
 --   NetBatches corresponding to each feature.
-toViBatch :: Visor -> (RGBDelayed, [Maybe Int]) -> ViBatch
-toViBatch (Visor (Game _ fs _) _) (img, lbls) = zipWith NetBatch xs ys
+toVBatch :: [Feature] -> (RGBDelayed, [Maybe Int]) -> VBatch
+toVBatch fs (img, lbls) = zipWith NetBatch xs ys
   where
     xs :: [Matrix R]
     xs = extractFeature img <$> fs
@@ -123,5 +123,5 @@ extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = combine resized
     combine :: [RGBDelayed] -> Matrix R
     combine = fromRows . fmap (imageToVector . convert)
 
-encodeVB :: ViBatch -> BS.ByteString
+encodeVB :: VBatch -> BS.ByteString
 encodeVB vb = encode $ fmap (\(NetBatch i o) -> (toLists i, toLists o)) vb
