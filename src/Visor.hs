@@ -6,6 +6,7 @@ import Games.Melee
 import Batch
 import Util
 import Conduit
+import Data.Conduit.Zlib
 import Data.List
 import Data.Serialize
 import qualified Data.ByteString   as BS
@@ -47,6 +48,7 @@ consolidate vis = zipWith NetBatch xStack yStack
     xStack = fmap stack xs
     yStack = fmap stack ys
 
+stack :: NetBatch -> NetBatch -> NetBatch
 stack (NetBatch i1 o1) (NetBatch i2 o2) = NetBatch (i1 === i2) (o1 === o2)
 
 genBatch :: Int -> Dataset -> Visor -> IO ()
@@ -54,7 +56,8 @@ genBatch n set visor = runConduitRes $ batchSrc .| batchSink
  where
    batchSrc = asSource set .| interpret .| cvb'
    interpret = mapC (toViBatch visor)
-   cvb' = awaitForever $ \x -> takeC (n-1) .| foldlC (zipWith stack) x
+   cvb' = awaitForever $ \x -> do stacked <- takeC (n-1) .| foldlC (zipWith stack) x
+                                  yield stacked
 
    dir = "data" </> "batch" </> (title . game $ visor)
 
@@ -66,7 +69,7 @@ genBatch n set visor = runConduitRes $ batchSrc .| batchSink
    iterWrite i = do liftIO . putStrLn $ "Loading batch " ++ show i
                     mbs <- await
                     case mbs of
-                      Just bs -> do yield bs .| sinkFileBS (dir</>show i)
+                      Just bs -> do yield bs .| gzip .| sinkFileBS (dir</>show i)
                                     liftIO . putStrLn $ "Wrote batch " ++ show i
                                     iterWrite (i+1)
                       Nothing -> do return ()

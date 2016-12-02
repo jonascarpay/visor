@@ -35,6 +35,7 @@ library
                      , bytestring
                      , cereal
                      , conduit-combinators
+                     , conduit-extra
                      , resourcet
                      , transformers
   ghc-options:         -Wall
