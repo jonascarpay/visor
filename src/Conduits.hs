@@ -41,17 +41,36 @@ batchSink dirname = do liftIO $ createDirectoryIfMissing True dir
   where
     dir = "data" </> "batch" </> dirname
     iterWrite :: Int -> IOSink BS.ByteString
-    iterWrite i = do liftIO . putStrLn $ "Loading batch " ++ show i
-                     mbs <- await
+    iterWrite i = do mbs <- await
                      case mbs of
-                       Just bs -> do yield bs .| compress 9 defaultWindowBits .| sinkFileBS (dir</>dirname ++ show i)
+                       Just bs -> do yield bs .| compress 9 defaultWindowBits .| sinkFileBS (dir</>dirname ++ show i ++ ".vbatch")
                                      liftIO . putStrLn $ "Wrote batch " ++ show i
                                      iterWrite (i+1)
                        Nothing -> do return ()
                                      liftIO . putStrLn $ "Pipeline exhausted, exiting"
+
+-- | Streams batches from the directory specified
+batchSource :: String -> IOSrc VBatch
+batchSource dirname = sourceDirectory ("data"</>"batch"</>dirname)
+                   .| filterC ((==".vbatch") . takeExtension)
+                   .| sourceFileBS'
+                   .| mapC decode
+                   .| eitherC
 
 -- | Convert a dataset into VBatches and write them to disk
 genBatch :: Int -> Dataset -> Visor -> IO ()
 genBatch n set visor = runConduitRes $ datasetSource set
                                     .| parseLabeledImage visor n
                                     .| batchSink (title . game $ visor)
+
+-- | Auxiliary function to open and decompress large bytestrings. Can someone please
+--   tell me why sourceFileBS only produces 32kB chunks?
+sourceFileBS' :: IOConduit FilePath BS.ByteString
+sourceFileBS' = awaitForever $ \p -> do liftIO . putStrLn $ "Opening " ++ p
+                                        bs <- sourceFileBS p
+                                                .| decompress defaultWindowBits
+                                                .| foldC
+                                        yield bs
+
+eitherC :: IOConduit (Either String o) o
+eitherC = awaitForever $ either (liftIO . putStrLn) yield

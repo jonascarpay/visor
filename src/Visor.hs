@@ -4,7 +4,6 @@ import Network
 import Game
 import Batch
 import Util
-import Data.List
 import Numeric.LinearAlgebra
 import Vision.Image
 import Vision.Primitive.Shape
@@ -29,17 +28,6 @@ fromGame game =
     -- the case where the output is undefined
     forFeature :: Feature -> IO Network
     forFeature (Feature _ _ _ (rw,rh) k) = initNet (rw*rh) (k+1) [100] 1 1
-
-consolidate :: [VBatch] -> VBatch
-consolidate vis = zipWith NetBatch xStack yStack
-  where
-    stack :: [Matrix R] -> Matrix R
-    stack = fromBlocks . fmap (:[])
-    t' = transpose vis
-    xs = (fmap.fmap) input  t'
-    ys = (fmap.fmap) output t'
-    xStack = fmap stack xs
-    yStack = fmap stack ys
 
 -- | For a given set of features, and a pair of an image and labels,
 --   extract the features from the image and associate the labels

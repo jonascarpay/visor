@@ -6,10 +6,14 @@ import Batch
 import Visor
 import Games.Melee
 import Conduits
+import Numeric.LinearAlgebra
+import qualified Data.Conduit.Combinators as CC
 
 main :: IO ()
-main = do v <- fromGame melee
-          genBatch 256 dolphin_sets v
+main = do Just s <- runConduitRes $ batchSource "SSBM" .| CC.foldl1 (zipWith stack)
+          print . rows . input . head $ s
+          {-v <- fromGame melee-}
+          {-genBatch 256 dolphin_sets v-}
 
 main' :: [String] -> IO ()
 

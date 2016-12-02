@@ -52,3 +52,5 @@ executable visor-app
   main-is:             main.hs
   build-depends:       base
                      , visor
+                     , hmatrix
+                     , conduit-combinators
