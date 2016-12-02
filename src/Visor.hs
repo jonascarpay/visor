@@ -63,7 +63,7 @@ genBatch n set visor = runConduitRes $ batchSrc .| batchSink
 
    batchSink :: IOSink VBatch
    batchSink = do liftIO $ createDirectoryIfMissing True dir
-                  mapC encodeVB .| iterWrite 0
+                  mapC encode .| iterWrite 0
 
    iterWrite :: Int -> IOSink BS.ByteString
    iterWrite i = do liftIO . putStrLn $ "Loading batch " ++ show i
@@ -122,6 +122,3 @@ extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = combine resized
     resized = fmap (resize Bilinear $ ix2 ry rx) crops
     combine :: [RGBDelayed] -> Matrix R
     combine = fromRows . fmap (imageToVector . convert)
-
-encodeVB :: VBatch -> BS.ByteString
-encodeVB vb = encode $ fmap (\(NetBatch i o) -> (toLists i, toLists o)) vb

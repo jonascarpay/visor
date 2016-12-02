@@ -3,6 +3,7 @@ module Batch where
 
 import Numeric.LinearAlgebra
 import Vision.Image
+import Data.Serialize
 import qualified Data.Vector.Storable as V
 import qualified Vision.Image.Class as IC
 
@@ -13,6 +14,11 @@ import qualified Vision.Image.Class as IC
 data NetBatch = NetBatch { input  :: Matrix R
                          , output :: Matrix R
                          }
+
+instance Serialize NetBatch where
+  put (NetBatch i o) = put (toLists i, toLists o)
+  get = (\(il, ol) -> NetBatch (fromLists il) (fromLists ol)) <$> get
+
 
 -- | A dummy batch generator. Consists of k arms of n points each,
 --   arranged in a spiral around (0,0).
