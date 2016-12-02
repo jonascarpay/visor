@@ -3,6 +3,7 @@ module Util where
 import Numeric.LinearAlgebra
 import Data.Word
 import Conduit
+import Vision.Image
 
 colSums, rowSums :: Matrix R -> Vector R
 rowSums m = m #> konst 1 (cols m)
@@ -41,3 +42,9 @@ readDigit _   = Nothing
 type IOSrc a       = Source (ResourceT IO) a
 type IOConduit a b = Conduit a (ResourceT IO) b
 type IOSink a      = Sink a (ResourceT IO) ()
+
+-- | The atomic output of a dataset. It consists of an image and all
+--   associated labels. These are generally collected in batches for
+--   training.
+type LabeledImage = (RGBDelayed, [Maybe Int])
+

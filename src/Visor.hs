@@ -2,17 +2,10 @@ module Visor where
 
 import Network
 import Game
-import Games.Melee
 import Batch
 import Util
-import Conduit
-import Data.Conduit.Zlib
 import Data.List
-import Data.Serialize
-import qualified Data.ByteString   as BS
 import Numeric.LinearAlgebra
-import System.FilePath
-import System.Directory
 import Vision.Image
 import Vision.Primitive.Shape
 import Vision.Primitive
@@ -48,41 +41,10 @@ consolidate vis = zipWith NetBatch xStack yStack
     xStack = fmap stack xs
     yStack = fmap stack ys
 
-stack :: NetBatch -> NetBatch -> NetBatch
-stack (NetBatch i1 o1) (NetBatch i2 o2) = NetBatch (i1 === i2) (o1 === o2)
-
-genBatch :: Int -> Dataset -> Visor -> IO ()
-genBatch n set visor = runConduitRes $ batchSrc .| batchSink
- where
-   batchSrc = asSource set .| interpret .| cvb'
-   interpret = mapC (toVBatch . features . game $ visor)
-   cvb' = awaitForever $ \x -> do stacked <- takeC (n-1) .| foldlC (zipWith stack) x
-                                  yield stacked
-
-   dir = "data" </> "batch" </> (title . game $ visor)
-
-   batchSink :: IOSink VBatch
-   batchSink = do liftIO $ createDirectoryIfMissing True dir
-                  mapC encode .| iterWrite 0
-
-   iterWrite :: Int -> IOSink BS.ByteString
-   iterWrite i = do liftIO . putStrLn $ "Loading batch " ++ show i
-                    mbs <- await
-                    case mbs of
-                      Just bs -> do yield bs .| gzip .| sinkFileBS (dir</>show i)
-                                    liftIO . putStrLn $ "Wrote batch " ++ show i
-                                    iterWrite (i+1)
-                      Nothing -> do return ()
-                                    liftIO . putStrLn $ "Pipeline exhausted, exiting"
-
-test :: IO ()
-test = do v <- fromGame melee
-          l <- genBatch 256 dolphin_sets v
-          print l
-
--- | For a given visor, split an image and a set of labels into
---   NetBatches corresponding to each feature.
-toVBatch :: [Feature] -> (RGBDelayed, [Maybe Int]) -> VBatch
+-- | For a given set of features, and a pair of an image and labels,
+--   extract the features from the image and associate the labels
+--   with those features.
+toVBatch :: [Feature] -> LabeledImage -> VBatch
 toVBatch fs (img, lbls) = zipWith NetBatch xs ys
   where
     xs :: [Matrix R]
@@ -97,12 +59,14 @@ toVBatch fs (img, lbls) = zipWith NetBatch xs ys
     matchShape ins (e:es) = let (pre,post) = splitAt (length e) ins
                              in pre : matchShape post es
 
--- | Extracts samples for some feature from an image
+-- | Extracts a single feature from an image and returns it as
+--   a matrix.
 extractFeature :: RGBDelayed -> Feature -> Matrix R
 extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = combine resized
   where
     (Z:.ih:.iw) = shape img
 
+    -- TODO: document arguments
     toArea :: Double -> Double -> Double -> Double -> Int -> Int -> Rect
     toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
                                    yRel = cy - fh / 2

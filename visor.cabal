@@ -21,6 +21,7 @@ library
                      , Util
                      , Batch
                      , Layer
+                     , Conduits
                      , Games.Melee
   build-depends:       base
                      , hmatrix

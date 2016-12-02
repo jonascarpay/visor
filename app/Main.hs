@@ -4,9 +4,12 @@ import Control.Monad
 import Network
 import Batch
 import Visor
+import Games.Melee
+import Conduits
 
 main :: IO ()
-main = test
+main = do v <- fromGame melee
+          genBatch 256 dolphin_sets v
 
 main' :: [String] -> IO ()
 

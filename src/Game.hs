@@ -13,7 +13,6 @@ import Vision.Primitive
 import Vision.Image as I
 import Vision.Image.Storage.DevIL
 import System.Random
-import System.FilePath
 
 
 -- | A Game defines where to get a certain data set,
@@ -64,16 +63,6 @@ data Dataset =
       --   sample images
       distort :: Bool
     }
-
-asSource :: Dataset -> IOSrc (RGBDelayed, [Maybe Int])
-asSource (Dataset root lFn rect wig dis) = paths .| pair
-  where
-    paths       = sourceDirectoryDeep True root .| filterC ((==".png") . takeExtension)
-    imgSource p = do liftIO . putStrLn $ "Loading " ++ p
-                     bs <- sourceFileBS p .| foldC
-                     yield bs
-    pair        = awaitForever $ \p -> imgSource p .| toRGB .| mapC (,lFn p)
-    toRGB       = mapMC $ \bs -> loadImage bs rect wig dis
 
 -- | Loads an image and applies desired transformations
 loadImage :: ByteString -- ^ ByteString of the image to load. We use a

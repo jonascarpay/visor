@@ -19,6 +19,8 @@ instance Serialize NetBatch where
   put (NetBatch i o) = put (toLists i, toLists o)
   get = (\(il, ol) -> NetBatch (fromLists il) (fromLists ol)) <$> get
 
+stack :: NetBatch -> NetBatch -> NetBatch
+stack (NetBatch i1 o1) (NetBatch i2 o2) = NetBatch (i1 === i2) (o1 === o2)
 
 -- | A dummy batch generator. Consists of k arms of n points each,
 --   arranged in a spiral around (0,0).
