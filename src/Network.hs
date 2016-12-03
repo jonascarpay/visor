@@ -1,3 +1,4 @@
+{-# LANGUAGE DefaultSignatures, DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Network where
@@ -5,6 +6,8 @@ module Network where
 import Layer
 import Util
 import Batch
+import Data.Serialize
+import GHC.Generics (Generic)
 import Numeric.LinearAlgebra
 
 -- | A convolutional neural network for extracting features
@@ -18,7 +21,9 @@ data Network =
       delta :: Double,
       -- | Layers in the network
       layers :: [Layer]
-    }
+    } deriving Generic
+
+instance Serialize Network
 
 -- | Feed a network some matrix n * d where n is the number of
 --   samples and d is the dimensionality of the network input.

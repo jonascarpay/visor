@@ -72,5 +72,6 @@ sourceFileBS' = awaitForever $ \p -> do liftIO . putStrLn $ "Opening " ++ p
                                                 .| foldC
                                         yield bs
 
+-- | Conduit that prints out Left values as error messages, while extracting Right values
 eitherC :: IOConduit (Either String o) o
-eitherC = awaitForever $ either (liftIO . putStrLn) yield
+eitherC = awaitForever $ either (liftIO . putStrLn . ("Left: "++)) yield

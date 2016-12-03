@@ -3,8 +3,6 @@ module Main where
 import Control.Monad
 import Network
 import Batch
-import Visor
-import Games.Melee
 import Conduits
 import Numeric.LinearAlgebra
 import qualified Data.Conduit.Combinators as CC

@@ -2,6 +2,7 @@ module Util where
 
 import Numeric.LinearAlgebra
 import Data.Word
+import Data.Serialize
 import Conduit
 import Vision.Image
 
@@ -47,4 +48,12 @@ type IOSink a      = Sink a (ResourceT IO) ()
 --   associated labels. These are generally collected in batches for
 --   training.
 type LabeledImage = (RGBDelayed, [Maybe Int])
+
+instance (Element x, Serialize x) => Serialize (Matrix x) where
+  put = put . toLists
+  get = fmap fromLists get
+
+instance (Element x, Serialize x) => Serialize (Vector x) where
+  put = put . toList
+  get = fmap fromList get
 

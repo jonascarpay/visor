@@ -1,7 +1,10 @@
+{-# LANGUAGE DefaultSignatures, DeriveGeneric #-}
 module Layer where
 
 import Numeric.LinearAlgebra
 import Util
+import Data.Serialize
+import GHC.Generics (Generic)
 
 -- | A layer consists of a number of weights, a bias vector,
 --   and some activation function.
@@ -16,7 +19,9 @@ data Layer = L { -- | Weight matrix
                  --   should use a softMax activation function because of
                  --   its convenient mathematical properties.
                  activationFunction :: ActivationFunction
-               } deriving Show
+               } deriving (Generic, Show)
+
+instance Serialize Layer
 
 -- | Apply a matrix input to a layer. The output consists of the weight
 --   application followed by the activation function for this layer.
@@ -76,7 +81,9 @@ data ActivationFunction
          --   because it is easily calculated, easy to
          --   derive a gradient for, and has been proven
          --   empirically to provide good results.
-  deriving Show
+   deriving (Show, Generic)
+
+instance Serialize ActivationFunction
 
 -- | Gives an actual function on a matrix given an activation
 --   function term

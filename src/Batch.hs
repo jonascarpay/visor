@@ -1,9 +1,12 @@
+{-# LANGUAGE DeriveGeneric, DefaultSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Batch where
 
+import Util()
 import Numeric.LinearAlgebra
 import Vision.Image
 import Data.Serialize
+import GHC.Generics (Generic(..))
 import qualified Data.Vector.Storable as V
 import qualified Vision.Image.Class as IC
 
@@ -13,11 +16,9 @@ import qualified Vision.Image.Class as IC
 --   network and evaluate performance.
 data NetBatch = NetBatch { input  :: Matrix R
                          , output :: Matrix R
-                         }
+                         } deriving Generic
 
-instance Serialize NetBatch where
-  put (NetBatch i o) = put (toLists i, toLists o)
-  get = (\(il, ol) -> NetBatch (fromLists il) (fromLists ol)) <$> get
+instance Serialize NetBatch
 
 stack :: NetBatch -> NetBatch -> NetBatch
 stack (NetBatch i1 o1) (NetBatch i2 o2) = NetBatch (i1 === i2) (o1 === o2)
