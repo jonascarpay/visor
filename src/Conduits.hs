@@ -10,12 +10,13 @@ import Batch
 import Visor
 import System.Directory
 import System.FilePath
+import System.Posix
 import Data.Serialize
 import qualified Data.ByteString as BS
 import Data.Conduit.Zlib
 import Conduit
 
--- TODO: have Conduit typeclass for source/sink
+-- TODO: Write Conduit typeclass for source/sink
 
 -- | A source conduit that yields successive images from a dataset.
 datasetSource :: Dataset -> IOSrc LabeledImage
@@ -78,13 +79,23 @@ sourceFileBS' = awaitForever $ \p -> do liftIO . putStrLn $ "Opening " ++ p
 eitherC :: IOConduit (Either String o) o
 eitherC = awaitForever $ either (liftIO . putStrLn . ("Left: "++)) yield
 
--- | Loads a visor with the given name
-visorSource :: String -> IOSrc VBatch
-visorSource vName = sourceFile ("data"</>"visor"</>vName++".visor") .| mapC decode .| eitherC
+-- | Loads a visor with the given name, or initializes a new one if none exists.
+visorSource :: Game -> IOSrc Visor
+visorSource g@(Game vName _ _) =
+  do b <- liftIO $ fileExist p
+     if b then yield p .| sourceFileBS' .| mapC decode .| eitherC
+          else liftIO (fromGame g) >>= yield
+    where
+      p = "data" </> "visor" </> vName ++ ".visor"
 
 -- | Writes a visor
 visorSink :: IOSink Visor
 visorSink = awaitForever $
   \ v@(Visor vName _) -> yield v
                       .| mapC encode
-                      .| sinkFileBS ("data"</>"visor"</>vName++".visor")
+                      .| compress 9 defaultWindowBits
+                      .| write vName
+  where
+    dir = "data" </> "visor"
+    write vName = do liftIO $ createDirectoryIfMissing True dir
+                     sinkFileBS (dir </> vName ++".visor")

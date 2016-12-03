@@ -23,12 +23,11 @@ main' ["spiral"] =
 main' _ = putStrLn "Main"
 
 tla :: Network -> NetBatch -> (Network, Double, Double)
-tla n b = (train n b, loss n b, accuracy n b)
+tla n b = (fst $ train n b, snd $ train n b, accuracy n b)
 
 testNetwork :: NetBatch -> Network -> IO ()
 testNetwork b n =
-  do let n'  = train n b
-         l   = loss n b
+  do let (n', l)  = train n b
          acc = accuracy n b
      print l
      unless (acc > 0.95) $ testNetwork b n'

@@ -36,17 +36,17 @@ feed (Network _ _ ls) x = foldl forward x ls
 --   May need to be updated to incorporate dropout.
 train :: Network -- ^ Network to train
       -> NetBatch -- ^ Dataset to train on
-      -> Network -- ^ Network with updated weights
+      -> (Network, Double) -- ^ Network with updated weights and loss
 train (Network r d ls) (NetBatch x y) =
-  let (_, ls') = go ls x y
-   in Network r d ls'
+  let (_, ls', loss) = go ls x y
+   in (Network r d ls', loss)
   where
-    go :: [Layer] -> Matrix R -> Matrix R -> (Matrix R, [Layer])
-    go []     _ y = (y, [])
+    go :: [Layer] -> Matrix R -> Matrix R -> (Matrix R, [Layer], Double)
+    go []     x y = (y, [], dataLoss x y)
     go (l:ls) x y = let p = forward x l
-                        (dp, ls') = go ls p y
+                        (dp, ls', loss) = go ls p y
                         (l', dx) = backward l x p dp d r
-                     in (dx, l':ls')
+                     in (dx, l':ls', loss + regularizationLoss r l')
 
 -- | Calculate loss for a given network and input. The loss is
 --   the sum of the data loss and regularization loss. The data

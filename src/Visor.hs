@@ -24,10 +24,10 @@ instance Serialize Visor
 type VBatch = [NetBatch]
 
 -- | Generate an initial visor for a game.
-fromGame :: Game -> String -> IO Visor
-fromGame game visorName =
+fromGame :: Game -> IO Visor
+fromGame game =
   do nets <- traverse forFeature (features game)
-     return $ Visor visorName nets
+     return $ Visor (title game) nets
   where
     -- The network for a feature always has one output more than
     -- the feature cardinality. The extra output is used for
