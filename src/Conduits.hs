@@ -27,10 +27,10 @@ datasetSource (Dataset root lFn rect wig dis) = paths .| pair
     toRGB       = mapMC $ \bs -> loadImage bs rect wig dis
 
 -- | Collect n LabeledImages and consolidate them into a single VBatch.
-parseLabeledImage :: Visor -> Int -> IOConduit LabeledImage VBatch
-parseLabeledImage visor n = interpret .| gatherC
+parseLabeledImage :: Game -> Int -> IOConduit LabeledImage VBatch
+parseLabeledImage game n = interpret .| gatherC
   where
-   interpret = mapC (toVBatch . features . game $ visor)
+   interpret = mapC (toVBatch . features $ game)
    gatherC = awaitForever $ \x -> do stacked <- takeC (n-1) .| foldlC (zipWith stack) x
                                      yield stacked
 
@@ -58,10 +58,10 @@ batchSource dirname = sourceDirectory ("data"</>"batch"</>dirname)
                    .| eitherC
 
 -- | Convert a dataset into VBatches and write them to disk
-genBatch :: Int -> Dataset -> Visor -> IO ()
-genBatch n set visor = runConduitRes $ datasetSource set
-                                    .| parseLabeledImage visor n
-                                    .| batchSink (title . game $ visor)
+genBatch :: Int -> Dataset -> Game -> IO ()
+genBatch n set game = runConduitRes $ datasetSource set
+                                    .| parseLabeledImage game n
+                                    .| batchSink (title game)
 
 -- | Auxiliary function to open and decompress large bytestrings. Can someone please
 --   tell me why sourceFileBS only produces 32kB chunks?

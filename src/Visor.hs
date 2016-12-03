@@ -9,7 +9,7 @@ import Vision.Image
 import Vision.Primitive.Shape
 import Vision.Primitive
 
-data Visor = Visor { game :: Game
+data Visor = Visor { visorName :: String
                    , nets :: [Network]
                    }
 
@@ -18,10 +18,11 @@ data Visor = Visor { game :: Game
 --   that can be fed to a visor.
 type VBatch = [NetBatch]
 
-fromGame :: Game -> IO Visor
-fromGame game =
+-- | Generate an initial visor for a game.
+fromGame :: Game -> String -> IO Visor
+fromGame game visorName =
   do nets <- traverse forFeature (features game)
-     return $ Visor game nets
+     return $ Visor visorName nets
   where
     -- The network for a feature always has one output more than
     -- the feature cardinality. The extra output is used for
