@@ -80,3 +80,6 @@ extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = combine resized
     resized = fmap (resize Bilinear $ ix2 ry rx) crops
     combine :: [RGBDelayed] -> Matrix R
     combine = fromRows . fmap (imageToVector . convert)
+
+vTrain :: Visor -> VBatch -> ([Network], Double)
+vTrain (Visor _ nets) vb = fmap sum . unzip $ zipWith train nets vb

@@ -99,3 +99,14 @@ visorSink = awaitForever $
     dir = "data" </> "visor"
     write vName = do liftIO $ createDirectoryIfMissing True dir
                      sinkFileBS (dir </> vName ++".visor")
+
+-- | Trains a visor
+trainC :: Visor -> IOConduit VBatch Visor
+trainC v = do mvb <- await
+              case mvb of
+                Nothing -> return ()
+                Just vb -> let (ns', l) = vTrain v vb
+                               v'       = v {nets = ns'}
+                            in do liftIO . putStrLn $ "Loss: " ++ show l
+                                  yield v'
+                                  trainC v'
