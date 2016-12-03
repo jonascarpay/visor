@@ -15,6 +15,8 @@ import qualified Data.ByteString as BS
 import Data.Conduit.Zlib
 import Conduit
 
+-- TODO: have Conduit typeclass for source/sink
+
 -- | A source conduit that yields successive images from a dataset.
 datasetSource :: Dataset -> IOSrc LabeledImage
 datasetSource (Dataset root lFn rect wig dis) = paths .| pair
@@ -75,3 +77,14 @@ sourceFileBS' = awaitForever $ \p -> do liftIO . putStrLn $ "Opening " ++ p
 -- | Conduit that prints out Left values as error messages, while extracting Right values
 eitherC :: IOConduit (Either String o) o
 eitherC = awaitForever $ either (liftIO . putStrLn . ("Left: "++)) yield
+
+-- | Loads a visor with the given name
+visorSource :: String -> IOSrc VBatch
+visorSource vName = sourceFile ("data"</>"visor"</>vName++".visor") .| mapC decode .| eitherC
+
+-- | Writes a visor
+visorSink :: IOSink Visor
+visorSink = awaitForever $
+  \ v@(Visor vName _) -> yield v
+                      .| mapC encode
+                      .| sinkFileBS ("data"</>"visor"</>vName++".visor")

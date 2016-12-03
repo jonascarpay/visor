@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Visor where
 
 import Network
@@ -8,10 +9,14 @@ import Numeric.LinearAlgebra
 import Vision.Image
 import Vision.Primitive.Shape
 import Vision.Primitive
+import Data.Serialize
+import GHC.Generics (Generic(..))
 
 data Visor = Visor { visorName :: String
                    , nets :: [Network]
-                   }
+                   } deriving Generic
+
+instance Serialize Visor
 
 -- | A visor consists of multiple networks. A network is fed
 --   batches. A VBatch is a collection of these batches

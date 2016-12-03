@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, DefaultSignatures #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Batch where
 
