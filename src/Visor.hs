@@ -81,5 +81,9 @@ extractFeature img (Feature _ pos (fw,fh) (rx, ry) _) = combine resized
     combine :: [RGBDelayed] -> Matrix R
     combine = fromRows . fmap (imageToVector . convert)
 
-vTrain :: Visor -> VBatch -> ([Network], Double)
-vTrain (Visor _ nets) vb = fmap sum . unzip $ zipWith train nets vb
+vTrain :: Visor -> VBatch -> ([Network], [Double])
+vTrain (Visor _ nets) vb = unzip $ zipWith train nets vb
+
+vAccuracy :: Visor -> VBatch -> [Double]
+vAccuracy (Visor _ nets) vb = (*100) <$> zipWith accuracy nets vb
+

@@ -88,6 +88,9 @@ visorSource g@(Game vName _ _) =
     where
       p = "data" </> "visor" </> vName ++ ".visor"
 
+genVisor :: Game -> IO (Maybe Visor)
+genVisor g = runConduitRes $ visorSource g .| headC
+
 -- | Writes a visor
 visorSink :: IOSink Visor
 visorSink = awaitForever $
