@@ -5,6 +5,7 @@ import Data.Word
 import Data.Serialize
 import Conduit
 import Vision.Image
+import Vision.Primitive
 
 colSums, rowSums :: Matrix R -> Vector R
 rowSums m = m #> konst 1 (cols m)
@@ -56,4 +57,16 @@ instance (Element x, Serialize x) => Serialize (Matrix x) where
 instance (Element x, Serialize x) => Serialize (Vector x) where
   put = put . toList
   get = fmap fromList get
+
+-- TODO: document arguments
+toArea :: Double -> Double -> Double -> Double -> Int -> Int -> Rect
+toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
+                               yRel = cy - fh / 2
+                               wRel = fw
+                               hRel = fh
+                               x = round $ fromIntegral iw * xRel
+                               y = round $ fromIntegral ih * yRel
+                               w = round $ fromIntegral iw * wRel
+                               h = round $ fromIntegral ih * hRel
+                            in Rect x y w h
 

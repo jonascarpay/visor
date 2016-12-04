@@ -8,6 +8,10 @@ import Game
 import Util
 import Batch
 import Visor
+import Network
+import Numeric.LinearAlgebra
+import Vision.Image
+import Vision.Image.Storage.DevIL
 import System.Directory
 import System.FilePath
 import System.Posix
@@ -36,6 +40,26 @@ parseLabeledImage game n = interpret .| gatherC
    interpret = mapC (toVBatch . features $ game)
    gatherC = awaitForever $ \x -> do stacked <- takeC (n-1) .| foldlC (zipWith stack) x
                                      yield stacked
+
+featureSink :: Game -> IOSink LabeledImage
+featureSink (Game _ fs _) = go 0
+  where go n = do mli <- await
+                  case mli of
+                    Nothing -> return ()
+                    Just (img, lbls) ->
+                      let imgsD = fs >>= snd . extractFeature' img
+                          imgs  = fmap compute imgsD
+                          lbls'  = zip [(1::Int)..] lbls
+                          fname (i, Just lbl) = show n ++ "_" ++ show i ++ "_" ++ show lbl ++ ".png"
+                          fname (i, Nothing)  = show n ++ "_" ++ show i ++ "__.png"
+                          dir   = "data" </> "features"
+                          save' :: RGB -> (Int, Maybe Int) -> IO (Maybe StorageError)
+                          save' i f = save PNG (dir</>fname f) i
+                          saves :: [IO (Maybe StorageError)]
+                          saves = zipWith save' imgs lbls'
+                       in do liftIO $ do createDirectoryIfMissing True dir
+                                         sequence_ saves
+                             go (n+1)
 
 -- | Write VBatches to the directory specified
 batchSink :: String -> IOSink VBatch
@@ -109,11 +133,15 @@ trainC v = do mvb <- await
               case mvb of
                 Nothing -> return ()
                 Just vb -> let (ns', l)   = vTrain v vb
+                               x1         = asRow . head . toRows . input $ head vb
+                               n          = head ns'
                                v'         = v {nets = ns'}
                                acc        = vAccuracy v' vb
                                lossString = unwords $ fmap (take 9 . show) l
                                accString  = unwords $ fmap ((++"%") . take 4 . show) acc
                                output     = "\r" ++ accString ++ "\t" ++ lossString
                             in do liftIO . putStrLn $ output
+                                  liftIO $ print . Batch.output . head $ vb
+                                  liftIO $ print $ feed n x1
                                   yield v'
                                   trainC v'
