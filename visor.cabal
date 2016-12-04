@@ -56,3 +56,5 @@ executable visor-app
                      , visor
                      , hmatrix
                      , conduit-combinators
+                     , friday
+                     , friday-devil

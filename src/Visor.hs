@@ -33,7 +33,7 @@ fromGame game =
     -- the feature cardinality. The extra output is used for
     -- the case where the output is undefined
     forFeature :: Feature -> IO Network
-    forFeature (Feature _ _ _ (rw,rh) k) = initNet (rw*rh*3) (k+1) [100] 1 1
+    forFeature (Feature _ _ _ (rw,rh) k) = initNet (rw*rh*3) (k+1) [100] 1e0 1e-1
 
 -- | For a given set of features, and a pair of an image and labels,
 --   extract the features from the image and associate the labels

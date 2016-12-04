@@ -9,8 +9,6 @@ import Vision.Primitive
 melee :: Game
 melee = Game { title = "SSBM"
              , features = [ percentageOnes
-                          , percentageTens
-                          , percentageHundreds
                           ]
              , datasets = [ dolphin_sets
                           ]
@@ -19,32 +17,11 @@ melee = Game { title = "SSBM"
 percentageOnes :: Feature
 percentageOnes = Feature { name = "onesDigit"
                          , positions = [ (214/width, 914/height)
-                                       , (518/width, 914/height)
                                        ]
                          , dimensions = (100/width,120/height)
                          , resolution = (16,16)
                          , cardinality = 10
                          }
-
-percentageTens :: Feature
-percentageTens = Feature { name = "tensDigit"
-                         , positions = [ (149/width, 914/height)
-                                       , (442/width, 914/height)
-                                       ]
-                         , dimensions = (100/width,120/height)
-                         , resolution = (16,16)
-                         , cardinality = 10
-                         }
-
-percentageHundreds :: Feature
-percentageHundreds = Feature { name = "hundredsDigit"
-                            , positions = [ (94/width, 914/height)
-                                          , (394/width, 914/height)
-                                          ]
-                            , dimensions = (100/width,120/height)
-                            , resolution = (16,16)
-                            , cardinality = 10
-                            }
 
 width, height :: Double
 width = 1252

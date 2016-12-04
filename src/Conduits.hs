@@ -108,8 +108,12 @@ trainC :: Visor -> IOConduit VBatch Visor
 trainC v = do mvb <- await
               case mvb of
                 Nothing -> return ()
-                Just vb -> let (ns', l) = vTrain v vb
-                               v'       = v {nets = ns'}
-                            in do liftIO . putStrLn $ "Loss: " ++ show l
+                Just vb -> let (ns', l)   = vTrain v vb
+                               v'         = v {nets = ns'}
+                               acc        = vAccuracy v' vb
+                               lossString = unwords $ fmap (take 9 . show) l
+                               accString  = unwords $ fmap ((++"%") . take 4 . show) acc
+                               output     = "\r" ++ accString ++ "\t" ++ lossString
+                            in do liftIO . putStrLn $ output
                                   yield v'
                                   trainC v'

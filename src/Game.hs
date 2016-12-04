@@ -77,7 +77,7 @@ loadImage :: ByteString -- ^ ByteString of the image to load. We use a
 loadImage bs (Rect x y w h) wig dis =
   do [dx, dy, dw, dh] <- replicateM 4 (liftIO $ randomRIO (0, wig `div` 2))
      [dr, dg, db]     <- replicateM 3 (liftIO $ randomRIO (0.9, 1.1 :: Double))
-     let eimg :: Either StorageError RGB = loadBS Autodetect bs
+     let eimg :: Either StorageError RGBDelayed = loadBS Autodetect bs
          img = case eimg of
                  Right x -> x
                  Left err -> error $ show err
