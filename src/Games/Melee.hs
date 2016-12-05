@@ -10,8 +10,6 @@ melee :: Game
 melee = Game { title = "SSBM"
              , features = [ percentageOnes
                           ]
-             , datasets = [ dolphin_sets
-                          ]
              }
 
 percentageOnes :: Feature

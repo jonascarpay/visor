@@ -2,7 +2,7 @@ module Main where
 
 import Conduits
 import Batch
-import Data.Conduit.Combinators as CC
+import qualified Data.Conduit.Combinators as CC
 import Games.Melee
 import System.Environment
 

@@ -24,7 +24,7 @@ import Conduit
 
 -- | A source conduit that yields successive images from a dataset.
 datasetSource :: Dataset -> IOSrc LabeledImage
-datasetSource (Dataset root lFn rect wig dis) = paths .| pair
+datasetSource (Dataset root lFn rect wig dis) = paths .| pair .| takeC 2
   where
     paths       = sourceDirectoryDeep True root .| filterC ((==".png") . takeExtension)
     imgSource p = do liftIO . putStrLn $ "Loading " ++ p
@@ -42,7 +42,7 @@ parseLabeledImage game n = interpret .| gatherC
                                      yield stacked
 
 featureSink :: Game -> IOSink LabeledImage
-featureSink (Game _ fs _) = go 0
+featureSink (Game _ fs) = go (0 :: Int)
   where go n = do mli <- await
                   case mli of
                     Nothing -> return ()
@@ -105,7 +105,7 @@ eitherC = awaitForever $ either (liftIO . putStrLn . ("Left: "++)) yield
 
 -- | Loads a visor with the given name, or initializes a new one if none exists.
 visorSource :: Game -> IOSrc Visor
-visorSource g@(Game vName _ _) =
+visorSource g@(Game vName _) =
   do b <- liftIO $ fileExist p
      if b then yield p .| sourceFileBS' .| mapC decode .| eitherC
           else liftIO (fromGame g) >>= yield

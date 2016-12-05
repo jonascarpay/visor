@@ -15,12 +15,10 @@ import Vision.Image.Storage.DevIL
 import System.Random
 
 
--- TODO: remove datasets record
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
 data Game = Game { title    :: String
                  , features :: [Feature]
-                 , datasets :: [Dataset]
                  }
 
 -- | A feature represents some metric to be obtained
