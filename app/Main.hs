@@ -2,7 +2,6 @@ module Main where
 
 import Conduits
 import Batch
-import qualified Data.Conduit.Combinators as CC
 import Games.Melee
 import System.Environment
 
@@ -15,8 +14,6 @@ main' _ = do Just v <- genVisor melee
              runConduitRes $ batchSource "SSBM"
                           .| (foldl1' (zipWith stack) >>= repeatC)
                           .| trainC v
+                          .| takeC 1000
                           .| lastDefC undefined
              return ()
-
-foldl1' f = do Just x <- CC.foldl1 f
-               return x

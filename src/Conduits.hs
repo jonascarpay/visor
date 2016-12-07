@@ -17,6 +17,7 @@ import Data.Serialize
 import qualified Data.ByteString as BS
 import Data.Conduit.Zlib
 import Conduit
+import qualified Data.Conduit.Combinators as CC
 
 -- TODO: Write Conduit typeclass for source/sink
 
@@ -139,3 +140,7 @@ trainC v = do mvb <- await
                             in do liftIO . putStrLn $ output
                                   yield v'
                                   trainC v'
+
+foldl1' :: Monad m => (b -> b -> b) -> ConduitM b o m b
+foldl1' f = do Just x <- CC.foldl1 f
+               return x
