@@ -13,12 +13,12 @@ melee = Game { title = "SSBM"
              }
 
 percentageOnes :: Feature
-percentageOnes = Feature { name = "onesDigit"
-                         , positions = [ (214/width, 914/height)
-                                       ]
-                         , dimensions = (100/width,120/height)
-                         , resolution = (16,16)
+percentageOnes = Feature { name        = "onesDigit"
+                         , positions   = [ (214/width, 914/height) ]
+                         , dimensions  = (100/width,120/height)
+                         , resolution  = (16,16)
                          , cardinality = 10
+                         , netConfig   = defaultNetConfig
                          }
 
 width, height :: Double

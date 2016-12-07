@@ -25,22 +25,60 @@ data Game = Game { title    :: String
 -- from an image, and the positions it occurs in.
 data Feature =
   Feature
-    { -- | Name for this feature
+    { -- ^ Name for this feature
       name :: String,
-      -- | The center of the feature in the image.
-      -- Values given should be between 0 and 1
+      -- ^ The center of the feature in the image.
+      --   Values given should be between 0 and 1
       positions :: [(Double, Double)],
-      -- | The area to be scanned for the feature.
-      -- Values should be between 0 and 1
+      -- ^ The area to be scanned for the feature.
+      --   Values should be between 0 and 1
       dimensions :: (Double, Double),
-      -- | The resolution to be used for this feature.
+      -- ^ The resolution to be used for this feature.
       --   Lower values mean more downsampling can be
       --   done during preprocessing, which leads to
       --   better performance
       resolution :: (Int, Int),
-      -- | The number of different values this feature can take
-      cardinality :: Int
+      -- ^ The number of different values this feature can take
+      cardinality :: Int,
+      -- ^ Internal configuration for the neural network.
+      --   Can be tweaked for performance or accuracy.
+      netConfig :: NetConfig
     }
+
+-- | A container for the configuration of a network.
+data NetConfig =
+  NetConfig
+    { -- ^ Penalty factor for high weights. A higher value
+      --   means high weight values are penalized more strongly,
+      --   thereby preventing overfitting. A higher value means
+      --   training takes longer, and if the value is too high,
+      --   the network might decrease potential accuracy.
+      --   Regularization strength is usually referred to as either
+      --   lambda, λ, or r in the rest of the code.
+      -- TODO: λ everywhere
+      regularizationStrength :: Double,
+      -- ^ The learning rate for the network. A lower value
+      --   trades off speed for convergence probability. A
+      --   value that is too high might cause oscillations
+      --   or divergence.
+      --   Learning rate is usually referred to as either delta,
+      --   δ, or l in the rest of the code.
+      -- TODO: δ everywhere
+      learningRate :: Double,
+      -- ^ The number of neurons in the hidden layers. An empty
+      --   list means there are no hidden layers. Hidden layers
+      --   make a network more elaborate, making it able to
+      --   make more complicated inferences on a data set. This
+      --   comes at the cost of slower training and worse performance.
+      hiddenNeurons :: [Int]
+    }
+
+-- | Default values for a NetConfig. These are reasonably conservative
+--   values, and should generally lead to a converging network. Tweak
+--   them if they don't.
+defaultNetConfig :: NetConfig
+defaultNetConfig = NetConfig 1e-3 1e-3 [100]
+
 
 -- | A data set defines a set of samples for some game
 data Dataset =

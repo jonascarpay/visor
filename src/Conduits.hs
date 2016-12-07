@@ -8,8 +8,6 @@ import Game
 import Util
 import Batch
 import Visor
-import Network
-import Numeric.LinearAlgebra
 import Vision.Image
 import Vision.Image.Storage.DevIL
 import System.Directory
@@ -24,7 +22,7 @@ import Conduit
 
 -- | A source conduit that yields successive images from a dataset.
 datasetSource :: Dataset -> IOSrc LabeledImage
-datasetSource (Dataset root lFn rect wig dis) = paths .| pair .| takeC 2
+datasetSource (Dataset root lFn rect wig dis) = paths .| pair
   where
     paths       = sourceDirectoryDeep True root .| filterC ((==".png") . takeExtension)
     imgSource p = do liftIO . putStrLn $ "Loading " ++ p
@@ -133,15 +131,11 @@ trainC v = do mvb <- await
               case mvb of
                 Nothing -> return ()
                 Just vb -> let (ns', l)   = vTrain v vb
-                               x1         = asRow . head . toRows . input $ head vb
-                               n          = head ns'
                                v'         = v {nets = ns'}
                                acc        = vAccuracy v' vb
                                lossString = unwords $ fmap (take 9 . show) l
                                accString  = unwords $ fmap ((++"%") . take 4 . show) acc
                                output     = "\r" ++ accString ++ "\t" ++ lossString
                             in do liftIO . putStrLn $ output
-                                  liftIO $ print . Batch.output . head $ vb
-                                  liftIO $ print $ feed n x1
                                   yield v'
                                   trainC v'
