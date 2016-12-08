@@ -9,15 +9,17 @@ main :: IO ()
 main = getArgs >>= main'
 
 main' :: [String] -> IO ()
-main' ["gen"] = genBatch 256 dolphin_sets melee
+main' ["gen"] = genBatch 4096 dolphin_sets melee
 main' ["features", n] = runConduitRes $ datasetSource dolphin_sets
                                      .| takeC (read n)
                                      .| featureSink melee
 
-main' _ = do Just v <- genVisor melee
-             runConduitRes $ batchSource "SSBM"
-                          .| (foldl1' (zipWith stack) >>= repeatC)
-                          .| trainC v
-                          .| takeC 1000
-                          .| lastDefC undefined
+main' _ = do Just vIn <- genVisor melee
+             Just vOut <- runConduitRes $ batchSource "SSBM"
+                                       .| (foldl1' (zipWith stack) >>= repeatC)
+                                       .| trainC vIn
+                                       .| takeC 1000
+                                       .| lastC
+
+             runConduitRes $ yield vOut .| visorSink
              return ()
