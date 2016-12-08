@@ -6,6 +6,7 @@ import System.FilePath.Posix
 import Data.List.Split
 import Vision.Primitive
 
+-- | Game definition for SSBM.
 melee :: Game
 melee = Game { title = "SSBM"
              , features = [ percentageOnes

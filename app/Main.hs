@@ -10,6 +10,9 @@ main = getArgs >>= main'
 
 main' :: [String] -> IO ()
 main' ["gen"] = genBatch 256 dolphin_sets melee
+main' ["features"] = runConduitRes $ datasetSource dolphin_sets
+                                  .| featureSink melee
+
 main' _ = do Just v <- genVisor melee
              runConduitRes $ batchSource "SSBM"
                           .| (foldl1' (zipWith stack) >>= repeatC)
