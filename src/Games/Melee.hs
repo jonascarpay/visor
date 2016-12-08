@@ -15,9 +15,11 @@ melee = Game { title = "SSBM"
 
 percentageOnes :: Feature
 percentageOnes = Feature { name        = "onesDigit"
-                         , positions   = [ (214/width, 914/height) ]
+                         , positions   = [ (214/width, 914/height)
+                                         , (516/width, 914/height)
+                                         ]
                          , dimensions  = (100/width,120/height)
-                         , resolution  = (16,16)
+                         , resolution  = (16,32)
                          , cardinality = 10
                          , netConfig   = defaultNetConfig
                          }
@@ -43,9 +45,9 @@ asDigits cs = fmap readDigit (reverse cs) ++ repeat Nothing
 dolphin_sets :: Dataset
 dolphin_sets =
   Dataset { rootDir = "/Users/jmc/tmp/"
-          , labels = \f -> let (_:_:_:p1p:_:_:p2p:_) = splitOn "_" (takeBaseName f)
-                               p1p' = take 3 (asDigits p1p)
-                               p2p' = take 3 (asDigits p2p)
+          , labels = \f -> let (_:_:st:time:p1p:p1s:p2p:p2s) = splitOn "_" (takeBaseName f)
+                               p1p' = take 3 $ if st == "0" || p1p == "X" then repeat Nothing else asDigits p1p
+                               p2p' = take 3 $ if st == "0" || p2p == "X" then repeat Nothing else asDigits p2p
                             in merge p1p' p2p'
           , cropRect = Rect 335 50 1251 1027
           , wiggle = 20
