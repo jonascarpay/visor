@@ -50,12 +50,8 @@ toVBatch fs (img, lbls) = zipWith NetBatch xs ys
 
     labelsGrouped = matchShape lbls (fmap positions fs)
 
-    matchShape _   []     = []
-    matchShape ins (e:es) = let (pre,post) = splitAt (length e) ins
-                             in pre : matchShape post es
-
--- | Extracts a single feature from an image and returns it as
---   a matrix.
+-- | Extracts a single feature from an image and returns all occurrences
+--   of that feature as both a matrix and a list of images
 extractFeature' :: RGBDelayed -> Feature -> (Matrix R, [RGBDelayed])
 extractFeature' img (Feature _ pos (fw,fh) (rx, ry) _ _) = (combine resized, resized)
   where
@@ -76,6 +72,16 @@ extractFeature img f = fst $ extractFeature' img f
 vTrain :: Visor -> VBatch -> ([Network], [Double])
 vTrain (Visor _ nets) vb = unzip $ zipWith train nets vb
 
+vFeed :: Game -> Visor -> RGBDelayed -> [Maybe Int]
+vFeed (Game _ fs) (Visor _ nets) img = max
+  where
+    xs = fmap (extractFeature img) fs
+    ys = zipWith feed nets xs
+    vecs = ys >>= toRows
+    max = fmap (min1 . maxIndex) vecs
+    min1 x
+      | x < 1 = Nothing
+      | otherwise = Just (x-1)
+
 vAccuracy :: Visor -> VBatch -> [Double]
 vAccuracy (Visor _ nets) vb = (*100) <$> zipWith accuracy nets vb
-

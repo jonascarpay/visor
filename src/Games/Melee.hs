@@ -4,7 +4,10 @@ import Game
 import Util
 import System.FilePath.Posix
 import Data.List.Split
+import Data.List (intercalate)
+import Data.Maybe
 import Vision.Primitive
+import Control.Applicative
 
 -- | Game definition for SSBM.
 melee :: Game
@@ -127,3 +130,17 @@ dolphin_sets =
           , wiggle = 20
           , distort = True
           }
+
+delabelMelee :: [Maybe Int] -> String
+delabelMelee [p11, p21, p110, p210, p1100, p2100, td1, td2, td3, p1s, p2s] = filename
+  where
+    filename = intercalate "_" . fmap p $ [p1p, p1s, p2p, p2s, mins, secs]
+    secs = liftA2 (+) ((*10) <$> td2) td3
+    mins = td1
+    p = maybe "X" show
+    p1p = case p11 of
+            Nothing   -> Nothing
+            Just p11' -> Just $ p11' + fromMaybe 0 p110 * 10 + fromMaybe 0 p1100 * 100
+    p2p = case p21 of
+            Nothing   -> Nothing
+            Just p21' -> Just $ p21' + fromMaybe 0 p210 * 10 + fromMaybe 0 p2100 * 100

@@ -15,6 +15,7 @@ import System.Directory
 import System.FilePath
 import System.Posix
 import Data.Serialize
+import Data.List (intercalate)
 import qualified Data.ByteString as BS
 import Data.Conduit.Zlib
 import Conduit
@@ -60,6 +61,19 @@ featureSink (Game _ fs) = go (0 :: Int)
                           saves = zipWith save' imgs lbls'
                        in do liftIO $ do createDirectoryIfMissing True dir
                                          sequence_ saves
+                             go (n+1)
+
+labelSink :: ([Maybe Int] -> String) -> IOSink LabeledImage
+labelSink delabel = go (0::Int)
+  where go :: Int -> IOSink LabeledImage
+        go n = do mli <- await
+                  case mli of
+                    Nothing -> return ()
+                    Just (img, lbls) ->
+                      let filename = show n ++ "_" ++ delabel lbls ++ ".png"
+                          dir = "data" </> "labeled"
+                       in do liftIO $ do createDirectoryIfMissing True dir
+                                         save PNG (dir</>filename) (convert img :: RGB)
                              go (n+1)
 
 -- | Write VBatches to the directory specified
@@ -114,6 +128,7 @@ visorSource g@(Game vName _) =
     where
       p = "data" </> "visor" </> vName ++ ".visor"
 
+-- TODO: Better name
 genVisor :: Game -> IO (Maybe Visor)
 genVisor g = runConduitRes $ visorSource g .| headC
 

@@ -70,3 +70,8 @@ toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
                                h = round $ fromIntegral ih * hRel
                             in Rect x y w h
 
+matchShape :: [a] -> [[b]] -> [[a]]
+matchShape _   []     = []
+matchShape ins (e:es) = let (pre,post) = splitAt (length e) ins
+                         in pre : matchShape post es
+
