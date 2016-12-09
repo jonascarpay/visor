@@ -1,5 +1,6 @@
 {-# LANGUAGE DefaultSignatures, DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Network where
 

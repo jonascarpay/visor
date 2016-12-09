@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Conduits ( module Conduit
                 , module Conduits
@@ -18,6 +19,7 @@ import qualified Data.ByteString as BS
 import Data.Conduit.Zlib
 import Conduit
 import qualified Data.Conduit.Combinators as CC
+import Control.Monad
 
 -- TODO: Write Conduit typeclass for source/sink
 
@@ -77,11 +79,12 @@ batchSink dirname = do liftIO $ createDirectoryIfMissing True dir
 
 -- | Streams batches from the directory specified
 batchSource :: String -> IOSrc VBatch
-batchSource dirname = sourceDirectory ("data"</>"batch"</>dirname)
-                   .| filterC ((==".vbatch") . takeExtension)
-                   .| sourceFileBS'
-                   .| mapC decode
-                   .| eitherC
+batchSource dirname =
+      sourceDirectory ("data"</>"batch"</>dirname)
+   .| filterC ((==".vbatch") . takeExtension)
+   .| sourceFileBS'
+   .| mapC decode
+   .| eitherC
 
 -- | Convert a dataset into VBatches and write them to disk
 genBatch :: Int -> Dataset -> Game -> IO ()
@@ -93,7 +96,7 @@ genBatch n set game = runConduitRes $ datasetSource set
 --   tell me why sourceFileBS only produces 32kB chunks?
 sourceFileBS' :: IOConduit FilePath BS.ByteString
 sourceFileBS' = awaitForever $ \p -> do liftIO . putStrLn $ "Opening " ++ p
-                                        bs <- sourceFileBS p
+                                        !bs <- sourceFileBS p
                                                 .| decompress defaultWindowBits
                                                 .| foldC
                                         yield bs
@@ -144,3 +147,9 @@ trainC v = do mvb <- await
 foldl1' :: Monad m => (b -> b -> b) -> ConduitM b o m b
 foldl1' f = do Just x <- CC.foldl1 f
                return x
+
+loopC :: Monad m => m a -> m b
+loopC c = c >> loopC c
+
+replicateCC :: Monad m => Int -> ConduitM o o m ()
+replicateCC n = awaitForever $ \x -> replicateM n (yield x)

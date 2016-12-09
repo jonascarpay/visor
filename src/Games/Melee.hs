@@ -9,7 +9,7 @@ import Vision.Primitive
 -- | Game definition for SSBM.
 melee :: Game
 melee = Game { title = "SSBM"
-             , features = [percentageOnes, percentageTens, percentage100s, timeDigits, stocks, stage]
+             , features = [percentageOnes, percentageTens, percentage100s, timeDigits, stocks]
              }
 
 percentageOnes :: Feature
@@ -17,7 +17,7 @@ percentageOnes = Feature { name        = "onesDigit"
                          , positions   = [ (w 214, h 914)
                                          , (w 516, h 914)
                                          ]
-                         , dimensions  = (w 100,h 120)
+                         , dimensions  = (w 120,h 120)
                          , resolution  = (16,16)
                          , cardinality = 10
                          , netConfig   = defaultNetConfig
@@ -43,6 +43,7 @@ percentage100s = Feature { name        = "hundredsDigit"
                          , resolution  = (16,16)
                          , cardinality = 10
                          , netConfig   = defaultNetConfig
+                           { learningRate = 2e-2 }
                          }
 
 timeDigits :: Feature
@@ -64,8 +65,11 @@ stocks = Feature { name        = "stockCount"
                                  ]
                  , dimensions  = (w 228, h 74)
                  , resolution  = (32,8)
-                 , cardinality = 4
+                 , cardinality = 5
                  , netConfig   = defaultNetConfig
+                   { regularizationStrength = 1e-2
+                   , learningRate = 1e-2
+                   , hiddenNeurons = [1000] }
                  }
 
 stage :: Feature
@@ -74,7 +78,7 @@ stage = Feature { name        = "stockCount"
                 , dimensions  = (w 1246, h 584)
                 , resolution  = (32,16)
                 , cardinality = 4
-                , netConfig   = defaultNetConfig
+                , netConfig   = defaultNetConfig {learningRate = 1e-3}
                 }
 
 screenWidth, screenHeight :: Double

@@ -77,7 +77,7 @@ data NetConfig =
 --   values, and should generally lead to a converging network. Tweak
 --   them if they don't.
 defaultNetConfig :: NetConfig
-defaultNetConfig = NetConfig 1e-3 1e-1 [1000]
+defaultNetConfig = NetConfig 1e-3 8e-2 [300]
 
 
 -- | A data set defines a set of samples for some game
