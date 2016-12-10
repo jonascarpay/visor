@@ -23,6 +23,7 @@ library
                      , Layer
                      , Conduits
                      , Games.Melee
+                     , Screen
   build-depends:       base
                      , hmatrix
                      , vector
@@ -39,6 +40,7 @@ library
                      , conduit-extra
                      , resourcet
                      , transformers
+                     , process
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
                       -fno-warn-orphans

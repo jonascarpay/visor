@@ -15,7 +15,6 @@ import System.Directory
 import System.FilePath
 import System.Posix
 import Data.Serialize
-import Data.List (intercalate)
 import qualified Data.ByteString as BS
 import Data.Conduit.Zlib
 import Conduit
