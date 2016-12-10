@@ -30,8 +30,6 @@ library
                      , directory
                      , filepath
                      , split
-                     , friday
-                     , friday-devil
                      , random
                      , unix
                      , bytestring
@@ -59,5 +57,3 @@ executable visor-app
                      , visor
                      , hmatrix
                      , conduit-combinators
-                     , friday
-                     , friday-devil
