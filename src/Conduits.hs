@@ -40,7 +40,7 @@ parseLabeledImage :: Game -> Int -> IOConduit LabeledImage VBatch
 parseLabeledImage game n = interpret .| gatherC
   where
    interpret = mapC (toVBatch . features $ game)
-   gatherC = takeC n .| foldl1' (zipWith stack) >>= yield
+   gatherC = takeC n .| foldl1' (\a b -> force $ zipWith stack a b) >>= yield
 
 featureSink :: Game -> IOSink LabeledImage
 featureSink (Game _ fs) = go (0 :: Int)

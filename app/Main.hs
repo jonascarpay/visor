@@ -16,8 +16,8 @@ main = getArgs >>= main'
 
 main' :: [String] -> IO ()
 
-main' ["gen"] =
-  genBatch 1024 dolphin_sets melee
+main' ["gen", read -> n] =
+  genBatch n dolphin_sets melee
 
 main' ["datasetfeatures", read -> ndrop, read -> n] =
   runConduitRes $ datasetSource dolphin_sets
@@ -40,8 +40,8 @@ main' ["watch", read -> x, read -> y, read -> w, read -> h] =
 
 main' ["train", read -> n] =
   do Just vIn <- genVisor melee
-     Just vOut <- runConduitRes $ batchSource "SSBM"
-                               .| (foldl1' (zipWith stack) >>= repeatC)
+     Just vOut <- runConduitRes $ loopC (batchSource "SSBM")
+                               .| awaitForever (replicateC 20)
                                .| trainC vIn
                                .| takeC n
                                .| lastC
