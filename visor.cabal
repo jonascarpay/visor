@@ -41,6 +41,7 @@ library
                      , resourcet
                      , transformers
                      , process
+                     , deepseq
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
                       -fno-warn-orphans

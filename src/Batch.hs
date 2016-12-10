@@ -9,6 +9,7 @@ import Data.Serialize
 import GHC.Generics (Generic(..))
 import qualified Data.Vector.Storable as V
 import qualified Vision.Image.Class as IC
+import Control.DeepSeq
 
 -- | A NetBatch consists of a set of samples, and a
 --   corresponding matrix of correct
@@ -19,6 +20,7 @@ data NetBatch = NetBatch { input  :: Matrix R
                          } deriving Generic
 
 instance Serialize NetBatch
+instance NFData NetBatch
 
 stack :: NetBatch -> NetBatch -> NetBatch
 stack (NetBatch i1 o1) (NetBatch i2 o2) = NetBatch (i1 === i2) (o1 === o2)

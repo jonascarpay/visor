@@ -20,6 +20,7 @@ import Data.Conduit.Zlib
 import Conduit
 import qualified Data.Conduit.Combinators as CC
 import Control.Monad
+import Control.DeepSeq
 
 -- TODO: Write Conduit typeclass for source/sink
 
@@ -39,8 +40,7 @@ parseLabeledImage :: Game -> Int -> IOConduit LabeledImage VBatch
 parseLabeledImage game n = interpret .| gatherC
   where
    interpret = mapC (toVBatch . features $ game)
-   gatherC = awaitForever $ \x -> do stacked <- takeC (n-1) .| foldlC (zipWith stack) x
-                                     yield stacked
+   gatherC = takeC n .| foldl1' (zipWith stack) >>= yield
 
 featureSink :: Game -> IOSink LabeledImage
 featureSink (Game _ fs) = go (0 :: Int)
@@ -102,14 +102,14 @@ batchSource dirname =
 -- | Convert a dataset into VBatches and write them to disk
 genBatch :: Int -> Dataset -> Game -> IO ()
 genBatch n set game = runConduitRes $ datasetSource set
-                                    .| parseLabeledImage game n
-                                    .| batchSink (title game)
+                                   .| parseLabeledImage game n
+                                   .| batchSink (title game)
 
 -- | Auxiliary function to open and decompress large bytestrings. Can someone please
 --   tell me why sourceFileBS only produces 32kB chunks?
 sourceFileBS' :: IOConduit FilePath BS.ByteString
 sourceFileBS' = awaitForever $ \p -> do liftIO . putStrLn $ "Opening " ++ p
-                                        !bs <- sourceFileBS p
+                                        bs <- sourceFileBS p
                                                 .| decompress defaultWindowBits
                                                 .| foldC
                                         yield bs
@@ -158,7 +158,7 @@ trainC v = do mvb <- await
                                   yield v'
                                   trainC v'
 
-foldl1' :: Monad m => (b -> b -> b) -> ConduitM b o m b
+foldl1' :: (NFData b, Monad m) => (b -> b -> b) -> ConduitM b o m b
 foldl1' f = do Just x <- CC.foldl1 f
                return x
 
