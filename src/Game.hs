@@ -118,7 +118,7 @@ loadImage bs (Rect x y w h) wig dis =
          img = case eimg of
                  Right x -> x
                  Left err -> error $ show err
-         (translated :: RGBDelayed) = crop (Rect (x+dx) (y+dy) (w-wig-dw) (h-wig-dh)) img
+         (translated :: RGBDelayed) = crop (Rect (x+dx) (y+dy) (w-dx-dw) (h-dy-dh)) img
          tr, tg, tb :: Word8 -> Word8
          tr = scaleWord8 dr
          tg = scaleWord8 dg

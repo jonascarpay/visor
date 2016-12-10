@@ -17,33 +17,33 @@ melee = Game { title = "SSBM"
 
 percentageOnes :: Feature
 percentageOnes = Feature { name        = "onesDigit"
-                         , positions   = [ (w 214, h 914)
-                                         , (w 516, h 914)
+                         , positions   = [ (w 175, h 908)
+                                         , (w 455, h 908)
                                          ]
-                         , dimensions  = (w 120,h 120)
-                         , resolution  = (16,16)
+                         , dimensions  = (w 274, h 196)
+                         , resolution  = (32,32)
                          , cardinality = 10
                          , netConfig   = defaultNetConfig
                          }
 
 percentageTens :: Feature
 percentageTens = Feature { name        = "tensDigit"
-                         , positions   = [ (w 155, h 914)
-                                         , (w 461, h 914)
+                         , positions   = [ (w 175, h 908)
+                                         , (w 455, h 908)
                                          ]
-                         , dimensions  = (w 120, h 120)
-                         , resolution  = (16,16)
+                         , dimensions  = (w 274, h 196)
+                         , resolution  = (32,32)
                          , cardinality = 10
                          , netConfig   = defaultNetConfig
                          }
 
 percentage100s :: Feature
 percentage100s = Feature { name        = "hundredsDigit"
-                         , positions   = [ (w 94, h 914)
-                                         , (w 404, h 914)
+                         , positions   = [ (w 175, h 908)
+                                         , (w 455, h 908)
                                          ]
-                         , dimensions  = (w 120, h 120)
-                         , resolution  = (16,16)
+                         , dimensions  = (w 274, h 196)
+                         , resolution  = (32,32)
                          , cardinality = 10
                          , netConfig   = defaultNetConfig
                            { learningRate = 2e-2 }
@@ -55,8 +55,8 @@ timeDigits = Feature { name        = "timeDigit"
                                      , (w 641, h 142)
                                      , (w 698, h 142)
                                      ]
-                     , dimensions  = (w 74, h 74)
-                     , resolution  = (16,16)
+                     , dimensions  = (w 90, h 100)
+                     , resolution  = (32,32)
                      , cardinality = 10
                      , netConfig   = defaultNetConfig
                      }
@@ -66,8 +66,8 @@ stocks = Feature { name        = "stockCount"
                  , positions   = [ (w 150, h 802)
                                  , (w 453, h 802)
                                  ]
-                 , dimensions  = (w 228, h 74)
-                 , resolution  = (32,8)
+                 , dimensions  = (w 275, h 98)
+                 , resolution  = (32,16)
                  , cardinality = 5
                  , netConfig   = defaultNetConfig
                    { regularizationStrength = 1e-2
@@ -127,7 +127,7 @@ dolphin_sets =
                           else replicate 3 Nothing
                        in merge p1p' p2p' ++ time ++ [p1Stocks, p2Stocks, stage']
           , cropRect = Rect 335 50 1251 1027
-          , wiggle = 20
+          , wiggle = 50
           , distort = True
           }
 
