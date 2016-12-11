@@ -24,6 +24,7 @@ library
                      , Conduits
                      , Games.Melee
                      , Screen
+                     , Volume
   build-depends:       base
                      , hmatrix
                      , vector
@@ -40,6 +41,8 @@ library
                      , transformers
                      , process
                      , deepseq
+                     , repa
+                     , repa-algorithms
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
                       -fno-warn-orphans
