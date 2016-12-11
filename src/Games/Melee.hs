@@ -6,7 +6,6 @@ import System.FilePath.Posix
 import Data.List.Split
 import Data.List (intercalate)
 import Data.Maybe
-import Vision.Primitive
 import Control.Applicative
 
 -- | Game definition for SSBM.

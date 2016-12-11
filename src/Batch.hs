@@ -2,13 +2,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Batch where
 
-import Util()
+import Util
 import Numeric.LinearAlgebra
-import Vision.Image
 import Data.Serialize
 import GHC.Generics (Generic(..))
 import qualified Data.Vector.Storable as V
-import qualified Vision.Image.Class as IC
 import Control.DeepSeq
 
 -- | A NetBatch consists of a set of samples, and a
@@ -41,9 +39,7 @@ spiral n k = do t' <- (*0.01) . flatten <$> randn (n*k) 1
 --   Even though I think both are the same Data.Vector
 --   underneath.
 imageToVector :: RGB -> Vector R
-imageToVector = fromList . (>>= unpackPixel) . V.toList . IC.vector
-  where norm i = fromIntegral i / 255
-        unpackPixel (RGBPixel r g b) = [norm r, norm g, norm b]
+imageToVector = undefined
 
 -- | Converts a list of indices to a r x c matrix with 1's
 --   in the positions specified by the indices and 0 otherwise.

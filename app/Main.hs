@@ -3,13 +3,10 @@
 module Main where
 
 import Conduits
-import Batch
 import Visor
 import Screen
 import Games.Melee
 import System.Environment
-import Vision.Image (compute)
-import Vision.Image.Storage.DevIL
 
 main :: IO ()
 main = getArgs >>= main'
@@ -52,7 +49,7 @@ main' ["train", read -> n] =
 main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
   do runConduitRes $ screenSource x y w h
          .| takeC 1
-         .| awaitForever (liftIO . save PNG "data/croptest.png" . compute)
+         .| awaitForever (liftIO . undefined)
      return ()
 
 

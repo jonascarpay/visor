@@ -6,9 +6,6 @@ import Game
 import Batch
 import Util
 import Numeric.LinearAlgebra
-import Vision.Image
-import Vision.Primitive.Shape
-import Vision.Primitive
 import Data.Serialize
 import GHC.Generics (Generic(..))
 
@@ -53,18 +50,7 @@ toVBatch fs (img, lbls) = zipWith NetBatch xs ys
 -- | Extracts a single feature from an image and returns all occurrences
 --   of that feature as both a matrix and a list of images
 extractFeature' :: RGBDelayed -> Feature -> (Matrix R, [RGBDelayed])
-extractFeature' img (Feature _ pos (fw,fh) (rx, ry) _ _) = (combine resized, resized)
-  where
-    (Z:.ih:.iw) = shape img
-
-    cropAreas :: [Rect]
-    cropAreas = fmap (\(cx, cy) -> toArea cx cy fw fh iw ih) pos
-    crops :: [RGBDelayed]
-    crops = fmap (`crop` img) cropAreas
-    resized :: [RGBDelayed]
-    resized = fmap (resize Bilinear $ ix2 ry rx) crops
-    combine :: [RGBDelayed] -> Matrix R
-    combine = fromRows . fmap (imageToVector . compute)
+extractFeature' = undefined -- (combine resized, resized)
 
 extractFeature :: RGBDelayed -> Feature -> Matrix R
 extractFeature img f = fst $ extractFeature' img f

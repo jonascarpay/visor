@@ -4,8 +4,9 @@ import Numeric.LinearAlgebra
 import Data.Word
 import Data.Serialize
 import Conduit
-import Vision.Image
-import Vision.Primitive
+
+data RGBDelayed
+data RGB
 
 colSums, rowSums :: Matrix R -> Vector R
 rowSums m = m #> konst 1 (cols m)
@@ -69,6 +70,8 @@ toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
                                w = round $ fromIntegral iw * wRel
                                h = round $ fromIntegral ih * hRel
                             in Rect x y w h
+
+data Rect = Rect Int Int Int Int
 
 matchShape :: [a] -> [[b]] -> [[a]]
 matchShape _   []     = []

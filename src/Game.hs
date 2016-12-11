@@ -9,9 +9,6 @@ import Data.Word
 import Conduit
 import Control.Monad
 import Control.Monad.Trans.Resource
-import Vision.Primitive
-import Vision.Image as I
-import Vision.Image.Storage.DevIL
 import System.Random
 
 
@@ -111,18 +108,4 @@ loadImage :: ByteString -- ^ ByteString of the image to load. We use a
                  --  translation to the image.
           -> Bool -- ^ Wether or not to apply color distortions to the image
           -> ResIO RGBDelayed
-loadImage bs (Rect x y w h) wig dis =
-  do [dx, dy, dw, dh] <- replicateM 4 (liftIO $ randomRIO (0, wig `div` 2))
-     [dr, dg, db]     <- replicateM 3 (liftIO $ randomRIO (0.9, 1.1 :: Double))
-     let eimg :: Either StorageError RGBDelayed = loadBS Autodetect bs
-         img = case eimg of
-                 Right x -> x
-                 Left err -> error $ show err
-         (translated :: RGBDelayed) = crop (Rect (x+dx) (y+dy) (w-dx-dw) (h-dy-dh)) img
-         tr, tg, tb :: Word8 -> Word8
-         tr = scaleWord8 dr
-         tg = scaleWord8 dg
-         tb = scaleWord8 db
-         (discolored :: RGBDelayed) = I.map (\(RGBPixel r g b) -> RGBPixel (tr r) (tg g) (tb b)) translated
-     if dis then return discolored
-            else return translated
+loadImage bs (Rect x y w h) wig dis = undefined

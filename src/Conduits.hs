@@ -9,8 +9,6 @@ import Game
 import Util
 import Batch
 import Visor
-import Vision.Image
-import Vision.Image.Storage.DevIL
 import System.Directory
 import System.FilePath
 import System.Posix
@@ -43,37 +41,10 @@ parseLabeledImage game n = interpret .| gatherC
    gatherC = takeC n .| foldl1' (\a b -> force $ zipWith stack a b) >>= yield
 
 featureSink :: Game -> IOSink LabeledImage
-featureSink (Game _ fs) = go (0 :: Int)
-  where go n = do mli <- await
-                  case mli of
-                    Nothing -> return ()
-                    Just (img, lbls) ->
-                      let imgsD = fs >>= snd . extractFeature' img
-                          imgs  = fmap compute imgsD
-                          lbls'  = zip [(1::Int)..] lbls
-                          fname (i, Just lbl) = show n ++ "_" ++ show i ++ "_" ++ show lbl ++ ".png"
-                          fname (i, Nothing)  = show n ++ "_" ++ show i ++ "__.png"
-                          dir   = "data" </> "features"
-                          save' :: RGB -> (Int, Maybe Int) -> IO (Maybe StorageError)
-                          save' i f = save PNG (dir</>fname f) i
-                          saves :: [IO (Maybe StorageError)]
-                          saves = zipWith save' imgs lbls'
-                       in do liftIO $ do createDirectoryIfMissing True dir
-                                         sequence_ saves
-                             go (n+1)
+featureSink (Game _ _) = undefined
 
 labelSink :: ([Maybe Int] -> String) -> IOSink LabeledImage
-labelSink delabel = go (0::Int)
-  where go :: Int -> IOSink LabeledImage
-        go n = do mli <- await
-                  case mli of
-                    Nothing -> return ()
-                    Just (img, lbls) ->
-                      let filename = show n ++ "_" ++ delabel lbls ++ ".png"
-                          dir = "data" </> "labeled"
-                       in do liftIO $ do createDirectoryIfMissing True dir
-                                         save PNG (dir</>filename) (convert img :: RGB)
-                             go (n+1)
+labelSink = undefined
 
 -- | Write VBatches to the directory specified
 batchSink :: String -> IOSink VBatch
@@ -158,7 +129,7 @@ trainC v = do mvb <- await
                                   yield v'
                                   trainC v'
 
-foldl1' :: (NFData b, Monad m) => (b -> b -> b) -> ConduitM b o m b
+foldl1' :: (Monad m) => (b -> b -> b) -> ConduitM b o m b
 foldl1' f = do Just x <- CC.foldl1 f
                return x
 
