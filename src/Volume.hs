@@ -24,14 +24,19 @@ forward2 :: Matrix -> Layer2 -> DMatrix
 forward2 _ _ = undefined
 
 {-# INLINE backward3 #-}
-backward3 :: Monad m => Layer3 -> Volume -> Volume -> Volume -> Double -> Double -> m (Layer3, DVolume)
+backward3 :: Monad m => Layer3 -> Volume -> Volume -> Volume -> Double -> Double -> m (Layer3, Volume)
 
-backward3 (Conv w b) x y dy λ δ =
-  do w `fullConv` dy
-     undefined
+backward3 (Conv w b) x _ dy λ dt =
+  do dx <- w `fullConv` dy
+     dw <- dy `corrVolumes` x
+     db <- computeP$ b -^ R.map (*dt) dy
+     return (Conv undefined db, dx)
 
-backward3 Pool       x y dy λ δ = return (Pool, undefined)
-backward3 ReLU       x y dy λ δ = return (ReLU, R.zipWith (\x t -> if t > 0 then x else 0) y dy)
+backward3 Pool x _ dy _ _ = do dx <- undefined x dy
+                               return (Pool, dx)
+
+backward3 ReLU _ y dy _ _ = do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) y dy
+                               return (ReLU, dx)
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -74,6 +79,25 @@ corr krns img = if kd /= id
       where
         krn  = slice krns (Z:.od:.All:.All:.All)
         img' = extract (Z:.0:.oh:.ow) (Z:.id:.kh:.kw) img
+
+corrVolumes :: Monad m => Volume -> Volume -> m Weights
+corrVolumes krns imgs = computeP $ fromFunction sh' convF
+  where
+    Z:.kd:.kh:.kw = extent krns
+    Z:.id:.ih:.iw = extent imgs
+    sh' :: DIM4
+    sh' = Z :. kd :. id :. ih-kh+1 :. iw-kw+1
+
+    {-# INLINE convF #-}
+    convF :: DIM4 -> Double
+    convF (Z:.n:.z:.y:.x) = sumAllS $ krn *^ img
+      where
+        krn = extract (ix3 n 0 0) (ix3 1 kh kw) krns
+        img = extract (ix3 z y x) (ix3 1 kh kw) imgs
+
+conv :: Monad m => Volume -> Volume -> m Weights
+conv krn img = do krn' <- computeP $ rotate krn
+                  corrVolumes krn' img
 
 fullConv :: Monad m => Weights -> Volume -> m Volume
 fullConv krn img = do krn' <- computeP $ rotate krn
