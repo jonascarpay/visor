@@ -27,7 +27,9 @@ initNet :: [LayerSpec] -- ^ Spec of the convolutional part of the network
         -> Int -- ^ Hidden layer size
         -> Int -- ^ RNG seed
         -> ConvNet
-initNet = undefined
+initNet specs iw ih k seed = undefined
+  where
+    specToNet (ConvS s c) = undefined
 
 feed :: Monad m => ConvNet -> Volume -> m Label
 feed (ConvNet l3s l1s) v = do vol <- foldConv v

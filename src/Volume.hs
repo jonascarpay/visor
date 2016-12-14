@@ -13,6 +13,7 @@ module Volume where
 import Label
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV
+import Data.Array.Repa.Algorithms.Randomish
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -40,6 +41,7 @@ data Layer3
   | Pool -- ^ A max-pooling layer. The pool size has been hard-coded to 2, at least
          --   for now. A pooling layer subsamples the input to a quarter the size,
          --   passing through the maximum element in each 2x2 subregion.
+      deriving (Eq, Show)
 
 -- | A network layer that takes vectors as both its input and output.
 --   Note that, for now, there is no ReLU defined. This means that the only
@@ -50,6 +52,7 @@ data Layer1
       Matrix -- ^ The weight matrix.
       Vector -- ^ The bias vector
   | SoftMax -- ^ A Softmax activation function layer.
+  deriving (Eq, Show)
 
 -- | Apply a volume to a Layer3
 forward3 :: Monad m -- ^ Repa requires some monad in order to guarantee
@@ -250,3 +253,15 @@ maxIndex = toLabel . DV.maxIndex . toUnboxed
 flatten :: (Monad m, Source r1 Double, Shape sh1) => Array r1 sh1 Double -> m Vector
 flatten arr = computeP $ reshape (Z:.s) arr
   where s = product . listOfShape . extent $ arr
+
+randomConvLayer :: Int -- ^ Kernel width
+                -> Int -- ^ Kernel height
+                -> Int -- ^ Kernel/output depth
+                -> Int -- ^ Kernel count
+                -> Int -- ^ Output width
+                -> Int -- ^ Output height
+                -> Layer3 -- ^ Kernel width
+randomConvLayer kw kh kd kn ow oh = Conv w b
+  where
+    w = randomishDoubleArray (Z:.kn:.kd:.kh:.kw) (1e-2) (-1e-2) 0
+    b = randomishDoubleArray (Z:.kd:.oh:.ow)     (1e-2) (-1e-2) 1
