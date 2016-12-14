@@ -214,12 +214,16 @@ vmmult v m = fromFunction sh' ixFn
     sh' = Z:.c
     ixFn (Z:.i :: DIM1) = sumAllS $ slice m (Any:.i) *^ v
 
+-- | Vector-vector multiplication. The output is a matrix in which every
+--   (x,y) position corresponds to the xth element of the first vector
+--   and the yth element of the second. Hence, the resulting matrix is
+--   as wide as the first vector's length and as tall as the second's.
 {-# INLINE vvmult #-}
 vvmult :: (Source r2 Double, Source r1 Double) => Array r1 DIM1 Double -> Array r2 DIM1 Double -> Array D DIM2 Double
 vvmult vw vh = traverse2 vw vh shFn vFn
   where
     shFn (Z:.w) (Z:.h) = Z:.h:.w
-    vFn v1 v2 (Z:.y:.x) = v1 (ix1 y) * v2 (ix1 x)
+    vFn v1 v2 (Z:.y:.x) = v1 (ix1 x) * v2 (ix1 y)
 
 -- | Data loss of a network output, given some classification.
 --   This value is somewhere between 0 (p_correct == 1) and
