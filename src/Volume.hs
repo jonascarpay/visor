@@ -17,18 +17,44 @@ type DVolume  = Array D DIM3 Double
 type DMatrix  = Array D DIM2 Double
 type DVector  = Array D DIM1 Double
 
-data Layer3 = Conv Weights Bias
-            | ReLU
-            | Pool
+-- | A network layer that has volumes as both its input and output.
+data Layer3
+  = Conv -- ^ A layer that applies a convolution of its weights (or,
+         --   more accurately, a correlation) to its input volume.
+         Weights -- ^ The weights used for the convolution. The first
+                 --   dimension, i, is used to distinguish different weights.
+                 --   Its second dimension, d, is equal to the input volume's
+                 --   first dimension d, and therefore disappears from the output
+                 --   in order to produce a volume again.
+         Bias    -- ^ A bias volume that is added to the output volume.
+  | ReLU -- ^ A rectified linear unit, or ReLU. NN jargon for (\x -> max x 0).
+         --   A ReLU is cheap but has all the properties that you want from an
+         --   activation function and hence is the most commonly used.
+  | Pool -- ^ A max-pooling layer. The pool size has been hard-coded to 2, at least
+         --   for now. A pooling layer subsamples the input to a quarter the size,
+         --   passing through the maximum element in each 2x2 subregion.
 
-data Layer1 = FC Matrix Vector
-            | SoftMax
+-- | A network layer that takes vectors as both its input and output.
+--   Note that, for now, there is no ReLU defined. This means that the only
+--   uesful architecture for the output is a single FC layer, followed by a
+--   single softmax layer.
+data Layer1
+  = FC -- ^ A fully connected layer as is usually employed in NN's.
+      Matrix -- ^ The weight matrix.
+      Vector -- ^ The bias vector
+  | SoftMax -- ^ A Softmax activation function layer.
 
-forward3 :: Monad m => Volume -> Layer3 -> m Volume
+-- | Apply a volume to a Layer3
+forward3 :: Monad m -- ^ Repa requires some monad in order to guarantee
+                    --   that parallel evaluations are executed sequentially.
+         => Volume
+         -> Layer3
+         -> m Volume
 forward3 x (Conv w b) = w `corr` x >>= computeP . (+^ b)
 forward3 x ReLU       = computeP $ R.map (max 0) x
 forward3 x Pool       = pool x
 
+-- | Layer1 equivalent of forward3
 forward1 :: Monad m => Vector -> Layer1 -> m Vector
 forward1 x (FC w b) = computeP $ x `vmmult` w +^ b
 
@@ -36,7 +62,19 @@ forward1 x SoftMax = do exps   :: Vector <- computeP $ R.map exp x
                         sumExp :: Double <- sumAllP exps
                         computeP $ R.map (/sumExp) exps
 
-backward3 :: Monad m => Layer3 -> Volume -> Volume -> Volume -> Double -> Double -> m (Layer3, Volume)
+-- | Propagate an error gradient backwards through a Layer3. Many arguments
+--   are usually calculated during the forward pass. Some of them could be
+--   recalculated during the backwards pass, but for the sake of both efficiency
+--   and clarity I chose to reuse them from the forward pass. The recursive
+--   definition of the training function makes this work out quite nicely.
+backward3 :: Monad m -- ^ Required by repa for parallel computations
+          => Layer3 -- ^ Layer to backprop through
+          -> Volume -- ^ Input for this layer during the forward pass
+          -> Volume -- ^ Output for this layer during the forward pass
+          -> Volume -- ^ Error gradient on the output of this layer
+          -> Double -- ^ Regularization loss factor. Not yet implemented.
+          -> Double -- ^ Step size/learning rate
+          -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
 backward3 (Conv w b) x _ dy _ dt =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
@@ -52,6 +90,7 @@ backward3 ReLU _ y dy _ _ =
   do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) y dy
      return (ReLU, dx)
 
+-- | Layer1 equivalent of backward3
 backward1 :: Monad m => Layer1 -> Vector -> Vector -> Vector -> Double -> Double -> m (Layer1, Vector)
 backward1 SoftMax  _ y dy _ _ = do dx <- computeP $ y -^ dy
                                    return (SoftMax, dx)
@@ -61,6 +100,7 @@ backward1 (FC w b) x _ dy _ dt = do dx <- computeP $ dy `vmmult` transpose w
                                     b' <- computeP $ R.zipWith (\x d -> x-d*dt) b dy
                                     return (FC w' b', dx)
 
+-- | Max-pooling function for volumes
 pool :: Monad m => Volume -> m Volume
 pool v = computeP $ R.traverse v shFn maxReg
   where
@@ -68,7 +108,14 @@ pool v = computeP $ R.traverse v shFn maxReg
     shFn (Z:.d:.h:.w) = Z:. d `div` n :. h `div` n :. w `div` n
     maxReg lkUp (b:.y:.x) = maximum [ lkUp (b:.y + dy:.x + dx) | dy <- [0..n-1], dx <- [0 .. n-1]]
 
-poolBackprop :: Monad m => Volume -> Volume -> Volume -> m Volume
+-- | Backprop of the max-pooling function. We upsample the error volume,
+--   propagating the error to the position of the max element in every subregion,
+--   setting the others to 0.
+poolBackprop :: Monad m
+             => Volume -- ^ Input during forward pass, used to determine max-element
+             -> Volume -- ^ Output during forward pass, used to determine max-element
+             -> Volume -- ^ Error gradient on the output
+             -> m Volume -- ^ Error gradient on the input
 poolBackprop input output errorGradient = computeP $ traverse3 input output errorGradient shFn outFn
   where
     n = 2
@@ -77,7 +124,7 @@ poolBackprop input output errorGradient = computeP $ traverse3 input output erro
     outFn in_ out_ err_ p@(Z:.z:.y:.x) = if out_ p' == in_ p then err_ p' else 0
       where p' = Z:. z `div` n :. y `div` n :. x `div` n
 
-
+-- | Rotates the two topmost dimensions of an array by 180 degrees.
 {-# INLINE rotate #-}
 rotate :: (Source r e, Shape tail) => Array r ((tail :. Int) :. Int) e -> Array D ((tail :. Int) :. Int) e
 rotate arr = backpermute sh invert arr
