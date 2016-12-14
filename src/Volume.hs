@@ -21,7 +21,7 @@ data Layer3 = Conv Weights Bias
             | ReLU
             | Pool
 
-data Layer2 = FC Matrix Vector
+data Layer1 = FC Matrix Vector
             | SoftMax
 
 forward3 :: Monad m => Volume -> Layer3 -> m Volume
@@ -29,13 +29,18 @@ forward3 x (Conv w b) = w `corr` x >>= computeP . (+^ b)
 forward3 x ReLU       = computeP $ R.map (max 0) x
 forward3 x Pool       = pool x
 
-forward :: Vector -> Layer2 -> DVector
-forward x (FC w b) = fromFunction sh' ixFn +^ b
+forward1 :: Monad m => Vector -> Layer1 -> m Vector
+forward1 x (FC w b) = if l == r then computeP $ fromFunction sh' ixFn +^ b
+                                else error "Vector/matrix dimension mismatch"
   where
     Z:.r:.c = extent w
     Z:.l    = extent x
     sh' = Z:.c
     ixFn (Z:.i :: DIM1) = sumAllS $ slice w (Any:.i) *^ x
+
+forward1 x SoftMax = do exps   :: Vector <- computeP $ R.map exp x
+                        sumExp :: Double <- sumAllP exps
+                        computeP $ R.map (/sumExp) exps
 
 backward3 :: Monad m => Layer3 -> Volume -> Volume -> Volume -> Double -> Double -> m (Layer3, Volume)
 backward3 (Conv w b) x _ dy _ dt =
