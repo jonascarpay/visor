@@ -1,4 +1,4 @@
-module Classification where
+module Label where
 
 -- | A label for some image classification. We make
 --   explicit at the type level that classification may
