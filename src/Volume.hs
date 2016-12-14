@@ -2,10 +2,13 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Volume where
 
+import Classification
 import Data.Array.Repa as R hiding ((++))
+import qualified Data.Vector.Unboxed as DV
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -218,6 +221,18 @@ vvmult vw vh = traverse2 vw vh shFn vFn
     shFn (Z:.w) (Z:.h) = Z:.h:.w
     vFn v1 v2 (Z:.y:.x) = v1 (ix1 y) * v2 (ix1 x)
 
-dataLoss :: Vector -> Maybe Int -> Double
-dataLoss p n = negate . log $ linearIndex p i
-  where i = maybe 0 (+1) n
+-- | Data loss of a network output, given some classification.
+--   This value is somewhere between 0 (p_correct == 1) and
+--   infinity (p_correct == 0).
+dataLoss :: Vector -> Label -> Double
+dataLoss p (fromLabel -> i) = negate . log $ linearIndex p i
+
+-- | The label of some input to a network, as determined by
+--   the output of the network for that input.
+--   If the output layer of the network is a SoftMax function,
+--   the class scores produced by that network can be interpreted
+--   as probability/certainty scores. This function returns the
+--   class the network assigns the highest probability to and
+--   converts it into a label.
+maxIndex :: Vector -> Label
+maxIndex = toLabel . DV.maxIndex . toUnboxed

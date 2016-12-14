@@ -25,6 +25,7 @@ library
                      , Games.Melee
                      , Screen
                      , Volume
+                     , Classification
   build-depends:       base
                      , hmatrix
                      , vector
