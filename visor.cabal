@@ -25,7 +25,8 @@ library
                      , Games.Melee
                      , Screen
                      , Volume
-                     , Classification
+                     , Label
+                     , ConvNet
   build-depends:       base
                      , hmatrix
                      , vector

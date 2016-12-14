@@ -250,4 +250,3 @@ maxIndex = toLabel . DV.maxIndex . toUnboxed
 flatten :: (Monad m, Source r1 Double, Shape sh1) => Array r1 sh1 Double -> m Vector
 flatten arr = computeP $ reshape (Z:.s) arr
   where s = product . listOfShape . extent $ arr
-
