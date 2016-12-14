@@ -21,7 +21,7 @@ data Layer3 = Conv Weights Bias
             | ReLU
             | Pool
 
-data Layer2 = FC Matrix
+data Layer2 = FC Matrix Vector
             | SoftMax
 
 forward3 :: Monad m => Volume -> Layer3 -> m Volume
@@ -29,13 +29,15 @@ forward3 x (Conv w b) = w `corr` x >>= computeP . (+^ b)
 forward3 x ReLU       = computeP $ R.map (max 0) x
 forward3 x Pool       = pool x
 
+forward :: Vector -> Layer2 -> DVector
+forward x (FC w b) = fromFunction sh' ixFn +^ b
+  where
+    Z:.r:.c = extent w
+    Z:.l    = extent x
+    sh' = Z:.c
+    ixFn (Z:.i :: DIM1) = sumAllS $ slice w (Any:.i) *^ x
 
-forward2 :: Matrix -> Layer2 -> DMatrix
-forward2 _ _ = undefined
-
-{-# INLINE backward3 #-}
 backward3 :: Monad m => Layer3 -> Volume -> Volume -> Volume -> Double -> Double -> m (Layer3, Volume)
-
 backward3 (Conv w b) x _ dy _ dt =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
@@ -131,12 +133,3 @@ zeropad n a = R.traverse a shFn padFn
     padFn lkFn (b:.y:.x)
       | y < n || y >= h + n || x < n || x >= w + n = 0
       | otherwise = lkFn (b:.y-n:.x-n)
-
-img :: Volume
-img  = fromListUnboxed (ix3 1 3 3) [1,2,3,1,0,1,0,1,1]
-
-mask :: Weights
-mask = fromListUnboxed (ix4 1 1 2 2) [1,0,0,0]
-
-ic :: Monad m => m Volume
-ic = mask `fullConv` img
