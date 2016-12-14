@@ -7,6 +7,16 @@ module Volume where
 
 import Data.Array.Repa as R hiding ((++))
 
+type Weights = Array U DIM4 Double
+type Volume  = Array U DIM3 Double
+type Matrix  = Array U DIM2 Double
+type Vector  = Array U DIM1 Double
+type Bias    = Volume
+type DWeights = Array D DIM4 Double
+type DVolume  = Array D DIM3 Double
+type DMatrix  = Array D DIM2 Double
+type DVector  = Array D DIM1 Double
+
 data Layer3 = Conv Weights Bias
             | ReLU
             | Pool
@@ -26,35 +36,37 @@ forward2 _ _ = undefined
 {-# INLINE backward3 #-}
 backward3 :: Monad m => Layer3 -> Volume -> Volume -> Volume -> Double -> Double -> m (Layer3, Volume)
 
-backward3 (Conv w b) x _ dy λ dt =
+backward3 (Conv w b) x _ dy _ dt =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
      db <- computeP$ b -^ R.map (*dt) dy
-     return (Conv undefined db, dx)
+     w' <- computeP$ w -^ R.map (*dt) dw
+     return (Conv w' db, dx)
 
-backward3 Pool x _ dy _ _ = do dx <- undefined x dy
-                               return (Pool, dx)
+backward3 Pool x y dy _ _ =
+  do dx <- poolBackprop x y dy
+     return (Pool, dx)
 
-backward3 ReLU _ y dy _ _ = do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) y dy
-                               return (ReLU, dx)
+backward3 ReLU _ y dy _ _ =
+  do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) y dy
+     return (ReLU, dx)
 
-type Weights = Array U DIM4 Double
-type Volume  = Array U DIM3 Double
-type Matrix  = Array U DIM2 Double
-type Vector  = Array U DIM1 Double
-type Bias    = Volume
-type DWeights = Array D DIM4 Double
-type DVolume  = Array D DIM3 Double
-type DMatrix  = Array D DIM2 Double
-type DVector  = Array D DIM1 Double
-
-{-# INLINE pool #-}
 pool :: Monad m => Volume -> m Volume
 pool v = computeP $ R.traverse v shFn maxReg
   where
     n = 2
     shFn (Z:.d:.h:.w) = Z:. d `div` n :. h `div` n :. w `div` n
     maxReg lkUp (b:.y:.x) = maximum [ lkUp (b:.y + dy:.x + dx) | dy <- [0..n-1], dx <- [0 .. n-1]]
+
+poolBackprop :: Monad m => Volume -> Volume -> Volume -> m Volume
+poolBackprop input output errorGradient = computeP $ traverse3 input output errorGradient shFn outFn
+  where
+    n = 2
+    shFn sh _ _ = sh
+    {-# INLINE outFn #-}
+    outFn in_ out_ err_ p@(Z:.z:.y:.x) = if out_ p' == in_ p then err_ p' else 0
+      where p' = Z:. z `div` n :. y `div` n :. x `div` n
+
 
 {-# INLINE rotate #-}
 rotate :: (Source r e, Shape tail) => Array r ((tail :. Int) :. Int) e -> Array D ((tail :. Int) :. Int) e
@@ -127,4 +139,4 @@ mask :: Weights
 mask = fromListUnboxed (ix4 1 1 2 2) [1,0,0,0]
 
 ic :: Monad m => m Volume
-ic = do mask `fullConv` img
+ic = mask `fullConv` img
