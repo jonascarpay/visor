@@ -132,15 +132,29 @@ rotate arr = backpermute sh invert arr
     sh@(_:.h:.w) = extent arr
     invert (b:.y:.x) = b:.h-y-1:.w-x-1
 
--- TODO: accept delayed representations, inline corr
-corr :: Monad m => Weights -> Volume -> m Volume
+-- | Valid convolution of a stencil/kernel over some image, with the
+--   kernel rotated 180 degrees. The valid part means that no zero
+--   padding is applied. It is called corr to reflect that the
+--   correct term for this operation would be cross-correlation.
+--   Cross-correlation and convolution are used interchangeably in
+--   most literature which can make things very confusing.
+--   Note that the kernel is 4-dimensional, while the image is
+--   three-dimensional. The stencils first dimension translates
+--   to the output volume's depth.
+--   A kernel of size (Z:. n_k :. d_k :. h_k :. w_k) convolved over
+--   an image of size (Z:. d_i :. h_i :. w_i) results in
+--   a output of size (Z:. n_k :. h_i - h_k +1 :. w_i - w_k + 1)
+corr :: Monad m -- ^ Host monad for repa
+     => Weights -- ^ Convolution kernel
+     -> Volume  -- ^ Image to iterate over
+     -> m Volume
 corr krns img = if kd /= id
                    then error "Weight / image depth mismatch"
                    else computeP $ fromFunction sh' convF
   where
-    Z:.ki:.kd:.kh:.kw = extent krns
+    Z:.kn:.kd:.kh:.kw = extent krns
     Z:.    id:.ih:.iw = extent img
-    sh' = Z:.ki:.ih-kh+1:.iw-kw+1
+    sh' = Z:.kn:.ih-kh+1:.iw-kw+1
 
     {-# INLINE convF #-}
     convF :: DIM3 -> Double
@@ -204,6 +218,6 @@ vvmult vw vh = traverse2 vw vh shFn vFn
     shFn (Z:.w) (Z:.h) = Z:.h:.w
     vFn v1 v2 (Z:.y:.x) = v1 (ix1 y) * v2 (ix1 x)
 
-someVec :: Vector
-someVec = fromListUnboxed (ix1 3) [1,2,3]
-
+dataLoss :: Vector -> Maybe Int -> Double
+dataLoss p n = negate . log $ linearIndex p i
+  where i = maybe 0 (+1) n
