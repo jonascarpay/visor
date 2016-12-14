@@ -10,7 +10,7 @@
 
 module Volume where
 
-import Classification
+import Label
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV
 
@@ -244,3 +244,10 @@ dataLoss p (fromLabel -> i) = negate . log $ linearIndex p i
 --   converts it into a label.
 maxIndex :: Vector -> Label
 maxIndex = toLabel . DV.maxIndex . toUnboxed
+
+-- TODO: Non-urgent; Let forward1 accept delayed representations so the
+-- flattened array does not need to be rebuilt in memory
+flatten :: (Monad m, Source r1 Double, Shape sh1) => Array r1 sh1 Double -> m Vector
+flatten arr = computeP $ reshape (Z:.s) arr
+  where s = product . listOfShape . extent $ arr
+
