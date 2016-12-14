@@ -260,16 +260,18 @@ randomConvLayer :: Int -- ^ Kernel width
                 -> Int -- ^ Kernel count
                 -> Int -- ^ Output width
                 -> Int -- ^ Output height
+                -> Int -- ^ RNG Seed
                 -> Layer3
-randomConvLayer kw kh kd kn ow oh = Conv w b
+randomConvLayer kw kh kd kn ow oh seed = Conv w b
   where
-    w = randomishDoubleArray (Z:.kn:.kd:.kh:.kw) 1e-2 (-1e-2) 0
-    b = randomishDoubleArray (Z:.kd:.oh:.ow)     1e-2 (-1e-2) 1
+    w = randomishDoubleArray (Z:.kn:.kd:.kh:.kw) 1e-2 (-1e-2) seed
+    b = randomishDoubleArray (Z:.kd:.oh:.ow)     1e-2 (-1e-2) (seed+1)
 
 randomFCLayer :: Int -- ^ Input dimensionality
               -> Int -- ^ Output dimensionality
+              -> Int -- ^ RNG Seed
               -> Layer1
-randomFCLayer k d = FC w b
+randomFCLayer k d seed = FC w b
   where
-    w = randomishDoubleArray (Z:.k:.d) 1e-2 (-1e-2) 3
-    b = randomishDoubleArray (Z:.d)    1e-2 (-1e-2) 4
+    w = randomishDoubleArray (Z:.k:.d) 1e-2 (-1e-2) seed
+    b = randomishDoubleArray (Z:.d)    1e-2 (-1e-2) (seed+1)
