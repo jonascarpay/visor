@@ -30,13 +30,7 @@ forward3 x ReLU       = computeP $ R.map (max 0) x
 forward3 x Pool       = pool x
 
 forward1 :: Monad m => Vector -> Layer1 -> m Vector
-forward1 x (FC w b) = if l == r then computeP $ fromFunction sh' ixFn +^ b
-                                else error "Vector/matrix dimension mismatch"
-  where
-    Z:.r:.c = extent w
-    Z:.l    = extent x
-    sh' = Z:.c
-    ixFn (Z:.i :: DIM1) = sumAllS $ slice w (Any:.i) *^ x
+forward1 x (FC w b) = computeP $ x `vmmult` w +^ b
 
 forward1 x SoftMax = do exps   :: Vector <- computeP $ R.map exp x
                         sumExp :: Double <- sumAllP exps
@@ -57,6 +51,15 @@ backward3 Pool x y dy _ _ =
 backward3 ReLU _ y dy _ _ =
   do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) y dy
      return (ReLU, dx)
+
+backward1 :: Monad m => Layer1 -> Vector -> Vector -> Vector -> Double -> Double -> m (Layer1, Vector)
+backward1 SoftMax  _ y dy _ _ = do dx <- computeP $ y -^ dy
+                                   return (SoftMax, dx)
+
+backward1 (FC w b) x _ dy _ dt = do dx <- computeP $ dy `vmmult` transpose w
+                                    w' <- computeP $ R.zipWith (\x d -> x-d*dt) w $ x `vvmult` dy
+                                    b' <- computeP $ R.zipWith (\x d -> x-d*dt) b dy
+                                    return (FC w' b', dx)
 
 pool :: Monad m => Volume -> m Volume
 pool v = computeP $ R.traverse v shFn maxReg
@@ -138,3 +141,22 @@ zeropad n a = R.traverse a shFn padFn
     padFn lkFn (b:.y:.x)
       | y < n || y >= h + n || x < n || x >= w + n = 0
       | otherwise = lkFn (b:.y-n:.x-n)
+
+{-# INLINE vmmult #-}
+vmmult :: (Source r Double, Source r2 Double) => Array r2 DIM1 Double -> Array r DIM2 Double -> Array D DIM1 Double
+vmmult v m = fromFunction sh' ixFn
+  where
+    Z:._:.c = extent m
+    sh' = Z:.c
+    ixFn (Z:.i :: DIM1) = sumAllS $ slice m (Any:.i) *^ v
+
+{-# INLINE vvmult #-}
+vvmult :: (Source r2 Double, Source r1 Double) => Array r1 DIM1 Double -> Array r2 DIM1 Double -> Array D DIM2 Double
+vvmult vw vh = traverse2 vw vh shFn vFn
+  where
+    shFn (Z:.w) (Z:.h) = Z:.h:.w
+    vFn v1 v2 (Z:.y:.x) = v1 (ix1 y) * v2 (ix1 x)
+
+someVec :: Vector
+someVec = fromListUnboxed (ix1 3) [1,2,3]
+
