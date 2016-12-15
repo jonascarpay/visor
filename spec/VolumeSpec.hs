@@ -1,9 +1,10 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module VolumeSpec where
 
-import Prelude hiding (map)
+import Prelude hiding (map, zipWith)
 import Test.QuickCheck
 import Data.Array.Repa
 import Data.Functor.Identity
@@ -39,6 +40,11 @@ instance Arbitrary WgtA where
                  elems <- vector (w*h*d*n)
                  return . WgtA $ fromListUnboxed (Z:.n:.d:.h:.w) elems
 
+a `approx` b = abs (a-b) < 1e-3
+arr1 `approxA` arr2 =
+  extent arr1 == extent arr2 &&
+    and [ linearIndex arr1 i `approx` linearIndex arr2 i | i <- [0..size (extent arr1) -1]]
+
 prop_rotateInvolutionM (MatA a) = once$ computeS (rotate . rotate $ a) == a
 prop_rotateInvolutionV (VolA a) = once$ computeS (rotate . rotate $ a) == a
 prop_rotateInvolutionW (WgtA a) = once$ computeS (rotate . rotate $ a) == a
@@ -67,14 +73,17 @@ prop_poolSum (VolA a) = once$
     a' = runIdentity $ pool a
     Z:._:.h:.w = extent a
 
-prop_poolBackpropShapeSumInvariant (VolA a) = runIdentity $
-  do p :: Volume <- pool a
-     dp :: Volume <- computeP $ map (1/) p
-     da <- poolBackprop a p dp
-     sdp <- sumAllP dp
-     sda <- sumAllP da
-     return $ sda == sdp
+prop_poolBackpropShapeSumInvariant (VolA a) = once$
+  h>2 && w>2 && h `mod` 2 == 0 && w `mod` 2 == 0 ==> runIdentity $
+    do p  :: Volume <- pool a
+       dp :: Volume <- computeP $ map (1/) p
+       da <- poolBackprop a p dp
+       sdp <- sumAllP dp
+       sda <- sumAllP da
+       return $ sda `approx` sdp && extent a == extent da
 
+  where
+    Z:._:.h:.w = extent a
 
 prop_zeroPadAssoc (MatA a) (Positive (Small n1)) (Positive (Small n2)) = once$
     (computeS . zeropad n1 $ (computeS . zeropad n2 $ a :: Matrix) :: Matrix)
@@ -92,6 +101,43 @@ prop_corrExtent (WgtA a) (VolA b) = once$
     Z:.id:.ih:.iw     = extent b
     Z:.kn:.kd:.kh:.kw = extent a
     out = runIdentity $ a `corr` b
+
+-- Note that we could drop the d==1 constraint if the output of corr were four-dimensional
+prop_corrIdentity (VolA a) = once$ d == 1 ==> ca == a
+  where
+    Z:.d:._:._ = extent a
+    dirac = fromListUnboxed (Z:.1:.1:.1:.1) [1]
+    ca = runIdentity $ dirac `corr` a
+
+prop_fullConvIdty (VolA a) = once$ d == 1 ==> ca == a
+  where
+    Z:.d:._:._ = extent a
+    dirac = fromListUnboxed (Z:.1:.1:.1:.1) [1]
+    ca = runIdentity $ dirac `fullConv` a
+
+prop_scalarAssocCorr (WgtA a) (VolA b) (c :: Double) = once$
+    id == kd && ih >= kh && iw >= kw
+      ==> runIdentity $
+        do ca   <- computeP $ map (*c) a
+           ab   <- a `corr` b
+           c_ab :: Volume <- computeP $ map (*c) ab
+           ca_b <- ca `corr` b
+           return $ ca_b `approxA` c_ab
+  where
+    Z:.id:.ih:.iw    = extent b
+    Z:._:.kd:.kh:.kw = extent a
+
+prop_scalarAssocCorrVolumes (VolA a) (VolA b) (c :: Double) = once$
+    id == kd && ih >= kh && iw >= kw
+      ==> runIdentity $
+        do ca   <- computeP $ map (*c) a
+           ab   <- a `corrVolumes` b
+           c_ab :: Weights <- computeP $ map (*c) ab
+           ca_b <- ca `corrVolumes` b
+           return $ ca_b `approxA` c_ab
+  where
+    Z:.id:.ih:.iw    = extent b
+    Z:.kd:.kh:.kw = extent a
 
 return []
 runtests = $quickCheckAll

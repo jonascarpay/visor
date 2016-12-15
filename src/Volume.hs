@@ -146,7 +146,7 @@ poolBackprop input output errorGradient = computeP $ traverse3 input output erro
     shFn sh _ _ = sh
     {-# INLINE outFn #-}
     outFn in_ out_ err_ p@(Z:.z:.y:.x) = if out_ p' == in_ p then err_ p' else 0
-      where p' = Z:. z `div` n :. y `div` n :. x `div` n
+      where p' = Z:. z :. y `div` n :. x `div` n
 
 -- | Rotates the two topmost dimensions of an array by 180 degrees.
 {-# INLINE rotate #-}
