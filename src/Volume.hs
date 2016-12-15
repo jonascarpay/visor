@@ -128,8 +128,8 @@ pool :: Monad m => Volume -> m Volume
 pool v = computeP $ R.traverse v shFn maxReg
   where
     n = 2
-    shFn (Z:.d:.h:.w) = Z:. d `div` n :. h `div` n :. w `div` n
-    maxReg lkUp (b:.y:.x) = maximum [ lkUp (b:.y + dy:.x + dx) | dy <- [0..n-1], dx <- [0 .. n-1]]
+    shFn (Z:.d:.h:.w) = Z:. d :. h `div` n :. w `div` n
+    maxReg lkUp (b:.y:.x) = maximum [ lkUp (b:.y*n + dy:.x*n + dx) | dy <- [0..n-1], dx <- [0 .. n-1]]
 
 -- | Backprop of the max-pooling function. We upsample the error volume,
 --   propagating the error to the position of the max element in every subregion,
@@ -278,7 +278,7 @@ randomConvLayer :: Int -- ^ Kernel width
 randomConvLayer kw kh kd kn ow oh seed = Conv w b
   where
     w = randomishDoubleArray (Z:.kn:.kd:.kh:.kw) 1e-2 (-1e-2) seed
-    b = randomishDoubleArray (Z:.kd:.oh:.ow)     1e-2 (-1e-2) (seed+1)
+    b = randomishDoubleArray (Z:.kn:.oh:.ow)     1e-2 (-1e-2) (seed+1)
 
 randomFCLayer :: Int -- ^ Input dimensionality
               -> Int -- ^ Output dimensionality
