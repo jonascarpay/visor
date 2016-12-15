@@ -123,6 +123,7 @@ backward1 (FC w b) x _ dy _ dt = do dx <- computeP $ dy `vmmult` transpose w
                                     b' <- computeP $ R.zipWith (\x d -> x-d*dt) b dy
                                     return (FC w' b', dx)
 
+-- TODO: backprop van pooling moet extent-invariant worden
 -- | Max-pooling function for volumes
 pool :: Monad m => Volume -> m Volume
 pool v = computeP $ R.traverse v shFn maxReg
@@ -172,7 +173,7 @@ corr :: Monad m -- ^ Host monad for repa
      -> Volume  -- ^ Image to iterate over
      -> m Volume
 corr krns img = if kd /= id
-                   then error "Weight / image depth mismatch"
+                   then error "kernel / image depth mismatch"
                    else computeP $ fromFunction sh' convF
   where
     Z:.kn:.kd:.kh:.kw = extent krns
