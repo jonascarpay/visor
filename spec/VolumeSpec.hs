@@ -45,6 +45,7 @@ arr1 `approxA` arr2 =
   extent arr1 == extent arr2 &&
     and [ linearIndex arr1 i `approx` linearIndex arr2 i | i <- [0..size (extent arr1) -1]]
 
+-- rotate
 prop_rotateInvolutionM (MatA a) = once$ computeS (rotate . rotate $ a) == a
 prop_rotateInvolutionV (VolA a) = once$ computeS (rotate . rotate $ a) == a
 prop_rotateInvolutionW (WgtA a) = once$ computeS (rotate . rotate $ a) == a
@@ -65,6 +66,7 @@ prop_rotateInv (MatA a) (Positive (Small y)) (Positive (Small x)) = once$
     Z:.h:.w = extent a
     a' = computeS $ rotate a :: Matrix
 
+-- pool
 prop_poolSum (VolA a) = once$
   h>2 && w>2 && h `mod` 2 == 0 && w `mod` 2 == 0
   ==> max (maxElem a) 0 == maxElem a'
@@ -81,18 +83,20 @@ prop_poolBackpropShapeSumInvariant (VolA a) = once$
        sdp <- sumAllP dp
        sda <- sumAllP da
        return $ sda `approx` sdp && extent a == extent da
-
   where
     Z:._:.h:.w = extent a
 
+-- zeropad
 prop_zeroPadAssoc (MatA a) (Positive (Small n1)) (Positive (Small n2)) = once$
     (computeS . zeropad n1 $ (computeS . zeropad n2 $ a :: Matrix) :: Matrix)
      == (computeS . zeropad (n1+n2)) a
 
 prop_zeroPadSumInvariant (MatA a) = sumAllS (computeS (zeropad 1 a) :: Matrix) == sumAllS a
 
+-- vvmult
 prop_vecMult (VecA a) (VecA b) = abs (sumAllS a * sumAllS b - sumAllS (a `vvmult` b)) < 1e-3
 
+-- corr
 prop_corrExtent (WgtA a) (VolA b) = once$
     id == kd && ih >= kh && iw >= kw
     ==> shOut == (Z:.kn:.ih-kh+1:.iw-kw+1)
@@ -109,12 +113,6 @@ prop_corrIdentity (VolA a) = once$ d == 1 ==> ca == a
     dirac = fromListUnboxed (Z:.1:.1:.1:.1) [1]
     ca = runIdentity $ dirac `corr` a
 
-prop_fullConvIdty (VolA a) = once$ d == 1 ==> ca == a
-  where
-    Z:.d:._:._ = extent a
-    dirac = fromListUnboxed (Z:.1:.1:.1:.1) [1]
-    ca = runIdentity $ dirac `fullConv` a
-
 prop_scalarAssocCorr (WgtA a) (VolA b) (c :: Double) = once$
     id == kd && ih >= kh && iw >= kw
       ==> runIdentity $
@@ -127,6 +125,14 @@ prop_scalarAssocCorr (WgtA a) (VolA b) (c :: Double) = once$
     Z:.id:.ih:.iw    = extent b
     Z:._:.kd:.kh:.kw = extent a
 
+-- fullConv
+prop_fullConvIdty (VolA a) = once$ d == 1 ==> ca == a
+  where
+    Z:.d:._:._ = extent a
+    dirac = fromListUnboxed (Z:.1:.1:.1:.1) [1]
+    ca = runIdentity $ dirac `fullConv` a
+
+-- corrVolumes
 prop_scalarAssocCorrVolumes (VolA a) (VolA b) (c :: Double) = once$
     id == kd && ih >= kh && iw >= kw
       ==> runIdentity $
