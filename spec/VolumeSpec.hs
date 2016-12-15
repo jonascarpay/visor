@@ -145,5 +145,22 @@ prop_scalarAssocCorrVolumes (VolA a) (VolA b) (c :: Double) = once$
     Z:.id:.ih:.iw    = extent b
     Z:.kd:.kh:.kw = extent a
 
+-- SoftMax
+prop_SoftMaxSum1 (VecA a) = runIdentity $
+  do probs <- forward1 a SoftMax
+     sum <- sumAllP probs
+     return $ sum `approx` 1
+
+prop_SoftMaxMaxElemInvariant (VecA a) = runIdentity $
+  do probs <- forward1 a SoftMax
+     return $ maxIndex probs == maxIndex a
+
+-- subtractOneAt
+prop_subOneSum (VecA a) = runIdentity $
+  do sa <- sumAllP a
+     a' <- subtractOneAt 0 a
+     sa' <- sumAllP a'
+     return $ (sa - 1) `approx` sa'
+
 return []
 runtests = $quickCheckAll

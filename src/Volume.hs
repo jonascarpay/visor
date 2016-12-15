@@ -81,7 +81,8 @@ forward3 x Pool       = pool x
 forward1 :: Monad m => Vector -> Layer1 -> m Vector
 forward1 x (FC w b) = computeP $ x `vmmult` w +^ b
 
-forward1 x SoftMax = do exps   :: Vector <- computeP $ R.map exp x
+forward1 x SoftMax = do maxElem <- foldAllP max 0 x
+                        exps   :: Vector <- computeP $ R.map (exp . subtract maxElem) x
                         sumExp :: Double <- sumAllP exps
                         computeP $ R.map (/sumExp) exps
 
@@ -98,11 +99,11 @@ backward3 :: Monad m -- ^ Required by repa for parallel computations
           -> Double -- ^ Regularization loss factor. Not yet implemented.
           -> Double -- ^ Step size/learning rate
           -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
-backward3 (Conv w b) x _ dy _ dt =
+backward3 (Conv w b) x _ dy _ α =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
-     db <- computeP$ b -^ R.map (*dt) dy
-     w' <- computeP$ w -^ R.map (*dt) dw
+     db <- computeP$ b -^ R.map (*α) dy
+     w' <- computeP$ w -^ R.map (*α) dw
      return (Conv w' db, dx)
 
 backward3 Pool x y dy _ _ =
@@ -118,10 +119,10 @@ backward1 :: Monad m => Layer1 -> Vector -> Vector -> Vector -> Double -> Double
 backward1 SoftMax  _ y dy _ _ = do dx <- computeP $ y -^ dy
                                    return (SoftMax, dx)
 
-backward1 (FC w b) x _ dy _ dt = do dx <- computeP $ dy `vmmult` transpose w
-                                    w' <- computeP $ R.zipWith (\x d -> x-d*dt) w $ x `vvmult` dy
-                                    b' <- computeP $ R.zipWith (\x d -> x-d*dt) b dy
-                                    return (FC w' b', dx)
+backward1 (FC w b) x _ dy _ α = do dx <- computeP $ dy `vmmult` transpose w
+                                   w' <- computeP $ R.zipWith (\x d -> x-d*α) w $ x `vvmult` dy
+                                   b' <- computeP $ R.zipWith (\x d -> x-d*α) b dy
+                                   return (FC w' b', dx)
 
 -- TODO: backprop van pooling moet extent-invariant worden
 -- | Max-pooling function for volumes
@@ -261,6 +262,10 @@ dataLoss p (fromLabel -> i) = negate . log $ linearIndex p i
 --   converts it into a label.
 maxIndex :: Vector -> Label
 maxIndex = toLabel . DV.maxIndex . toUnboxed
+
+subtractOneAt :: Monad m => Int -> Vector -> m Vector
+subtractOneAt i arr = computeP $ R.traverse arr id ixFn
+  where ixFn src (Z:.w) = if w == i then src (ix1 w) - 1 else src (ix1 w)
 
 -- TODO: Non-urgent; Let forward1 accept delayed representations so the
 -- flattened array does not need to be rebuilt in memory
