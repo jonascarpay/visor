@@ -5,7 +5,13 @@ import Volume
 import Label
 
 data ConvNet = ConvNet [Layer3] [Layer1]
-  deriving (Eq, Show)
+
+instance Show ConvNet where
+  show (ConvNet l3s l1s) = unlines $ ["ConvNet"] ++ l3str ++ [" -"] ++ l1str
+    where
+      indent str = "  " ++ str
+      l3str = fmap (indent . show) l3s
+      l1str = fmap (indent . show) l1s
 
 -- | Defines the parameters for the construction of a convolutional layer
 data LayerSpec
