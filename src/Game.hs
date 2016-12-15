@@ -5,11 +5,7 @@ module Game where
 
 import Util
 import Data.ByteString as BS hiding (putStrLn)
-import Data.Word
-import Conduit
-import Control.Monad
 import Control.Monad.Trans.Resource
-import System.Random
 
 
 -- | A Game defines where to get a certain data set,

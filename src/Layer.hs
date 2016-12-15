@@ -1,5 +1,6 @@
 {-# LANGUAGE DefaultSignatures, DeriveGeneric #-}
 
+
 module Layer where
 
 import Numeric.LinearAlgebra

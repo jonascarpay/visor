@@ -6,7 +6,6 @@ import Util
 import Numeric.LinearAlgebra
 import Data.Serialize
 import GHC.Generics (Generic(..))
-import qualified Data.Vector.Storable as V
 import Control.DeepSeq
 
 -- | A NetBatch consists of a set of samples, and a

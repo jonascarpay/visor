@@ -143,3 +143,5 @@ delabelMelee [p11, p21, p110, p210, p1100, p2100, td1, td2, td3, p1s, p2s] = fil
     p2p = case p21 of
             Nothing   -> Nothing
             Just p21' -> Just $ p21' + fromMaybe 0 p210 * 10 + fromMaybe 0 p2100 * 100
+
+delabelMelee _ = undefined
