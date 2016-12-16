@@ -16,7 +16,7 @@ fromLabel Indeterminate = 0
 fromLabel (Label n) = n + 1
 
 -- | Convert an index used at the network level to a label
-toLabel :: Int -> Label
+toLabel :: Integral a => a -> Label
 toLabel n
   | n == 0    = Indeterminate
-  | otherwise = Label (n-1)
+  | otherwise = Label (fromIntegral n-1)

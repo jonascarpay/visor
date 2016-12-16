@@ -11,6 +11,7 @@
 module Volume where
 
 import Label
+import Data.Word
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV
 import Data.Array.Repa.Algorithms.Randomish
@@ -294,3 +295,6 @@ randomFCLayer k d seed = FC w b
   where
     w = randomishDoubleArray (Z:.k:.d) 1e-2 (-1e-2) seed
     b = randomishDoubleArray (Z:.d)    1e-2 (-1e-2) (seed+1)
+
+toCifarVolume :: [Word8] -> Volume
+toCifarVolume = fromListUnboxed (Z:.3:.32:.32) . fmap ((/255) . fromIntegral)

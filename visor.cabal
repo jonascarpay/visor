@@ -27,6 +27,7 @@ library
                      , Volume
                      , Label
                      , ConvNet
+                     , Cifar
   build-depends:       base
                      , hmatrix
                      , vector
@@ -39,6 +40,7 @@ library
                      , cereal
                      , conduit-combinators
                      , conduit-extra
+                     , cereal-conduit
                      , resourcet
                      , transformers
                      , process

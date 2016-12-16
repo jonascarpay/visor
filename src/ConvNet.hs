@@ -7,6 +7,10 @@ import Label
 
 data ConvNet = ConvNet [Layer3] [Layer1]
 
+data ConvSample = ConvSample { sample :: Volume
+                             , label :: Label
+                             } deriving (Eq, Show)
+
 instance Show ConvNet where
   show (ConvNet l3s l1s) = unlines $ ["ConvNet"] ++ l3str ++ [" -"] ++ l1str
     where
@@ -69,7 +73,7 @@ train1 [] x y _ = do dx <- subtractOneAt (fromLabel y) x
 train1 (l:ls) x y α =
   do f <- forward1 x l
      (df, ls', loss) <- train1 ls f y α
-     (l', dx) <- backward1 l x f df (error "RegLoss not implemented") α
+     (l', dx) <- backward1 l x f df 0 α
      return (dx, l':ls', loss)
 
 train3 :: Monad m
@@ -87,5 +91,5 @@ train3 [] l1s x y α = do f <- flatten x
 train3 (l:ls) l1s x y α =
   do f <- forward3 x l
      (df, l3s', l1s', loss) <- train3 ls l1s f y α
-     (l', dx) <- backward3 l x f df (error "RegLoss not implemented") α
+     (l', dx) <- backward3 l x f df 0 α
      return (dx, l':l3s', l1s', loss)

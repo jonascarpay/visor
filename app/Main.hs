@@ -2,6 +2,7 @@
 
 module Main where
 
+import Cifar
 import Conduits
 import Visor
 import Screen
@@ -52,6 +53,7 @@ main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
          .| awaitForever (liftIO . undefined)
      return ()
 
-
+main' ["cifar"] = runConduitRes $ sourceCifar
+                               .| train3C cifarNet
 
 main' _ = putStrLn "No valid command line argument given"
