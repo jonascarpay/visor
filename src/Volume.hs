@@ -81,7 +81,7 @@ forward3 x Pool       = pool x
 forward1 :: Monad m => Vector -> Layer1 -> m Vector
 forward1 x (FC w b) = computeP $ x `vmmult` w +^ b
 
-forward1 x SoftMax = do maxElem <- foldAllP max 0 x
+forward1 x SoftMax = do maxElem <- foldAllP max (-1/0) x
                         exps   :: Vector <- computeP $ R.map (exp . subtract maxElem) x
                         sumExp :: Double <- sumAllP exps
                         computeP $ R.map (/sumExp) exps
