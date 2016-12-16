@@ -1,6 +1,7 @@
 module ConvNet where
 
 import Control.Monad
+import qualified Data.Array.Repa as R
 import Volume
 import Label
 
@@ -57,3 +58,34 @@ feed (ConvNet l3s l1s) v = do vol <- foldConv v
     foldConv vol = foldM forward3 vol l3s
     foldFC   vec = foldM forward1 vec l1s
 
+train1 :: Monad m
+       => [Layer1]
+       -> Vector
+       -> Label
+       -> Double
+       -> m (Vector, [Layer1], Double)
+train1 [] x y _ = do dx <- subtractOneAt (fromLabel y) x
+                     return (dx, [], dataLoss x y)
+train1 (l:ls) x y α =
+  do f <- forward1 x l
+     (df, ls', loss) <- train1 ls f y α
+     (l', dx) <- backward1 l x f df (error "RegLoss not implemented") α
+     return (dx, l':ls', loss)
+
+train3 :: Monad m
+       => [Layer3]
+       -> [Layer1]
+       -> Volume
+       -> Label
+       -> Double
+       -> m (Volume, [Layer3], [Layer1], Double)
+train3 [] l1s x y α = do f <- flatten x
+                         (df, l1s', loss) <- train1 l1s f y α
+                         dx <- R.computeP $ R.reshape (R.extent x) df
+                         return (dx, [], l1s', loss)
+
+train3 (l:ls) l1s x y α =
+  do f <- forward3 x l
+     (df, l3s', l1s', loss) <- train3 ls l1s f y α
+     (l', dx) <- backward3 l x f df (error "RegLoss not implemented") α
+     return (dx, l':l3s', l1s', loss)

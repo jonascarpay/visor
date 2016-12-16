@@ -43,7 +43,7 @@ train (Network r d ls) (NetBatch x y) =
    in (Network r d ls', loss)
   where
     go :: [Layer] -> Matrix R -> Matrix R -> (Matrix R, [Layer], Double)
-    go []     x y = (y, [], dataLoss x y)
+    go []     x y = (x - y, [], dataLoss x y)
     go (l:ls) x y = let p = forward x l
                         (dp, ls', loss) = go ls p y
                         (l', dx) = backward l x p dp d r
