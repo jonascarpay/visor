@@ -12,6 +12,8 @@ import System.FilePath
 import Data.Serialize
 import Data.Word
 import Control.Monad
+import Codec.Picture
+import Data.Array.Repa as R hiding ((++))
 
 newtype CifarSample = CifarSample {getSample :: ConvSample} deriving (Eq, Show)
 
@@ -36,3 +38,22 @@ train3C (ConvNet l3s l1s) =
      (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-3
      liftIO . print $ loss
      train3C (ConvNet l3s' l1s')
+
+toImage :: Volume -> DynamicImage
+toImage vol = ImageRGB8 $ generateImage convFn w h
+  where
+    Z:.3:.h:.w = extent vol
+    c x = round $ x * 255
+    convFn x y = let r = vol ! ix3 0 y x
+                     g = vol ! ix3 1 y x
+                     b = vol ! ix3 2 y x
+                  in PixelRGB8 (c r) (c g) (c b)
+
+imageSink :: IOSink CifarSample
+imageSink = go (0 :: Int)
+  where go n = do mimg <- await
+                  case mimg of
+                    Just (CifarSample (ConvSample x y)) ->
+                      do liftIO $ savePngImage ("data" </> "cifar" </> show n ++ "_" ++ show (fromLabel y) ++ ".png") (toImage x)
+                         go (n+1)
+                    Nothing -> return ()
