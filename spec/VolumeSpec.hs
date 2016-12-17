@@ -99,6 +99,13 @@ prop_poolBackpropSumInvariant (VolA a) = once$
   where
     Z:._:.h:.w = extent a
 
+-- relu
+prop_reluSum (VolA a) = once . runIdentity $
+  do f  <- forward3 a ReLU
+     sf <- sumAllP f
+     sa <- sumAllP a
+     return $ sf >= sf
+
 -- zeropad
 prop_zeroPadAssoc (MatA a) (Positive (Small n1)) (Positive (Small n2)) = once$
     (computeS . zeropad n1 $ (computeS . zeropad n2 $ a :: Matrix) :: Matrix)
