@@ -54,6 +54,7 @@ main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
      return ()
 
 main' ["cifar"] = runConduitRes $ sourceCifar
+                               .| takeC 10
                                .| train3C cifarNet
 
 main' _ = putStrLn "No valid command line argument given"

@@ -40,44 +40,45 @@ instance Arbitrary WgtA where
                  elems <- vector (w*h*d*n)
                  return . WgtA $ fromListUnboxed (Z:.n:.d:.h:.w) elems
 
-newtype Layer3A = Layer3A Layer3 deriving Show
+-- Generates a random layer and an input volume that is guaranteed to be compatible
+newtype Layer3A = Layer3A (Layer3, Volume) deriving Show
 instance Arbitrary Layer3A where
-  arbitrary = do Positive (Small w)  <- arbitrary
-                 Positive (Small h)  <- arbitrary
+  arbitrary = do Positive (Small ks) <- arbitrary
                  Positive (Small d)  <- arbitrary
-                 Positive (Small n)  <- arbitrary
-                 Positive (Small ow) <- arbitrary
-                 Positive (Small oh) <- arbitrary
+                 Positive (Small kn) <- arbitrary
+                 Positive (Small is') <- arbitrary
+                 let is = 2*(ks+is')
                  seed <- arbitrary
-                 o <- elements [ Pool, ReLU, randomConvLayer w h d n (w+ow) (h+oh) seed ]
-                 return . Layer3A $ o
+                 l <- elements [ Pool, ReLU, randomConvLayer ks d kn is is seed ]
+                 vElems <- vector (is*is*d)
+                 return . Layer3A $ (l, fromListUnboxed (ix3 d is is) vElems)
 
-a `divs` b = b `mod` a == 0
+a `divs`   b = b `mod` a == 0
 a `approx` b = abs (a-b) < 1e-3
+
 arr1 `approxA` arr2 =
   extent arr1 == extent arr2 &&
     and [ linearIndex arr1 i `approx` linearIndex arr2 i | i <- [0..size (extent arr1) -1]]
 
 -- rotate
-prop_rotateInvolutionM (MatA a) = once$ computeS (rotate . rotate $ a) == a
-prop_rotateInvolutionV (VolA a) = once$ computeS (rotate . rotate $ a) == a
-prop_rotateInvolutionW (WgtA a) = once$ computeS (rotate . rotate $ a) == a
+prop_rotateInvolution (MatA a) = computeS (rotate . rotate $ a) == a
 
-prop_rotateSizeM (MatA a) = once$ w == rw && h == rh
+prop_rotateSize (MatA a) = w == rw && h == rh
   where r = computeS $ rotate a :: Matrix
         Z:.h:.w = extent a
         Z:.rh:.rw = extent r
-
-prop_rotateSizeV (VolA a) = once$ w == rw && h == rh && d == rd
-  where r = computeS $ rotate a :: Volume
-        Z:.d:.h:.w = extent a
-        Z:.rd:.rh:.rw = extent r
 
 prop_rotateInv (MatA a) (Positive (Small y)) (Positive (Small x)) = once$
   y < h && x < w ==> a ! (Z:.y:.x) == a' ! (Z:.h-y-1:.w-x-1)
   where
     Z:.h:.w = extent a
     a' = computeS $ rotate a :: Matrix
+
+-- rotateW
+prop_rotateWInvolution (WgtA a) = once$ runIdentity $
+  do r  <- computeP $ rotateW a
+     rr <- computeP $ rotateW r
+     return $ rr == a
 
 -- pool
 prop_poolSum (VolA a) = once$
@@ -153,7 +154,7 @@ prop_fullConvIdty (VolA a) = once$ d == 1 ==> ca == a
     ca = runIdentity $ dirac `fullConv` a
 
 -- corrVolumes
-prop_scalarAssocCorrVolumes (VolA a) (VolA b) (c :: Double) = once$
+prop_corrScalarMultiplicationAssociativity (VolA a) (VolA b) (c :: Double) = once$
     id == kd && ih >= kh && iw >= kw
       ==> runIdentity $
         do ca   <- computeP $ map (*c) a
@@ -182,13 +183,17 @@ prop_subOneSum (VecA a) = runIdentity $
      sa' <- sumAllP a'
      return $ (sa - 1) `approx` sa'
 
--- backwards shape properties
-prop_shapeInvariant (Layer3A l) (VolA x) = 2 `divs` w && 2 `divs` h  ==> runIdentity $
+-- backprop
+prop_backpropShapeInvariant (Layer3A (l, x)) = once$ runIdentity $
   do y <- forward3 x l
      (_, dx) <- backward3 l x y y 0 0
      return (extent x == extent dx)
-  where
-    _:.h:.w = extent x
+
+prop_backpropZeroGradientLayerInvariant (Layer3A (l, x)) = once$ runIdentity $
+  do y <- forward3 x l
+     d0 <- computeP $ map (const 0) y
+     (l', _) <- backward3 l x y d0 0 1
+     return (l == l')
 
 return []
 runtests = $quickCheckAll

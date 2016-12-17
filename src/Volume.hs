@@ -15,6 +15,7 @@ import Data.Word
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV
 import Data.Array.Repa.Algorithms.Randomish
+import Debug.Trace
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -42,14 +43,15 @@ data Layer3
   | Pool -- ^ A max-pooling layer. The pool size has been hard-coded to 2, at least
          --   for now. A pooling layer subsamples the input to a quarter the size,
          --   passing through the maximum element in each 2x2 subregion.
+         deriving Eq
 
 instance Show Layer3 where
   show Pool       = "Pool"
   show ReLU       = "ReLU"
   show (Conv w b) = "Conv dimW: " ++ dimW ++ " dimB: " ++ dimB
     where
-      dimW = show . listOfShape . extent $ w
-      dimB = show . listOfShape . extent $ b
+      dimW = show . extent $ w
+      dimB = show . extent $ b
 
 -- | A network layer that takes vectors as both its input and output.
 --   Note that, for now, there is no ReLU defined. This means that the only
@@ -87,9 +89,9 @@ forward1 x SoftMax = do maxElem <- foldAllP max (-1/0) x
                         sumExp :: Double <- sumAllP exps
                         computeP $ R.map (/sumExp) exps
 
--- | Propagate an error gradient backwards through a Layer3. Many arguments
---   are usually calculated during the forward pass. Some of them could be
---   recalculated during the backwards pass, but for the sake of both efficiency
+-- | Propagate an error gradient backwards through a Layer3. Some arguments
+--   are calculated during the forward pass. We could recalculate them
+--   during the backwards pass, but for the sake of both efficiency
 --   and clarity I chose to reuse them from the forward pass. The recursive
 --   definition of the training function makes this work out quite nicely.
 backward3 :: Monad m -- ^ Required by repa for parallel computations
@@ -101,7 +103,7 @@ backward3 :: Monad m -- ^ Required by repa for parallel computations
           -> Double -- ^ Step size/learning rate
           -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
 backward3 (Conv w b) x _ dy _ α =
-  do dx <- w `fullConv` dy
+  do dx <- trace "CB" $ w `fullConv` dy
      dw <- dy `corrVolumes` x
      db <- computeP$ b -^ R.map (*α) dy
      w' <- computeP$ w -^ R.map (*α) dw
@@ -158,6 +160,14 @@ rotate arr = backpermute sh invert arr
     sh@(_:.h:.w) = extent arr
     invert (b:.y:.x) = b:.h-y-1:.w-x-1
 
+-- | Rotates the two topmost dimensions of an array by 180 degrees.
+{-# INLINE rotateW #-}
+rotateW :: Weights -> DWeights
+rotateW arr = backpermute (Z:.d:.n:.h:.w) invert arr
+  where
+    Z:.n:.d:.h:.w = extent arr
+    invert (Z:.i:.z:.y:.x) = Z:.z:.i:.h-y-1:.w-x-1
+
 -- | Valid convolution of a stencil/kernel over some image, with the
 --   kernel rotated 180 degrees. The valid part means that no zero
 --   padding is applied. It is called corr to reflect that the
@@ -209,12 +219,11 @@ conv krn img = do krn' <- computeP $ rotate krn
                   corrVolumes krn' img
 
 fullConv :: Monad m => Weights -> Volume -> m Volume
-fullConv krn img = do krn' <- computeP $ rotate krn
-                      img' <- computeP $ zeropad padSize img
+fullConv krn img = do krn' <- computeP $ rotateW krn
+                      img' <- computeP $ zeropad (kh-1) img
                       krn' `corr` img'
   where
-    _:.kh:.kw = extent krn
-    padSize = if kh == kw then kh-1 else error "Non-square kernel"
+    _:.kh:._ = extent krn
 
 {-# INLINE zeropad #-}
 zeropad :: (Source r Double, Shape tail) => Int -> Array r ((tail :. Int) :. Int) Double -> Array D ((tail :. Int) :. Int) Double
@@ -274,18 +283,18 @@ flatten :: (Monad m, Source r1 Double, Shape sh1) => Array r1 sh1 Double -> m Ve
 flatten arr = computeP $ reshape (Z:.s) arr
   where s = product . listOfShape . extent $ arr
 
-randomConvLayer :: Int -- ^ Kernel width
-                -> Int -- ^ Kernel height
+randomConvLayer :: Int -- ^ Kernel size
                 -> Int -- ^ Kernel/input depth
                 -> Int -- ^ Kernel count
-                -> Int -- ^ Output width
-                -> Int -- ^ Output height
+                -> Int -- ^ Input width
+                -> Int -- ^ Input height
                 -> Int -- ^ RNG Seed
                 -> Layer3
-randomConvLayer kw kh kd kn ow oh seed = Conv w b
+randomConvLayer ks kd kn iw ih seed = Conv w b
   where
-    w = randomishDoubleArray (Z:.kn:.kd:.kh:.kw) 1e-2 (-1e-2) seed
-    b = randomishDoubleArray (Z:.kn:.oh:.ow)     1e-2 (-1e-2) (seed+1)
+    w = randomishDoubleArray (Z:.kn:.kd:.ks:.ks)       1e-2 (-1e-2) seed
+    b = randomishDoubleArray (Z:.kn:.ih-ks+1:.iw-ks+1) 1e-2 (-1e-2) (seed+1)
+
 
 randomFCLayer :: Int -- ^ Input dimensionality
               -> Int -- ^ Output dimensionality
