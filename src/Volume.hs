@@ -33,7 +33,7 @@ data Layer3
          Weights -- ^ The weights used for the convolution. The first
                  --   dimension, i, is used to distinguish different weights.
                  --   Its second dimension, d, is equal to the input volume's
-                 --   first dimension d, and therefore disappears from the output
+                 --   first dimension d, and therefore disappears jrom the output
                  --   in order to produce a volume again.
          Bias    -- ^ A bias volume that is added to the output volume.
   | ReLU -- ^ A rectified linear unit, or ReLU. NN jargon for (\x -> max x 0).
@@ -175,7 +175,7 @@ corr :: Monad m -- ^ Host monad for repa
      -> Volume  -- ^ Image to iterate over
      -> m Volume
 corr krns img = if kd /= id
-                   then error "kernel / image depth mismatch"
+                   then error $ "kernel / image depth mismatch, k:" ++ show (extent krns) ++ " i:" ++ show (extent img)
                    else computeP $ fromFunction sh' convF
   where
     Z:.kn:.kd:.kh:.kw = extent krns
@@ -276,7 +276,7 @@ flatten arr = computeP $ reshape (Z:.s) arr
 
 randomConvLayer :: Int -- ^ Kernel width
                 -> Int -- ^ Kernel height
-                -> Int -- ^ Kernel/output depth
+                -> Int -- ^ Kernel/input depth
                 -> Int -- ^ Kernel count
                 -> Int -- ^ Output width
                 -> Int -- ^ Output height

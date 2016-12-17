@@ -28,7 +28,7 @@ sourceCifar = sourceDirectoryDeep True ("data" </> "cifar")
            .| conduitGet2 (get :: Get CifarSample)
 
 cifarNet :: ConvNet
-cifarNet = initCNet [ConvS 11 32, ReLUS, ConvS 11 32, ReLUS, PoolS] 32 32 10
+cifarNet = initCNet [ConvS 11 32, ReLUS, ConvS 11 16, ReLUS, PoolS] 32 32 10
 
 train3C :: ConvNet -> IOSink CifarSample
 train3C (ConvNet l3s l1s) =

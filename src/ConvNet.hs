@@ -88,6 +88,7 @@ train3 [] l1s x y α = do f <- flatten x
                          dx <- R.computeP $ R.reshape (R.extent x) df
                          return (dx, [], l1s', loss)
 
+
 train3 (l:ls) l1s x y α =
   do f <- forward3 x l
      (df, l3s', l1s', loss) <- train3 ls l1s f y α
