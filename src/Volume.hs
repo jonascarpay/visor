@@ -15,7 +15,6 @@ import Data.Word
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV
 import Data.Array.Repa.Algorithms.Randomish
-import Debug.Trace
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -62,6 +61,7 @@ data Layer1
       Matrix -- ^ The weight matrix.
       Vector -- ^ The bias vector
   | SoftMax -- ^ A Softmax activation function layer.
+  deriving Eq
 
 instance Show Layer1 where
   show SoftMax    = "SoftMax"
@@ -77,6 +77,7 @@ forward3 :: Monad m -- ^ Repa requires some monad in order to guarantee
          -> Layer3
          -> m Volume
 forward3 x (Conv w b) = w `corr` x >>= computeP . (+^ b)
+
 forward3 x ReLU       = computeP $ R.map (max 0) x
 forward3 x Pool       = pool x
 
@@ -103,7 +104,7 @@ backward3 :: Monad m -- ^ Required by repa for parallel computations
           -> Double -- ^ Step size/learning rate
           -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
 backward3 (Conv w b) x _ dy _ α =
-  do dx <- trace "CB" $ w `fullConv` dy
+  do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
      db <- computeP$ b -^ R.map (*α) dy
      w' <- computeP$ w -^ R.map (*α) dw
@@ -123,7 +124,8 @@ backward1 SoftMax  _ y dy _ _ = do dx <- computeP $ y -^ dy
                                    return (SoftMax, dx)
 
 backward1 (FC w b) x _ dy _ α = do dx <- computeP $ dy `vmmult` transpose w
-                                   w' <- computeP $ R.zipWith (\x d -> x-d*α) w $ x `vvmult` dy
+                                   let df = transpose $ x `vvmult` dy
+                                   w' <- computeP $ R.zipWith (\x d -> x-d*α) w df
                                    b' <- computeP $ R.zipWith (\x d -> x-d*α) b dy
                                    return (FC w' b', dx)
 

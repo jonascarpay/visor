@@ -53,6 +53,15 @@ instance Arbitrary Layer3A where
                  vElems <- vector (is*is*d)
                  return . Layer3A $ (l, fromListUnboxed (ix3 d is is) vElems)
 
+newtype Layer1A = Layer1A (Layer1, Vector) deriving Show
+instance Arbitrary Layer1A where
+  arbitrary = do Positive (Small k) <- arbitrary
+                 Positive (Small d) <- arbitrary
+                 seed <- arbitrary
+                 l <- elements [ SoftMax, randomFCLayer k d seed]
+                 vElems <- vector k
+                 return . Layer1A $ (l, fromListUnboxed (ix1 k) vElems)
+
 a `divs`   b = b `mod` a == 0
 a `approx` b = abs (a-b) < 1e-3
 
@@ -183,16 +192,41 @@ prop_subOneSum (VecA a) = runIdentity $
      sa' <- sumAllP a'
      return $ (sa - 1) `approx` sa'
 
+-- randomConvLayer
+prop_randomConvLayerShape
+  (Positive (Small s))
+  (Positive (Small d))
+  (Positive (Small n))
+  (Positive (Small i))
+  seed
+    = once$ bh == i - wh + 1 && bw == i - ww + 1 && bd == n && wd == d && bd == wn
+  where
+    Conv w b = randomConvLayer s d n i i seed
+    Z:.wn:.wd:.wh:.ww = extent w
+    Z:.bd:.bh:.bw = extent b
+
+
 -- backprop
-prop_backpropShapeInvariant (Layer3A (l, x)) = once$ runIdentity $
+prop_backprop3ShapeInvariant (Layer3A (l, x)) = once$ runIdentity $
   do y <- forward3 x l
      (_, dx) <- backward3 l x y y 0 0
      return (extent x == extent dx)
 
-prop_backpropZeroGradientLayerInvariant (Layer3A (l, x)) = once$ runIdentity $
+prop_backprop3ZeroGradientLayerInvariant (Layer3A (l, x)) = once$ runIdentity $
   do y <- forward3 x l
      d0 <- computeP $ map (const 0) y
      (l', _) <- backward3 l x y d0 0 1
+     return (l == l')
+
+prop_backprop1ShapeInvariant (Layer1A (l, x)) = runIdentity $
+  do y <- forward1 x l
+     (_, dx) <- backward1 l x y y 0 0
+     return (extent x == extent dx)
+
+prop_backprop1ZeroGradientLayerInvariant (Layer1A (l, x)) = runIdentity $
+  do y <- forward1 x l
+     d0 <- computeP $ map (const 0) y
+     (l', _) <- backward1 l x y d0 0 1
      return (l == l')
 
 return []

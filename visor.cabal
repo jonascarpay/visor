@@ -51,6 +51,7 @@ library
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
                       -fno-warn-orphans
+                      -threaded
                       -O2
 executable visor-app
   hs-source-dirs:      app
@@ -61,6 +62,7 @@ executable visor-app
                       -fno-warn-unused-matches
                       -fno-warn-missing-signatures
                       -O2
+                      -threaded
   main-is:             main.hs
   build-depends:       base
                      , visor
@@ -76,6 +78,7 @@ test-suite visor-spec
                       -fno-warn-name-shadowing
                       -fno-warn-orphans
                       -O2
+                      -threaded
   hs-source-dirs:      spec
   build-depends:       base
                      , visor

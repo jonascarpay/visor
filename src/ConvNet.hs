@@ -51,7 +51,7 @@ initCNet specs iw ih d = ConvNet convs fcs
     unroll3 (ReLUS:ls)     w h d r = (ReLU :) <$> unroll3 ls w h d r
     unroll3 (PoolS:ls)     w h d r = (Pool :) <$> unroll3 ls (w `div` 2) (h `div` 2) d r
     unroll3 (ConvS s n:ls) w h d r =
-      (randomConvLayer s d n (w-s+1) (h-s+1) r :) <$> unroll3 ls (w-s+1) (h-s+1) n (sq r)
+      (randomConvLayer s d n w h r :) <$> unroll3 ls (w-s+1) (h-s+1) n (sq r)
 
 feed :: Monad m => ConvNet -> Volume -> m Label
 feed (ConvNet l3s l1s) v = do vol <- foldConv v
@@ -87,7 +87,6 @@ train3 [] l1s x y α = do f <- flatten x
                          (df, l1s', loss) <- train1 l1s f y α
                          dx <- R.computeP $ R.reshape (R.extent x) df
                          return (dx, [], l1s', loss)
-
 
 train3 (l:ls) l1s x y α =
   do f <- forward3 x l

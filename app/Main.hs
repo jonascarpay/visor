@@ -53,8 +53,8 @@ main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
          .| awaitForever (liftIO . undefined)
      return ()
 
-main' ["cifar"] = runConduitRes $ sourceCifar
-                               .| takeC 10
+main' ["cifar"] = runConduitRes $ loopC (sourceCifar .| takeC 1)
+                               .| takeC 1000
                                .| train3C cifarNet
 
 main' _ = putStrLn "No valid command line argument given"
