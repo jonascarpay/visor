@@ -120,8 +120,7 @@ backward3 ReLU _ y dy _ _ =
 
 -- | Layer1 equivalent of backward3
 backward1 :: Monad m => Layer1 -> Vector -> Vector -> Vector -> Double -> Double -> m (Layer1, Vector)
-backward1 SoftMax  _ y dy _ _ = do dx <- computeP $ y -^ dy
-                                   return (SoftMax, dx)
+backward1 SoftMax  _ _ dy _ _ = return (SoftMax, dy)
 
 backward1 (FC w b) x _ dy _ α = do dx <- computeP $ dy `vmmult` transpose w
                                    let df = transpose $ x `vvmult` dy

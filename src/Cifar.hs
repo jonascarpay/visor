@@ -35,7 +35,7 @@ cifarNet = initCNet [ConvS 11 32, ReLUS, ConvS 11 16, ReLUS, PoolS] 32 32 10
 train3C :: ConvNet -> IOSink CifarSample
 train3C (ConvNet l3s l1s) =
   do Just (CifarSample (ConvSample x y)) <- await
-     (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-6
+     (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-0
      liftIO . print $ loss
      train3C (ConvNet l3s' l1s')
 
