@@ -4,6 +4,7 @@ module Main where
 
 import Cifar
 import Conduits
+import Data.Conduit.Async
 import Visor
 import Screen
 import Games.Melee
@@ -53,11 +54,8 @@ main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
          .| awaitForever (liftIO . undefined)
      return ()
 
-main' ["cifar"] = 
-  do w <- runConduitRes $ loopC sourceCifar
-
-                       .| takeC 600000
-                       .| train3C cifarNet
+main' ["cifar"] =
+  do _ <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 60000) (train3C cifarNet)
      return ()
 
 main' _ = putStrLn "No valid command line argument given"

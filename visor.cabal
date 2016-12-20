@@ -69,6 +69,7 @@ executable visor-app
                      , hmatrix
                      , QuickCheck
                      , conduit-combinators
+                     , stm-conduit
 
 test-suite visor-spec
   type:                exitcode-stdio-1.0
