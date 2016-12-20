@@ -274,6 +274,12 @@ dataLoss p (fromLabel -> i) = negate . log $ linearIndex p i
 maxIndex :: Vector -> Label
 maxIndex = toLabel . DV.maxIndex . toUnboxed
 
+maxElem :: (Source r Double, Shape sh, Monad m) => Array r sh Double -> m Double
+maxElem = foldAllP max (-1/0)
+
+minElem :: (Source r Double, Shape sh, Monad m) => Array r sh Double -> m Double
+minElem = foldAllP min (1/0)
+
 subtractOneAt :: Monad m => Int -> Vector -> m Vector
 subtractOneAt i arr = computeP $ R.traverse arr id ixFn
   where ixFn src (Z:.w) = if w == i then src (ix1 w) - 1 else src (ix1 w)
@@ -308,3 +314,8 @@ randomFCLayer k d seed = FC w b
 
 toCifarVolume :: [Word8] -> Volume
 toCifarVolume = fromListUnboxed (Z:.3:.32:.32) . fmap ((/255) . fromIntegral)
+
+lerp :: (Source r Double, Shape sh, Monad m) => Array r sh Double -> Double -> Double -> m (Array U sh Double)
+lerp arr lo hi = do minE <- minElem arr
+                    maxE <- maxElem arr
+                    computeP $ R.map (\x -> lo + (x-minE) * (hi-lo) / (maxE-minE)) arr

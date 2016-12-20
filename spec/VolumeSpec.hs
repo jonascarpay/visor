@@ -64,6 +64,7 @@ instance Arbitrary Layer1A where
 
 a `divs`   b = b `mod` a == 0
 a `approx` b = abs (a-b) < 1e-3
+infix 4 `approx`
 
 arr1 `approxA` arr2 =
   extent arr1 == extent arr2 &&
@@ -184,6 +185,15 @@ prop_SoftMaxSum1 (VecA a) = runIdentity $
 prop_SoftMaxMaxElemInvariant (VecA a) = runIdentity $
   do probs <- forward1 a SoftMax
      return $ maxIndex probs == maxIndex a
+
+-- lerp
+prop_LerpMaxElemInvariant (MatA a) (lo) (Positive r) = runIdentity $
+  do lerped <- lerp a lo (lo + r)
+     maxA <- maxElem a
+     minA <- minElem a
+     maxN <- maxElem lerped
+     minN <- minElem lerped
+     return $ maxA /= minA ==> maxN `approx` lo + r && minN `approx` lo
 
 -- subtractOneAt
 prop_subOneSum (VecA a) = runIdentity $
