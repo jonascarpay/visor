@@ -319,3 +319,15 @@ lerp :: (Source r Double, Shape sh, Monad m) => Array r sh Double -> Double -> D
 lerp arr lo hi = do minE <- minElem arr
                     maxE <- maxElem arr
                     computeP $ R.map (\x -> lo + (x-minE) * (hi-lo) / (maxE-minE)) arr
+
+splitW :: Monad m => Weights -> m [Matrix]
+splitW arr = Prelude.traverse computeP slices
+  where
+    Z:.n:.d:._:._ = extent arr
+    slices :: [DMatrix]
+    slices = [ slice arr (Z:.ni:.di:.All:.All) | ni <- [0..n-1], di <- [0..d-1]]
+
+getWeights :: [Layer3] -> [Weights]
+getWeights [] = []
+getWeights (Conv w _:ws) = w : getWeights ws
+getWeights (_:ws) = getWeights ws

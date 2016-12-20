@@ -55,7 +55,7 @@ main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
      return ()
 
 main' ["cifar"] =
-  do _ <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 60000) (train3C cifarNet)
-     return ()
+  do net <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 600) (train3C cifarNet)
+     saveWeightImages net
 
 main' _ = putStrLn "No valid command line argument given"
