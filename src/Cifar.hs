@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Cifar where
 
@@ -30,20 +31,23 @@ sourceCifar = sourceDirectoryDeep True ("data" </> "cifar")
            .| conduitGet2 (get :: Get CifarSample)
 
 cifarNet :: ConvNet
-cifarNet = initCNet [ConvS 11 32, ReLUS, ConvS 11 16, ReLUS, PoolS] 32 32 10
+cifarNet = initCNet [ConvS 5 64, ReLUS, PoolS, ConvS 5 64, ReLUS, PoolS] 32 32 10
 
-train3C :: ConvNet -> IOSink CifarSample
-train3C (ConvNet l3s l1s) =
-  do Just (CifarSample (ConvSample x y)) <- await
-     (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-0
-     liftIO . print $ loss
-     train3C (ConvNet l3s' l1s')
+train3C :: ConvNet -> Consumer CifarSample (ResourceT IO) ConvNet
+train3C n@(ConvNet l3s l1s) =
+  do ms <- await
+     case ms of
+       Just (CifarSample (ConvSample x y)) ->
+         do (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-2
+            liftIO . print $ loss
+            train3C (ConvNet l3s' l1s')
+       Nothing -> return n
 
 toImage :: Volume -> DynamicImage
 toImage vol = ImageRGB8 $ generateImage convFn w h
   where
     Z:.3:.h:.w = extent vol
-    c x = round $ x * 255
+    c x = round $ x / 255
     convFn x y = let r = vol ! ix3 0 y x
                      g = vol ! ix3 1 y x
                      b = vol ! ix3 2 y x

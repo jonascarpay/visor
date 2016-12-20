@@ -53,10 +53,11 @@ main' ["croptest", read -> x, read -> y, read -> w, read -> h] =
          .| awaitForever (liftIO . undefined)
      return ()
 
-main' ["cifar"] = runConduitRes $ (do l <- sourceCifar .| (dropC 2 >> takeC 1) .| sinkList
-                                      loopC (yieldMany l)
-                                  )
-                               .| takeC 10000
-                               .| train3C cifarNet
+main' ["cifar"] = 
+  do w <- runConduitRes $ loopC sourceCifar
+
+                       .| takeC 600000
+                       .| train3C cifarNet
+     return ()
 
 main' _ = putStrLn "No valid command line argument given"

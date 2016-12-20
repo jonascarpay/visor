@@ -115,7 +115,7 @@ backward3 Pool x y dy _ _ =
      return (Pool, dx)
 
 backward3 ReLU _ y dy _ _ =
-  do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) y dy
+  do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) dy y
      return (ReLU, dx)
 
 -- | Layer1 equivalent of backward3
