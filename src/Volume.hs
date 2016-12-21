@@ -3,10 +3,12 @@
                 -fllvm -optlo-O3 #-}
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Volume where
 
@@ -15,6 +17,8 @@ import Data.Word
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV
 import Data.Array.Repa.Algorithms.Randomish
+import GHC.Generics (Generic)
+import Data.Serialize
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -42,7 +46,8 @@ data Layer3
   | Pool -- ^ A max-pooling layer. The pool size has been hard-coded to 2, at least
          --   for now. A pooling layer subsamples the input to a quarter the size,
          --   passing through the maximum element in each 2x2 subregion.
-         deriving Eq
+         deriving (Eq, Generic)
+instance Serialize Layer3
 
 instance Show Layer3 where
   show Pool       = "Pool"
@@ -61,7 +66,8 @@ data Layer1
       Matrix -- ^ The weight matrix.
       Vector -- ^ The bias vector
   | SoftMax -- ^ A Softmax activation function layer.
-  deriving Eq
+  deriving (Eq, Generic)
+instance Serialize Layer1
 
 instance Show Layer1 where
   show SoftMax    = "SoftMax"
@@ -331,3 +337,31 @@ getWeights :: [Layer3] -> [Weights]
 getWeights [] = []
 getWeights (Conv w _:ws) = w : getWeights ws
 getWeights (_:ws) = getWeights ws
+
+instance (DV.Unbox e, Serialize e) => Serialize (Array U DIM4 e) where
+  put a = do put (listOfShape . extent $ a)
+             put (toList a)
+  get   = do sh    <- shapeOfList <$> get
+             elems <- get
+             return (fromListUnboxed sh elems)
+
+instance (DV.Unbox e, Serialize e) => Serialize (Array U DIM3 e) where
+  put a = do put (listOfShape . extent $ a)
+             put (toList a)
+  get   = do sh    <- shapeOfList <$> get
+             elems <- get
+             return (fromListUnboxed sh elems)
+
+instance (DV.Unbox e, Serialize e) => Serialize (Array U DIM2 e) where
+  put a = do put (listOfShape . extent $ a)
+             put (toList a)
+  get   = do sh    <- shapeOfList <$> get
+             elems <- get
+             return (fromListUnboxed sh elems)
+
+instance (DV.Unbox e, Serialize e) => Serialize (Array U DIM1 e) where
+  put a = do put (listOfShape . extent $ a)
+             put (toList a)
+  get   = do sh    <- shapeOfList <$> get
+             elems <- get
+             return (fromListUnboxed sh elems)

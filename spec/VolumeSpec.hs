@@ -8,6 +8,7 @@ import Prelude hiding (map, zipWith)
 import Test.QuickCheck
 import Data.Array.Repa
 import Data.Functor.Identity
+import Data.Serialize
 import Volume
 
 newtype VecA = VecA Vector deriving Show
@@ -238,6 +239,12 @@ prop_backprop1ZeroGradientLayerInvariant (Layer1A (l, x)) = runIdentity $
      d0 <- computeP $ map (const 0) y
      (l', _) <- backward1 l x y d0 0 1
      return (l == l')
+
+-- Serialize
+prop_SerializePutGetInvariantW (WgtA a) = once$ pure a == (decode . encode $ a)
+prop_SerializePutGetInvariantV (VolA a) = once$ pure a == (decode . encode $ a)
+prop_SerializePutGetInvariantM (MatA a) = once$ pure a == (decode . encode $ a)
+prop_SerializePutGetInvariantC (VecA a) = once$ pure a == (decode . encode $ a)
 
 return []
 runtests = $quickCheckAll

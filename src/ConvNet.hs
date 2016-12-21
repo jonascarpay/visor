@@ -1,11 +1,18 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module ConvNet where
 
 import Control.Monad
 import qualified Data.Array.Repa as R
 import Volume
 import Label
+import GHC.Generics (Generic)
+import Data.Serialize
 
 data ConvNet = ConvNet [Layer3] [Layer1]
+  deriving Generic
+
+instance Serialize ConvNet
 
 data ConvSample = ConvSample { sample :: Volume
                              , label :: Label
