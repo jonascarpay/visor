@@ -11,12 +11,12 @@ import Data.Serialize
 
 data ConvNet = ConvNet [Layer3] [Layer1]
   deriving Generic
-
 instance Serialize ConvNet
 
 data ConvSample = ConvSample { sample :: Volume
                              , label :: Label
-                             } deriving (Eq, Show)
+                             } deriving (Eq, Show, Generic)
+instance Serialize ConvSample
 
 instance Show ConvNet where
   show (ConvNet l3s l1s) = unlines $ ["ConvNet"] ++ l3str ++ [" -"] ++ l1str
@@ -33,13 +33,6 @@ data LayerSpec
   | ReLUS
   | PoolS
   deriving (Eq, Show)
-
-defaultSpec :: [LayerSpec]
-defaultSpec = [ ConvS 64 32
-              , ReLUS
-              , ConvS 16 16
-              , ReLUS
-              , PoolS ]
 
 initCNet :: [LayerSpec] -- ^ Spec of the convolutional part of the network
         -> Int -- ^ Input width
