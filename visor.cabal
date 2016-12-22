@@ -48,10 +48,10 @@ library
                      , repa
                      , repa-algorithms
                      , JuicyPixels
+                     , JuicyPixels-extra
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
                       -fno-warn-orphans
-                      -threaded
                       -O2
 executable visor-app
   hs-source-dirs:      app
