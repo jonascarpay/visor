@@ -19,6 +19,14 @@ import Data.Serialize
 data ConvNet = ConvNet [Layer3] [[Layer1]]
   deriving Generic
 instance Serialize ConvNet
+-- TODO: A good future optimization is
+-- `data Shape sh => ConvNet sh = ConvNet [Layer(3)] sh`
+-- An FC layer can be modeled as a volumetric layer with output dimensions 1x1xn.
+-- The shape gives the size of the output space, and a classification is some
+-- point in that space. The size of the space affects what ranges of output
+-- neurons is grouped into a single SoftMax classification. This is functionally
+-- equivalent to the current implementation, but more extensible and likely
+-- has better performance.
 
 data ConvSample = ConvSample { sample :: Volume
                              , label :: Label
