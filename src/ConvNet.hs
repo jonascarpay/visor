@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module ConvNet where
 
@@ -9,7 +10,13 @@ import Label
 import GHC.Generics (Generic)
 import Data.Serialize
 
-data ConvNet = ConvNet [Layer3] [Layer1]
+-- | A convolutional network for image processing. The [Layer3] part represents
+--   the part of the network whose outputs are volumes, i.e. the convolutional
+--   part of the network. The [Layer1] Part is the fully connected part of the
+--   network. The reason there are multiple output layers is to leverage the
+--   fact that often features look similar and can therefore reuse convolution
+--   kernels.
+data ConvNet = ConvNet [Layer3] [[Layer1]]
   deriving Generic
 instance Serialize ConvNet
 
@@ -37,14 +44,14 @@ data LayerSpec
 initCNet :: [LayerSpec] -- ^ Spec of the convolutional part of the network
         -> Int -- ^ Input width
         -> Int -- ^ Input height
-        -> Int -- ^ Output dimensionality
+        -> [Int] -- ^ Output dimensionalities
         -> ConvNet
-initCNet specs iw ih d = ConvNet convs fcs
+initCNet specs iw ih ds = ConvNet convs fcs
   where
     sq x = x^(2::Int)
 
     (k,convs) = unroll3 specs iw ih 3 9
-    fcs = [randomFCLayer k d 99, SoftMax]
+    fcs = fmap (\(d,i) -> [randomFCLayer k d (99 + i), SoftMax]) (zip ds [1..])
 
     unroll3 :: [LayerSpec] -> Int -> Int -> Int -> Int -> (Int, [Layer3])
     unroll3 []             w h d _ = (d*w*h,[])
@@ -53,14 +60,14 @@ initCNet specs iw ih d = ConvNet convs fcs
     unroll3 (ConvS s n:ls) w h d r =
       (randomConvLayer s d n w h r :) <$> unroll3 ls (w-s+1) (h-s+1) n (sq r)
 
-feed :: Monad m => ConvNet -> Volume -> m Label
-feed (ConvNet l3s l1s) v = do vol <- foldConv v
-                              vec <- flatten vol
-                              y   <- foldFC vec
-                              return $ maxIndex y
+feed :: Monad m => ConvNet -> Volume -> m [Label]
+feed (ConvNet l3s l1ss) v = do vol <- foldConv v
+                               vec <- flatten vol
+                               ys  <- foldFC vec
+                               return $ fmap maxIndex ys
   where
     foldConv vol = foldM forward3 vol l3s
-    foldFC   vec = foldM forward1 vec l1s
+    foldFC   vec = mapM (foldM forward1 vec) l1ss
 
 train1 :: Monad m
        => [Layer1]
@@ -78,15 +85,21 @@ train1 (l:ls) x y α =
 
 train3 :: Monad m
        => [Layer3]
-       -> [Layer1]
+       -> [[Layer1]]
        -> Volume
        -> Label
        -> Double
-       -> m (Volume, [Layer3], [Layer1], Double)
-train3 [] l1s x y α = do f <- flatten x
-                         (df, l1s', loss) <- train1 l1s f y α
-                         dx <- R.computeP $ R.reshape (R.extent x) df
-                         return (dx, [], l1s', loss)
+       -> m (Volume, [Layer3], [[Layer1]], [Double])
+train3 [] l1ss x y α = do
+  f <- flatten x
+  rs <- forM l1ss (\l1s -> train1 l1s f y α)
+
+  let (dfs, l1s', losses) = unzip3 rs
+      df' = foldr1 (R.+^) (fmap R.delay dfs)
+
+  df :: Vector <- R.computeP df'
+  dx <- R.computeP $ R.reshape (R.extent x) df
+  return (dx, [], l1s', losses)
 
 train3 (l:ls) l1s x y α =
   do f <- forward3 x l

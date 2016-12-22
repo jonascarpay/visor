@@ -14,6 +14,15 @@ melee = Game { title = "SSBM"
              , features = [percentageOnes, percentageTens, percentage100s, timeDigits, stocks]
              }
 
+pOne :: Feature
+pOne = Feature { name        = "onesDigit"
+               , positions   = [ (w 175, h 908) ]
+               , dimensions  = (w 274, h 196)
+               , resolution  = (32,32)
+               , cardinality = 10
+               , netConfig   = defaultNetConfig
+               }
+
 percentageOnes :: Feature
 percentageOnes = Feature { name        = "onesDigit"
                          , positions   = [ (w 175, h 908)
