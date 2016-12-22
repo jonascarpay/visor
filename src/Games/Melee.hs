@@ -2,6 +2,7 @@ module Games.Melee where
 
 import Game
 import Util
+import Label
 import System.FilePath.Posix
 import Data.List.Split
 import Data.List (intercalate)
@@ -10,87 +11,16 @@ import Control.Applicative
 
 -- | Game definition for SSBM.
 melee :: Game
-melee = Game { title = "SSBM"
-             , features = [percentageOnes, percentageTens, percentage100s, timeDigits, stocks]
+melee = Game { title   = "SSBM"
+             , widgets = undefined
              }
 
-pOne :: Feature
-pOne = Feature { name        = "onesDigit"
-               , positions   = [ (w 175, h 908) ]
-               , dimensions  = (w 274, h 196)
-               , resolution  = (32,32)
-               , cardinality = 10
-               , netConfig   = defaultNetConfig
-               }
-
-percentageOnes :: Feature
-percentageOnes = Feature { name        = "onesDigit"
-                         , positions   = [ (w 175, h 908)
-                                         , (w 455, h 908)
-                                         ]
-                         , dimensions  = (w 274, h 196)
-                         , resolution  = (32,32)
-                         , cardinality = 10
-                         , netConfig   = defaultNetConfig
-                         }
-
-percentageTens :: Feature
-percentageTens = Feature { name        = "tensDigit"
-                         , positions   = [ (w 175, h 908)
-                                         , (w 455, h 908)
-                                         ]
-                         , dimensions  = (w 274, h 196)
-                         , resolution  = (32,32)
-                         , cardinality = 10
-                         , netConfig   = defaultNetConfig
-                         }
-
-percentage100s :: Feature
-percentage100s = Feature { name        = "hundredsDigit"
-                         , positions   = [ (w 175, h 908)
-                                         , (w 455, h 908)
-                                         ]
-                         , dimensions  = (w 274, h 196)
-                         , resolution  = (32,32)
-                         , cardinality = 10
-                         , netConfig   = defaultNetConfig
-                           { learningRate = 2e-2 }
-                         }
-
-timeDigits :: Feature
-timeDigits = Feature { name        = "timeDigit"
-                     , positions   = [ (w 563, h 142)
-                                     , (w 641, h 142)
-                                     , (w 698, h 142)
-                                     ]
-                     , dimensions  = (w 90, h 100)
-                     , resolution  = (32,32)
-                     , cardinality = 10
-                     , netConfig   = defaultNetConfig
-                     }
-
-stocks :: Feature
-stocks = Feature { name        = "stockCount"
-                 , positions   = [ (w 150, h 802)
-                                 , (w 453, h 802)
-                                 ]
-                 , dimensions  = (w 275, h 98)
-                 , resolution  = (32,16)
-                 , cardinality = 5
-                 , netConfig   = defaultNetConfig
-                   { regularizationStrength = 1e-2
-                   , learningRate = 1e-2
-                   , hiddenNeurons = [1000] }
-                 }
-
-stage :: Feature
-stage = Feature { name        = "stockCount"
-                , positions   = [ (w 666, h 555) ]
-                , dimensions  = (w 1246, h 584)
-                , resolution  = (32,16)
-                , cardinality = 4
-                , netConfig   = defaultNetConfig {learningRate = 1e-3}
-                }
+dmgStocks :: Widget
+dmgStocks = Widget { resolution = 32
+                   , position = [(w 46, h 772)]
+                   , dimensions = (w 280, h 240)
+                   , cardinalities = [10, 10, 10, 4]
+                   }
 
 screenWidth, screenHeight :: Double
 screenWidth = 1252
@@ -110,30 +40,30 @@ prepend fBase = fmap (fBase</>)
 
 -- | Gives the digits in cs in order of increasing significance
 --   "123" -> [Just 3, Just 2, Just 1, Nothing, Nothing..
-asDigits :: String -> [Maybe Int]
-asDigits cs = fmap readDigit (reverse cs) ++ repeat Nothing
+asDigits :: String -> [Label]
+asDigits cs = fmap readDigit (reverse cs) ++ repeat Indeterminate
 
 dolphin_sets :: Dataset
 dolphin_sets =
   Dataset { rootDir = "/Users/jmc/tmp/"
           , labels = \f ->
             let ["shot",_,stage,framesPassed,p1p,p1s,p2p,p2s] = splitOn "_" (takeBaseName f)
-                stage' = Just $ read stage
                 ingame = stage /= "0"
-                percentLegible p = take 3 $ if ingame && p /= "X" then asDigits p else repeat Nothing
+                percentLegible p = take 3 $ if ingame && p /= "X" then asDigits p else repeat Indeterminate
                 p1p' = percentLegible p1p
                 p2p' = percentLegible p2p
-                p1Stocks = if ingame then Just (read p1s) else Nothing
-                p2Stocks = if ingame then Just (read p2s) else Nothing
+                p1Stocks = if ingame then Label (read p1s) else Indeterminate
+                p2Stocks = if ingame then Label (read p2s) else Indeterminate
                 matchLength = 8 * 60 * 60
-                time = if ingame
-                          then let frames = matchLength - read framesPassed
-                                   secsTotal = frames `div` 60
-                                   (mins, secs) = secsTotal `divMod` 60
-                                   (secs10, secs1) = secs `divMod` 10
-                                in Just <$> [mins, secs10, secs1]
-                          else replicate 3 Nothing
-                       in merge p1p' p2p' ++ time ++ [p1Stocks, p2Stocks, stage']
+                time
+                  | not ingame = replicate 3 Indeterminate
+                  | ingame = let frames = matchLength - read framesPassed
+                                 secsTotal = frames `div` 60
+                                 (mins, secs) = secsTotal `divMod` 60
+                                 (secs10, secs1) = secs `divMod` 10
+                              in Label <$> [mins, secs10, secs1]
+
+             in [p1p' ++ [p1Stocks], p2p' ++ [p2Stocks]]
           , cropRect = Rect 335 50 1251 1027
           , wiggle = 50
           , distort = True

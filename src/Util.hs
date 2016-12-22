@@ -1,25 +1,26 @@
 module Util where
 
 import Conduit
+import Label
 
-readDigit :: Num a => Char -> Maybe a
-readDigit '1' = Just 1
-readDigit '2' = Just 2
-readDigit '3' = Just 3
-readDigit '4' = Just 4
-readDigit '5' = Just 5
-readDigit '6' = Just 6
-readDigit '7' = Just 7
-readDigit '8' = Just 8
-readDigit '9' = Just 9
-readDigit '0' = Just 0
-readDigit _   = Nothing
+readDigit :: Char -> Label
+readDigit '1' = Label 1
+readDigit '2' = Label 2
+readDigit '3' = Label 3
+readDigit '4' = Label 4
+readDigit '5' = Label 5
+readDigit '6' = Label 6
+readDigit '7' = Label 7
+readDigit '8' = Label 8
+readDigit '9' = Label 9
+readDigit '0' = Label 0
+readDigit _   = Indeterminate
 
 type IOSrc a       = Source (ResourceT IO) a
 type IOConduit a b = Conduit a (ResourceT IO) b
 type IOSink a      = Sink a (ResourceT IO) ()
 
-data Rect a = Rect { x :: a
-                   , y :: a
-                   , w :: a
-                   , h :: a }
+data Rect a = Rect { rx :: a
+                   , ry :: a
+                   , rw :: a
+                   , rh :: a }

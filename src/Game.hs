@@ -12,8 +12,8 @@ import System.Random
 
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
-data Game = Game { title    :: String
-                 , features :: [Widget]
+data Game = Game { title   :: String
+                 , widgets :: [Widget]
                  }
 
 -- | A widget represents a (possibly repeating) rectangular area of
