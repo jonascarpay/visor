@@ -64,9 +64,9 @@ data Dataset =
     }
 
 -- | Loads an image and applies desired transformations
-loadFromSet :: Dataset
-            -> IOSrc (Palette, [WidgetLabel])
-loadFromSet (Dataset root lblFn (Rect x y w h) wig dist) =
+datasetSource :: Dataset
+              -> IOSrc (Palette, [WidgetLabel])
+datasetSource (Dataset root lblFn (Rect x y w h) wig dist) =
   sourceDirectoryDeep True root .| loadImageC
   where
     loadImageC :: IOConduit FilePath (Palette, [WidgetLabel])
@@ -90,3 +90,5 @@ loadFromSet (Dataset root lblFn (Rect x y w h) wig dist) =
                           distorted = pixelMap distortColor imgCropped
 
                       return (if dist then distorted else imgCropped, lblFn fp)
+
+datasetSink :: IOSink (Palette, [WidgetLabel])
