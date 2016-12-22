@@ -1,33 +1,6 @@
 module Util where
 
-import Numeric.LinearAlgebra
-import Data.Word
-import Data.Serialize
 import Conduit
-
-data RGBDelayed
-data RGB
-
-colSums, rowSums :: Matrix R -> Vector R
-rowSums m = m #> konst 1 (cols m)
-colSums m = konst 1 (rows m) <# m
-
-normalizeRows :: Matrix R -> Matrix R
-normalizeRows m = m / asColumn (rowSums m)
-
--- | Gives the average of the sum of the rows of
---   some matrix. This is mostly used to take the
---   average output of a matrix where there is only
---   one non-zero value in every row
-avgRowSum :: Matrix R -> Double
-avgRowSum m = sumElements m / fromIntegral (rows m)
-
-merge :: [a] -> [a] -> [a]
-merge [] ys     = ys
-merge (x:xs) ys = x:merge ys xs
-
-scaleWord8 :: Double -> Word8 -> Word8
-scaleWord8 c = min 255 . max 0 . round . min 255 . max 0 . (*c) . fromIntegral
 
 readDigit :: Num a => Char -> Maybe a
 readDigit '1' = Just 1
@@ -45,36 +18,4 @@ readDigit _   = Nothing
 type IOSrc a       = Source (ResourceT IO) a
 type IOConduit a b = Conduit a (ResourceT IO) b
 type IOSink a      = Sink a (ResourceT IO) ()
-
--- | The atomic output of a dataset. It consists of an image and all
---   associated labels. These are generally collected in batches for
---   training.
-type LabeledImage = (RGBDelayed, [Maybe Int])
-
-instance (Element x, Serialize x) => Serialize (Matrix x) where
-  put = put . toLists
-  get = fmap fromLists get
-
-instance (Element x, Serialize x) => Serialize (Vector x) where
-  put = put . toList
-  get = fmap fromList get
-
--- TODO: document arguments
-toArea :: Double -> Double -> Double -> Double -> Int -> Int -> Rect
-toArea cx cy fw fh iw ih = let xRel = cx - fw / 2
-                               yRel = cy - fh / 2
-                               wRel = fw
-                               hRel = fh
-                               x = round $ fromIntegral iw * xRel
-                               y = round $ fromIntegral ih * yRel
-                               w = round $ fromIntegral iw * wRel
-                               h = round $ fromIntegral ih * hRel
-                            in Rect x y w h
-
-data Rect = Rect Int Int Int Int
-
-matchShape :: [a] -> [[b]] -> [[a]]
-matchShape _   []     = []
-matchShape ins (e:es) = let (pre,post) = splitAt (length e) ins
-                         in pre : matchShape post es
 
