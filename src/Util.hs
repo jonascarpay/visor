@@ -19,3 +19,7 @@ type IOSrc a       = Source (ResourceT IO) a
 type IOConduit a b = Conduit a (ResourceT IO) b
 type IOSink a      = Sink a (ResourceT IO) ()
 
+data Rect a = Rect { x :: a
+                   , y :: a
+                   , w :: a
+                   , h :: a }

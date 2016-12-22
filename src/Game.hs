@@ -4,14 +4,40 @@
 module Game where
 
 import Util
-import Data.ByteString as BS hiding (putStrLn)
-import Control.Monad.Trans.Resource
+import Label
+import Codec.Picture
 
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
 data Game = Game { title    :: String
-                 , features :: [Feature]
+                 , features :: [Widget]
                  }
+
+-- | A widget represents a (possibly repeating) rectangular area of
+--   the screen containing information to be extracted.
+data Widget =
+  Widget
+    { -- ^ The resolution at which this is fed to the network. Higher means
+      --   slower convergence, easier overfitting, and worse performance.
+      --   Usually, we want the lowest value at which features are still clearly
+      --   distinguishable. Because the convolutional network only accepts square
+      --   inputs, the resolution is the same for the x and y axes.
+      resolution :: Int,
+      -- ^ The x, y positions at which this widget occurs on the screen. Values
+      --   should be relative between 0 and 1. The coordinate corresponds to
+      --   the location of the top left corner.
+      position :: [(Double, Double)],
+      -- ^ The dimensions of the widget, again, both between 0 and 1.
+      dimensions :: (Double, Double),
+      -- ^ The length of this list equals the amount of features to extract from
+      --   a widget, and the values indicate how many possible values that feature
+      --   takes. A digit, for example, would have a cardinality of 10. Note that
+      --   Each feature is hardcoded to have an additional 'undefined/indeterminate'
+      --   output, that is used in case the feature does not occur.
+      cardinalities :: [Int]
+    }
+
+type WidgetLabel = [Label]
 
 -- | A data set defines a set of samples for some game
 data Dataset =
@@ -21,10 +47,10 @@ data Dataset =
       -- ^ The labels to extract from an image. The order and length
       --   of the labels should be the same as the total number of
       --   feature positions for the given game. Paths are absolute.
-      labels :: FilePath -> [Maybe Int],
+      labels :: FilePath -> [WidgetLabel],
       -- ^ The rectangle to crop the images to. This should be the
-      --   largest area that still captures the game screen.
-      cropRect :: Rect,
+      --   largest possible area that only captures the game screen.
+      cropRect :: Rect Int,
       -- ^ Indicates the number of extra pixels we can crop off
       --  in all directions. This is used to apply a random
       --  translation to the image.
@@ -35,13 +61,6 @@ data Dataset =
     }
 
 -- | Loads an image and applies desired transformations
-loadImage :: ByteString -- ^ ByteString of the image to load. We use a
-                        --   ByteString representation because conduit
-                        --   handles the IO
-          -> Rect -- ^ Cropping rectangle
-          -> Int -- ^ Indicates the number of extra pixels we can crop off
-                 --  in all directions. This is used to apply a random
-                 --  translation to the image.
-          -> Bool -- ^ Wether or not to apply color distortions to the image
-          -> ResIO RGBDelayed
-loadImage bs (Rect x y w h) wig dis = undefined
+loadFromSet :: Dataset
+            -> IOSrc Palette
+loadFromSet = undefined
