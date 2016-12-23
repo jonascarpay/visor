@@ -23,6 +23,7 @@ library
                      , Label
                      , Images
                      , ConvNet
+                     , Visor
                      , Cifar
   build-depends:       base
                      , hmatrix

@@ -49,6 +49,7 @@ data LayerSpec
   | PoolS
   deriving (Eq, Show)
 
+-- TODO: enforce square inputs
 initCNet :: [LayerSpec] -- ^ Spec of the convolutional part of the network
         -> Int -- ^ Input width
         -> Int -- ^ Input height

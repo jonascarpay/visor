@@ -1,6 +1,8 @@
 module Games.Melee where
 
 import Game
+import Visor
+import ConvNet
 import Util
 import Label
 import System.FilePath.Posix
@@ -28,6 +30,10 @@ screenHeight = 1028
 w, h :: Double -> Double
 w x = x / screenWidth
 h y = y / screenHeight
+
+meleeVisor = Visor [net]
+  where
+    net = initCNet meleespec 32 32 [10, 10, 10, 4]
 
 ssbm_root :: FilePath
 ssbm_root = "/Users/jmc/tmp/"

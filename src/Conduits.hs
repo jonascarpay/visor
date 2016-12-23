@@ -10,6 +10,7 @@ import ConvNet
 import Game
 import Images
 import Util
+import Visor
 import Conduit
 import Codec.Picture
 import Codec.Picture.Extra
@@ -81,3 +82,15 @@ trainC n@(ConvNet l3s l1s) =
             liftIO . print $ loss
             trainC (ConvNet l3s' l1s')
        Nothing -> return n
+
+gameSource :: Game -> Dataset -> IOSrc [[ConvSample]]
+gameSource game set = datasetSource set .| mapC (toSamples game)
+
+trainVisorC :: Visor -> Consumer [[ConvSample]] (ResourceT IO) Visor
+trainVisorC v =
+  do ms <- await
+     case ms of
+       Just s -> do (v', ds) <- trainVisor v s
+                    liftIO . print $ ds
+                    trainVisorC v'
+       Nothing -> return v
