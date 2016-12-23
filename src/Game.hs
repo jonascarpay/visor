@@ -46,7 +46,7 @@ data Dataset =
       -- ^ The labels to extract from an image. The order and length
       --   of the labels should be the same as the total number of
       --   feature positions for the given game. Paths are absolute.
-      labels :: FilePath -> [WidgetLabel],
+      labels :: FilePath -> [[WidgetLabel]],
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       cropRect :: Rect Int,

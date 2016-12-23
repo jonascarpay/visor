@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Util where
 
 import Conduit
@@ -24,3 +26,7 @@ data Rect a = Rect { rx :: a
                    , ry :: a
                    , rw :: a
                    , rh :: a }
+
+relToAbs :: Int -> Int -> Rect Double -> Rect Int
+relToAbs (fromIntegral -> w) (fromIntegral -> h) (Rect rx ry rw rh)
+  = Rect (round $ w*rx) (round $ h*ry) (round $ w*rw) (round $ h*rh)

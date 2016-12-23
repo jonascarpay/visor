@@ -12,7 +12,7 @@ import Control.Applicative
 -- | Game definition for SSBM.
 melee :: Game
 melee = Game { title   = "SSBM"
-             , widgets = undefined
+             , widgets = [dmgStocks]
              }
 
 dmgStocks :: Widget
@@ -63,7 +63,7 @@ dolphin_sets =
                                  (secs10, secs1) = secs `divMod` 10
                               in Label <$> [mins, secs10, secs1]
 
-             in [p1p' ++ [p1Stocks], p2p' ++ [p2Stocks]]
+             in [[p1p' ++ [p1Stocks], p2p' ++ [p2Stocks]]]
           , cropRect = Rect 335 50 1251 1027
           , wiggle = 30
           , distort = True

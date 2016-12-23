@@ -16,8 +16,8 @@ data Label = Indeterminate | Label Int
 
 instance Serialize Label
 instance Show Label where
-  show Indeterminate = "lX"
-  show (Label n) = 'l':show n
+  show Indeterminate = "X"
+  show (Label n) = show n
 
 -- | Convert a label to the index used at the network level representation.
 fromLabel :: Label -> Int

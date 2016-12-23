@@ -16,6 +16,8 @@ main' :: [String] -> IO ()
 
 main' ["setTest"] = runResourceT $ buffer 1 (datasetSource dolphin_sets) (datasetSink)
 
+main' ["parseTest"] = runResourceT $ buffer 1 (datasetSource dolphin_sets) (parseSink melee)
+
 main' ["cifar"] =
   do net <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 600) (train3C cifarNet)
      saveWeightImages net
