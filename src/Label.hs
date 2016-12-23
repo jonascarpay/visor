@@ -12,9 +12,12 @@ import GHC.Generics (Generic)
 --   is represented as the ouput with index 0, which can lead to confusion
 --   if we were to not use this explicit datatype.
 data Label = Indeterminate | Label Int
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic)
 
 instance Serialize Label
+instance Show Label where
+  show Indeterminate = "lX"
+  show (Label n) = 'l':show n
 
 -- | Convert a label to the index used at the network level representation.
 fromLabel :: Label -> Int

@@ -16,14 +16,9 @@ library
   hs-source-dirs:      src, spec
   default-language:    Haskell2010
   exposed-modules:     Game
-                     , Network
-                     , Visor
                      , Util
-                     , Batch
-                     , Layer
                      , Conduits
                      , Games.Melee
-                     , Screen
                      , Volume
                      , Label
                      , ConvNet

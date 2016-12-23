@@ -17,8 +17,8 @@ melee = Game { title   = "SSBM"
 
 dmgStocks :: Widget
 dmgStocks = Widget { resolution = 32
-                   , position = [(w 46, h 772)]
-                   , dimensions = (w 280, h 240)
+                   , position = [(w 36, h 762)]
+                   , dimensions = (w 300, h 260)
                    , cardinalities = [10, 10, 10, 4]
                    }
 
@@ -65,7 +65,7 @@ dolphin_sets =
 
              in [p1p' ++ [p1Stocks], p2p' ++ [p2Stocks]]
           , cropRect = Rect 335 50 1251 1027
-          , wiggle = 50
+          , wiggle = 30
           , distort = True
           }
 
