@@ -24,4 +24,4 @@ trainVisor (Visor nets) css = do zs <- z
 
 gameVisor :: Game -> Visor
 gameVisor (Game _ ws) = Visor (fmap widgetNet ws)
-  where widgetNet (Widget res _ _ cs spec) = initCNet spec res res cs
+  where widgetNet (Widget res _ _ cs spec) = initCNet spec res res ((+1) <$> cs) -- +1 to account for Indeterminate in cardinality

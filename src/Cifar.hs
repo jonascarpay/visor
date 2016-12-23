@@ -9,6 +9,7 @@ import Label
 import Conduit
 import Data.Conduit.Cereal
 import System.FilePath
+import System.Directory
 import Data.Serialize
 import Data.Word
 import Control.Monad
@@ -60,7 +61,8 @@ saveWeightImages (ConvNet l3s _) = do ms <- Prelude.traverse splitW $ getWeights
   where
     saveFn m (li::Int) (wi::Int) =
       do m' <- greyScaleToImage m
-         savePngImage ("data" </> "cifar" </> show li ++ "_" ++ show wi ++ ".png") m'
+         createDirectoryIfMissing True ("data"</>"weights")
+         savePngImage ("data" </> "weights" </> show li ++ "_" ++ show wi ++ ".png") m'
 
 imageSink :: IOSink ConvSample
 imageSink = go (0 :: Int)

@@ -23,8 +23,10 @@ main' ["cifar"] =
      saveWeightImages net
 
 main' ["melee"] =
-  do net <- runResourceT $ buffer 1 (loopC (gameSource melee dolphin_sets) .| takeC 600) (trainVisorC (gameVisor melee))
-     undefined
+  do Visor net <- runResourceT $ buffer 1
+                                   (loopC (gameSource melee dolphin_sets) .| takeC 6000)
+                                   (trainVisorC (gameVisor melee))
+     saveWeightImages (head net)
 
 main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
 

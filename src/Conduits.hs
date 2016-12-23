@@ -14,15 +14,16 @@ import Visor
 import Conduit
 import Codec.Picture
 import Codec.Picture.Extra
-import System.Random
+import Control.Monad
 import System.Directory
 import System.FilePath
+import System.Random
 
 -- | Loads an image and applies desired transformations
 datasetSource :: Dataset
               -> IOSrc (Palette, [[WidgetLabel]])
 datasetSource (Dataset root lblFn (Rect x y w h) wig dist) =
-  sourceDirectoryDeep True root .| filterC ((/='.') . head . takeFileName) .| loadImageC
+  sourceDirectoryDeep True root .| randomGate 0.05 .| filterC ((/='.') . head . takeFileName) .| loadImageC
   where
     loadImageC :: IOConduit FilePath (Palette, [[WidgetLabel]])
     loadImageC = awaitForever$
@@ -30,8 +31,7 @@ datasetSource (Dataset root lblFn (Rect x y w h) wig dist) =
                 yield o
 
     loadImage :: FilePath -> IO (Palette, [[WidgetLabel]])
-    loadImage fp = do putStrLn fp
-                      Right img' <- readImage fp
+    loadImage fp = do Right img' <- readImage fp
                       dx <- randomRIO (0, wig)
                       dy <- randomRIO (0, wig)
                       dw <- randomRIO (0, wig)
@@ -45,6 +45,14 @@ datasetSource (Dataset root lblFn (Rect x y w h) wig dist) =
                           distortColor (PixelRGB8 r g b) = PixelRGB8 (scaleMax r dr) (scaleMax g dg) (scaleMax b db)
                           distorted = pixelMap distortColor imgCropped
                       return (if dist then distorted else imgCropped, lblFn fp)
+
+randomGate :: Double -> IOConduit a a
+randomGate p = do mx <- await
+                  p' <- liftIO $ randomRIO (0,1)
+                  case mx of
+                    Just x -> do when (p' < p) (yield x)
+                                 randomGate p
+                    Nothing -> return ()
 
 datasetSink :: IOSink (Palette, [[WidgetLabel]])
 datasetSink = go (0 :: Int)
