@@ -17,7 +17,7 @@ melee = Game { title   = "SSBM"
 
 dmgStocks :: Widget
 dmgStocks = Widget { resolution = 32
-                   , position = [(w 36, h 762)]
+                   , position = [(w 36, h 762), (w 336, h 762)]
                    , dimensions = (w 300, h 260)
                    , cardinalities = [10, 10, 10, 4]
                    }

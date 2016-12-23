@@ -21,6 +21,7 @@ library
                      , Games.Melee
                      , Volume
                      , Label
+                     , Images
                      , ConvNet
                      , Cifar
   build-depends:       base

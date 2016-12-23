@@ -7,6 +7,7 @@ module Conduits ( module Conduit
 
 import Conduit
 import Game
+import Images
 import Util
 import Codec.Picture
 import Codec.Picture.Extra
@@ -59,23 +60,12 @@ parseSink game = go (0 :: Int)
   where go n = do mimg <- await
                   case mimg of
                     Just img ->
-                      do let labeledWidgets = concat . parse game $ img
+                      do let labeledWidgets = concat $ extractWidgets game img
                              dir = "data"</>"out"
                              saveWidget (widget, label) = writePng (dir</>show n ++ "_" ++ show label ++ ".png") widget
                          liftIO $ mapM_ saveWidget labeledWidgets
                          go (n+1)
                     Nothing -> return ()
-
-parse :: Game -> (Palette, [[WidgetLabel]]) -> [[(Palette, WidgetLabel)]]
-parse (Game _ ws) (img, ls) =
-  let w = imageWidth img
-      h = imageHeight img
-      w' x = round $ x * fromIntegral w
-      h' x = round $ x * fromIntegral h
-      getWidgets (Widget r ps (rw, rh) _) =
-        fmap (\(rx, ry) -> scaleBilinear r r $ crop (w' rx) (h' ry) (w' rw) (h' rh) img) ps
-      pair = zipWith zip
-   in pair (fmap getWidgets ws) ls
 
 loopC :: Monad m => m a -> m b
 loopC c = c >> loopC c

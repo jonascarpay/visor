@@ -58,3 +58,4 @@ data Dataset =
       --   sample images
       distort :: Bool
     }
+
