@@ -21,7 +21,7 @@ instance Serialize CifarSample where
   put = error "Error writing CIFAR sample"
   get = do label ::  Word8  <- get
            bytes :: [Word8] <- replicateM (3*1024) get
-           return . CifarSample $ ConvSample (toCifarVolume bytes) ([toLabel label])
+           return . CifarSample $ ConvSample (toCifarVolume bytes) [toLabel label]
 
 sourceCifar :: IOSrc ConvSample
 sourceCifar = sourceDirectoryDeep True ("data" </> "cifar")

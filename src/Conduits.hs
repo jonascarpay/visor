@@ -81,4 +81,3 @@ trainC n@(ConvNet l3s l1s) =
             liftIO . print $ loss
             trainC (ConvNet l3s' l1s')
        Nothing -> return n
-
