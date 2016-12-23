@@ -14,20 +14,28 @@ import Visor
 import Conduit
 import Codec.Picture
 import Codec.Picture.Extra
-import Control.Monad
+import Data.Serialize
+import qualified Data.ByteString as BS
 import System.Directory
 import System.FilePath
 import System.Random
+import System.Random.Shuffle
 
 -- | Loads an image and applies desired transformations
-datasetSource :: Dataset
+datasetSource :: Bool -- ^ Whether or not the list should be in shuffled order.
+                      --   Note that this will build a large cache of filenames
+                      --   and might be slow, especially for large datasets.
+              -> Dataset
               -> IOSrc (Palette, [[WidgetLabel]])
-datasetSource (Dataset root lblFn (Rect x y w h) wig dist) =
-  sourceDirectoryDeep True root .| randomGate 0.05 .| filterC ((/='.') . head . takeFileName) .| loadImageC
+datasetSource shuf (Dataset root lblFn (Rect x y w h) wig dist) =
+       sourceDirectoryDeep True root
+    .| filterC ((/='.') . head . takeFileName)
+    .| (if shuf then shuffleConduit .| loadImageC else loadImageC)
   where
     loadImageC :: IOConduit FilePath (Palette, [[WidgetLabel]])
     loadImageC = awaitForever$
-      \fp -> do o <- liftIO $ loadImage fp
+      \fp -> do liftIO.putStrLn$ "Loading " ++ fp
+                o <- liftIO $ loadImage fp
                 yield o
 
     loadImage :: FilePath -> IO (Palette, [[WidgetLabel]])
@@ -46,14 +54,6 @@ datasetSource (Dataset root lblFn (Rect x y w h) wig dist) =
                           distorted = pixelMap distortColor imgCropped
                       return (if dist then distorted else imgCropped, lblFn fp)
 
-randomGate :: Double -> IOConduit a a
-randomGate p = do mx <- await
-                  p' <- liftIO $ randomRIO (0,1)
-                  case mx of
-                    Just x -> do when (p' < p) (yield x)
-                                 randomGate p
-                    Nothing -> return ()
-
 datasetSink :: IOSink (Palette, [[WidgetLabel]])
 datasetSink = go (0 :: Int)
   where go n = do mimg <- await
@@ -65,6 +65,16 @@ datasetSink = go (0 :: Int)
                          liftIO $ writePng (dir</>filename) img
                          go (n+1)
                     Nothing -> return ()
+
+batchSink :: Int -> IOSink VisorSample
+batchSink batchSize = go (0::Int)
+  where
+    go n = do ms <- takeC batchSize .| sinkList
+              case ms of
+                [] -> return ()
+                s  -> do liftIO$ do createDirectoryIfMissing True ("data"</>"batch")
+                                    BS.writeFile ("data"</>"batch"</>show n ++ ".vbatch") (encode s)
+                         go (n+1)
 
 parseSink :: Game -> IOSink (Palette, [[WidgetLabel]])
 parseSink game = go (0 :: Int)
@@ -91,10 +101,10 @@ trainC n@(ConvNet l3s l1s) =
             trainC (ConvNet l3s' l1s')
        Nothing -> return n
 
-gameSource :: Game -> Dataset -> IOSrc [[ConvSample]]
-gameSource game set = datasetSource set .| mapC (toSamples game)
+gameSource :: Game -> Dataset -> Bool -> IOSrc VisorSample
+gameSource game set shuf = datasetSource shuf set .| mapC (toSamples game)
 
-trainVisorC :: Visor -> Consumer [[ConvSample]] (ResourceT IO) Visor
+trainVisorC :: Visor -> Consumer VisorSample (ResourceT IO) Visor
 trainVisorC v =
   do ms <- await
      case ms of
@@ -102,3 +112,13 @@ trainVisorC v =
                     liftIO . print $ ds
                     trainVisorC v'
        Nothing -> return v
+
+-- | A conduit that drains all elements, shuffles them, and then
+--   yields those elements. Note that this cannot be used on
+--   infinite sources
+shuffleConduit :: IOConduit a a
+shuffleConduit = do elems <- sinkList
+                    let n = length elems
+                    liftIO.putStrLn$ "Shuffling " ++ show n ++ " elements"
+                    seed <- liftIO randomIO
+                    yieldMany $ shuffle' elems n (mkStdGen seed)

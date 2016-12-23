@@ -33,6 +33,9 @@ data ConvSample = ConvSample { sample :: Volume
                              } deriving (Eq, Show, Generic)
 instance Serialize ConvSample
 
+type ConvSampleSequence = [ConvSample]
+type VisorSample = [ConvSampleSequence]
+
 instance Show ConvNet where
   show (ConvNet l3s l1s) = unlines $ ["ConvNet"] ++ l3str ++ [" -"] ++ l1str
     where

@@ -1,8 +1,11 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Images where
 
 import Game
 import Volume
 import ConvNet
+import System.Random
 import Data.Array.Repa
 import Codec.Picture
 import Codec.Picture.Extra

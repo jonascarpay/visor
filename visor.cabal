@@ -46,6 +46,7 @@ library
                      , repa-algorithms
                      , JuicyPixels
                      , JuicyPixels-extra
+                     , random-shuffle
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
                       -fno-warn-orphans

@@ -13,12 +13,12 @@ train' α (ConvNet l3s l1ss, losses) (ConvSample i o) =
   do (_, l3s', l1ss', loss) <- train3 l3s l1ss i o α
      return (ConvNet l3s' l1ss', loss:losses)
 
-trainVisor :: Monad m => Visor -> [[ConvSample]] -> m (Visor, [[[Double]]])
+trainVisor :: Monad m => Visor -> VisorSample -> m (Visor, [[[Double]]])
 trainVisor (Visor nets) css = do zs <- z
                                  let (nets, losses) = unzip zs
                                  return (Visor nets, losses)
   where
-    f :: Monad m => ConvNet -> [ConvSample] -> m (ConvNet, [[Double]])
+    f :: Monad m => ConvNet -> ConvSampleSequence -> m (ConvNet, [[Double]])
     f net cs = foldM (train' 1e-3) (net, []) cs
     z = zipWithM f nets css
 
