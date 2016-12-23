@@ -10,6 +10,7 @@ import Data.Array.Repa
 import Data.Functor.Identity
 import Data.Serialize
 import Volume
+import Util
 
 newtype VecA = VecA Vector deriving Show
 instance Arbitrary VecA where
@@ -63,7 +64,6 @@ instance Arbitrary Layer1A where
                  vElems <- vector k
                  return . Layer1A $ (l, fromListUnboxed (ix1 k) vElems)
 
-a `divs`   b = b `mod` a == 0
 a `approx` b = abs (a-b) < 1e-3
 infix 4 `approx`
 

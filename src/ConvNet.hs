@@ -3,11 +3,12 @@
 
 module ConvNet where
 
-import Control.Monad
-import qualified Data.Array.Repa as R
 import Volume
 import Label
+import Util
+import Control.Monad
 import GHC.Generics (Generic)
+import qualified Data.Array.Repa as R
 import Data.Serialize
 
 -- | A convolutional network for image processing. The [Layer3] part represents
@@ -16,7 +17,9 @@ import Data.Serialize
 --   network. The reason there are multiple output layers is to leverage the
 --   fact that often features look similar and can therefore reuse convolution
 --   kernels.
-data ConvNet = ConvNet [Layer3] [[Layer1]]
+data ConvNet = ConvNet { l3s :: [Layer3]
+                       , l1s :: [[Layer1]]
+                       }
   deriving Generic
 instance Serialize ConvNet
 -- TODO: A good future optimization is
@@ -50,6 +53,7 @@ data LayerSpec
       Int -- ^ Kernel count
   | ReLUS
   | PoolS
+  | FCS Int
   deriving (Eq, Show)
 
 -- TODO: enforce square inputs
@@ -66,11 +70,20 @@ initCNet specs iw ih ds = ConvNet convs fcs
     fcs = fmap (\(d,i) -> [randomFCLayer k d (99 + i), SoftMax]) (zip ds [1..])
 
     unroll3 :: [LayerSpec] -> Int -> Int -> Int -> Int -> (Int, [Layer3])
-    unroll3 []             w h d _ = (d*w*h,[])
-    unroll3 (ReLUS:ls)     w h d r = (ReLU :) <$> unroll3 ls w h d r
-    unroll3 (PoolS:ls)     w h d r = (Pool :) <$> unroll3 ls (w `div` 2) (h `div` 2) d r
-    unroll3 (ConvS s n:ls) w h d r =
-      (randomConvLayer s d n w h r :) <$> unroll3 ls (w-s+1) (h-s+1) n (sq r)
+    unroll3 []         w h d _ = (d*w*h,[])
+    unroll3 (ReLUS:ls) w h d r = (ReLU :) <$> unroll3 ls w h d r
+
+    unroll3 (FCS n:ls) w h d r
+      | w == h = unroll3 (ConvS w n:ls) w h d r
+      | otherwise = error "Non-square input when constructing FC layer"
+
+    unroll3 (PoolS:ls)     w h d r
+      | 2 `divs` w && 2 `divs` h = (Pool :) <$> unroll3 ls (w `div` 2) (h `div` 2) d r
+      | otherwise = error "Non-even dimensions when constructing pooling layer"
+
+    unroll3 (ConvS s n:ls) w h d r
+      | w-s+1 > 0 && h-s+1 > 0 = (randomConvLayer s d n w h r :) <$> unroll3 ls (w-s+1) (h-s+1) n (sq r)
+      | otherwise = error "Convolution kernel is too large"
 
 feed :: Monad m => ConvNet -> Volume -> m [Label]
 feed (ConvNet l3s l1ss) v = do vol <- foldConv v
