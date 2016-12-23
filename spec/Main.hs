@@ -1,10 +1,11 @@
 module Main where
 
 import VolumeSpec
+import Control.Monad
 
 
 main :: IO ()
-main = putStrLn "Hello World"
+main = void runtests
 
 maintest :: IO ()
 maintest = do _ <- runtests

@@ -76,6 +76,13 @@ batchSink batchSize = go (0::Int)
                                     BS.writeFile ("data"</>"batch"</>show n ++ ".vbatch") (encode s)
                          go (n+1)
 
+batchSource :: IOSrc VisorSample
+batchSource = sourceDirectoryDeep True ("data"</>"batch") .| awaitForever load
+  where load fp = do bs <- liftIO$ BS.readFile fp
+                     case decode bs of
+                       Left err -> liftIO$ putStrLn err
+                       Right s  -> yield s
+
 parseSink :: Game -> IOSink (Palette, [[WidgetLabel]])
 parseSink game = go (0 :: Int)
   where go n = do mimg <- await

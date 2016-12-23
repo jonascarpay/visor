@@ -116,7 +116,7 @@ prop_reluSum (VolA a) = once . runIdentity $
   do f  <- forward3 a ReLU
      sf <- sumAllP f
      sa <- sumAllP a
-     return $ sf >= sf
+     return $ sf >= sa
 
 -- zeropad
 prop_zeroPadAssoc (MatA a) (Positive (Small n1)) (Positive (Small n2)) = once$
