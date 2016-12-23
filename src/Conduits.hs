@@ -1,14 +1,16 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Conduits ( module Conduit
                 , module Conduits
                 ) where
 
-import Conduit
+import ConvNet
 import Game
 import Images
 import Util
+import Conduit
 import Codec.Picture
 import Codec.Picture.Extra
 import System.Random
@@ -69,4 +71,14 @@ parseSink game = go (0 :: Int)
 
 loopC :: Monad m => m a -> m b
 loopC c = c >> loopC c
+
+trainC :: ConvNet -> Consumer ConvSample (ResourceT IO) ConvNet
+trainC n@(ConvNet l3s l1s) =
+  do ms <- await
+     case ms of
+       Just (ConvSample x y) ->
+         do (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-2
+            liftIO . print $ loss
+            trainC (ConvNet l3s' l1s')
+       Nothing -> return n
 

@@ -1,5 +1,4 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Rank2Types #-}
 
 module Cifar where
 
@@ -24,24 +23,15 @@ instance Serialize CifarSample where
            bytes :: [Word8] <- replicateM (3*1024) get
            return . CifarSample $ ConvSample (toCifarVolume bytes) ([toLabel label])
 
-sourceCifar :: IOSrc CifarSample
+sourceCifar :: IOSrc ConvSample
 sourceCifar = sourceDirectoryDeep True ("data" </> "cifar")
            .| filterC ((==".bin") . takeExtension)
            .| awaitForever sourceFileBS
            .| conduitGet2 (get :: Get CifarSample)
+           .| mapC getSample
 
 cifarNet :: ConvNet
 cifarNet = initCNet [ConvS 5 64, ReLUS, PoolS, ConvS 5 64, ReLUS, PoolS] 32 32 [10]
-
-train3C :: ConvNet -> Consumer CifarSample (ResourceT IO) ConvNet
-train3C n@(ConvNet l3s l1s) =
-  do ms <- await
-     case ms of
-       Just (CifarSample (ConvSample x y)) ->
-         do (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-2
-            liftIO . print $ loss
-            train3C (ConvNet l3s' l1s')
-       Nothing -> return n
 
 -- TODO: Enforce 0-1 normalization?
 rgbToImage :: Volume -> DynamicImage
