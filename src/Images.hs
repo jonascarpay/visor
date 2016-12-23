@@ -17,5 +17,13 @@ extractWidgets (Game _ ws) (img, ls) =
       pair = Prelude.zipWith zip
    in pair (fmap getWidgets ws) ls
 
-toVolume :: Palette -> Volume
-toVolume img = undefined
+toVolume :: Monad m => Palette -> m Volume
+toVolume img = computeP $ fromFunction sh fn
+  where
+    w = imageWidth img
+    h = imageHeight img
+    sh = Z:.3:.h:.w
+    fn (Z:.0:.y:.x) = let PixelRGB8 r _ _ = pixelAt img x y in fromIntegral r / 255
+    fn (Z:.1:.y:.x) = let PixelRGB8 _ g _ = pixelAt img x y in fromIntegral g / 255
+    fn (Z:.2:.y:.x) = let PixelRGB8 _ _ b = pixelAt img x y in fromIntegral b / 255
+    fn _ = undefined

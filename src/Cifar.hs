@@ -22,7 +22,7 @@ instance Serialize CifarSample where
   put = error "Error writing CIFAR sample"
   get = do label ::  Word8  <- get
            bytes :: [Word8] <- replicateM (3*1024) get
-           return . CifarSample $ ConvSample (toCifarVolume bytes) (toLabel label)
+           return . CifarSample $ ConvSample (toCifarVolume bytes) ([toLabel label])
 
 sourceCifar :: IOSrc CifarSample
 sourceCifar = sourceDirectoryDeep True ("data" </> "cifar")
@@ -77,6 +77,6 @@ imageSink = go (0 :: Int)
   where go n = do mimg <- await
                   case mimg of
                     Just (CifarSample (ConvSample x y)) ->
-                      do liftIO $ savePngImage ("data" </> "cifar" </> show n ++ "_" ++ show (fromLabel y) ++ ".png") (rgbToImage x)
+                      do liftIO $ savePngImage ("data" </> "cifar" </> show n ++ "_" ++ show y ++ ".png") (rgbToImage x)
                          go (n+1)
                     Nothing -> return ()

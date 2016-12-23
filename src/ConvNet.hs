@@ -29,7 +29,7 @@ instance Serialize ConvNet
 -- has better performance.
 
 data ConvSample = ConvSample { sample :: Volume
-                             , label :: Label
+                             , label  :: [Label]
                              } deriving (Eq, Show, Generic)
 instance Serialize ConvSample
 
@@ -95,12 +95,12 @@ train3 :: Monad m
        => [Layer3]
        -> [[Layer1]]
        -> Volume
-       -> Label
+       -> [Label]
        -> Double
        -> m (Volume, [Layer3], [[Layer1]], [Double])
-train3 [] l1ss x y α = do
+train3 [] l1ss x ys α = do
   f <- flatten x
-  rs <- forM l1ss (\l1s -> train1 l1s f y α)
+  rs <- forM (zip l1ss ys) (\ (l1,y) -> train1 l1 f y α)
 
   let (dfs, l1s', losses) = unzip3 rs
       df' = foldr1 (R.+^) (fmap R.delay dfs)

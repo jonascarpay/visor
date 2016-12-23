@@ -22,4 +22,6 @@ main' ["cifar"] =
   do net <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 600) (train3C cifarNet)
      saveWeightImages net
 
+main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
+
 main' _ = putStrLn "No valid command line argument given"
