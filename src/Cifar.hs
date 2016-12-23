@@ -62,11 +62,11 @@ saveWeightImages (ConvNet l3s _) = do ms <- Prelude.traverse splitW $ getWeights
       do m' <- greyScaleToImage m
          savePngImage ("data" </> "cifar" </> show li ++ "_" ++ show wi ++ ".png") m'
 
-imageSink :: IOSink CifarSample
+imageSink :: IOSink ConvSample
 imageSink = go (0 :: Int)
   where go n = do mimg <- await
                   case mimg of
-                    Just (CifarSample (ConvSample x y)) ->
+                    Just (ConvSample x y) ->
                       do liftIO $ savePngImage ("data" </> "cifar" </> show n ++ "_" ++ show y ++ ".png") (rgbToImage x)
                          go (n+1)
                     Nothing -> return ()

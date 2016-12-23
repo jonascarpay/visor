@@ -3,6 +3,7 @@
 module Main where
 
 import Cifar
+import Visor
 import Conduits
 import Data.Conduit.Async
 import Games.Melee
@@ -21,8 +22,10 @@ main' ["cifar"] =
   do net <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 600) (trainC cifarNet)
      saveWeightImages net
 
-main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
+main' ["melee"] =
+  do net <- runResourceT $ buffer 1 (loopC (gameSource melee dolphin_sets) .| takeC 600) (trainVisorC (gameVisor melee))
+     undefined
 
-main' ["trainMelee"] = runResourceT $ buffer 1 (datasetSource dolphin_sets) undefined
+main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
 
 main' _ = putStrLn "No valid command line argument given"

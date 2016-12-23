@@ -5,6 +5,7 @@ module Game where
 
 import Util
 import Label
+import ConvNet
 
 -- | A Game defines where to get a certain data set,
 -- and what features to extract from it
@@ -33,7 +34,8 @@ data Widget =
       --   takes. A digit, for example, would have a cardinality of 10. Note that
       --   Each feature is hardcoded to have an additional 'undefined/indeterminate'
       --   output, that is used in case the feature does not occur.
-      cardinalities :: [Int]
+      cardinalities :: [Int],
+      netSpec :: [LayerSpec]
     }
 
 type WidgetLabel = [Label]

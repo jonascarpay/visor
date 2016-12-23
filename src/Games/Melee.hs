@@ -1,7 +1,6 @@
 module Games.Melee where
 
 import Game
-import Visor
 import ConvNet
 import Util
 import Label
@@ -22,6 +21,7 @@ dmgStocks = Widget { resolution = 32
                    , position = [(w 36, h 762), (w 336, h 762)]
                    , dimensions = (w 300, h 260)
                    , cardinalities = [10, 10, 10, 4]
+                   , netSpec = [ConvS 9 64, ReLUS, PoolS, ConvS 6 64, ReLUS, PoolS]
                    }
 
 screenWidth, screenHeight :: Double
@@ -30,10 +30,6 @@ screenHeight = 1028
 w, h :: Double -> Double
 w x = x / screenWidth
 h y = y / screenHeight
-
-meleeVisor = Visor [net]
-  where
-    net = initCNet meleespec 32 32 [10, 10, 10, 4]
 
 ssbm_root :: FilePath
 ssbm_root = "/Users/jmc/tmp/"

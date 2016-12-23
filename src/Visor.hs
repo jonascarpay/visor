@@ -1,9 +1,10 @@
 module Visor where
 
 import ConvNet
+import Game
 import Control.Monad
 
-newtype Visor = Visor [ConvNet]
+newtype Visor = Visor [ConvNet] deriving Show
 
 -- | Specialized training function for monadic folding. The List of doubles
 --   accumulates losses.
@@ -20,3 +21,7 @@ trainVisor (Visor nets) css = do zs <- z
     f :: Monad m => ConvNet -> [ConvSample] -> m (ConvNet, [[Double]])
     f net cs = foldM (train' 1e-3) (net, []) cs
     z = zipWithM f nets css
+
+gameVisor :: Game -> Visor
+gameVisor (Game _ ws) = Visor (fmap widgetNet ws)
+  where widgetNet (Widget res _ _ cs spec) = initCNet spec res res cs
