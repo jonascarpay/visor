@@ -81,7 +81,7 @@ batchSource = sourceDirectoryDeep True ("data"</>"batch") .| awaitForever load
   where load fp = do bs <- liftIO$ BS.readFile fp
                      case decode bs of
                        Left err -> liftIO$ putStrLn err
-                       Right s  -> yield s
+                       Right (s :: [VisorSample])  -> yieldMany s
 
 parseSink :: Game -> IOSink (Palette, [[WidgetLabel]])
 parseSink game = go (0 :: Int)

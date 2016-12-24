@@ -19,7 +19,7 @@ trainVisor (Visor nets) css = do zs <- z
                                  return (Visor nets, losses)
   where
     f :: Monad m => ConvNet -> ConvSampleSequence -> m (ConvNet, [[Double]])
-    f net cs = foldM (train' 1e-3) (net, []) cs
+    f net cs = foldM (train' 5e-3) (net, []) cs
     z = zipWithM f nets css
 
 gameVisor :: Game -> Visor

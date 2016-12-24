@@ -25,6 +25,12 @@ main' ["meleeRaw"] =
                                    (trainVisorC (gameVisor melee))
      saveWeightImages (head net)
 
+main' ["melee"] =
+  do Visor net <- runResourceT $ buffer 1
+                                   (loopC batchSource .| takeC 6000)
+                                   (trainVisorC (gameVisor melee))
+     saveWeightImages (head net)
+
 main' ["genBatch", read->n] =
   runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
 
