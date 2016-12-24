@@ -21,13 +21,14 @@ main' ["parseTest"] = runResourceT $ buffer 1 (datasetSource False dolphin_sets)
 -- Trains the initial visor directly from the dataset, without intermediate batches
 main' ["meleeRaw"] =
   do Visor net <- runResourceT $ buffer 1
-                                   (loopC (gameSource melee dolphin_sets False) .| takeC 6000)
+                                   (loopC (gameSource melee dolphin_sets False) .| takeC 10000)
                                    (trainVisorC (gameVisor melee))
      saveWeightImages (head net)
 
-main' ["melee"] =
+main' ["melee", n] =
   do Visor net <- runResourceT $ buffer 1
-                                   (loopC batchSource .| takeC 6000)
+                                   ( if n == "all" then batchSource
+                                                   else loopC batchSource .| takeC (read n))
                                    (trainVisorC (gameVisor melee))
      saveWeightImages (head net)
 

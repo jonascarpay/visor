@@ -34,11 +34,11 @@ relToAbs (fromIntegral -> w) (fromIntegral -> h) (Rect rx ry rw rh)
 
 printDoubleThresholded :: Double -> Double -> String
 printDoubleThresholded t x = (if x < t then green else red) ++ show x ++ reset
-  where green = "\x1b[96m"
+  where green = "\x1b[0m"
         red   = "\x1b[94m"
         reset = "\x1b[0m"
 
 printLosses :: [[[Double]]] -> String
 printLosses (head -> dss) = intercalate "\n" . fmap f $ dss
-  where f = intercalate "\t" . fmap (printDoubleThresholded 0.3)
+  where f = intercalate "\t" . fmap (printDoubleThresholded 0.7)
 
