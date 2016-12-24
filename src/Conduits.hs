@@ -81,7 +81,7 @@ batchSource = sourceDirectoryDeep True ("data"</>"batch") .| awaitForever load
   where load fp = do bs <- liftIO$ BS.readFile fp
                      case decode bs of
                        Left err -> liftIO$ putStrLn err
-                       Right s  -> yield s
+                       Right (s :: [VisorSample])  -> yieldMany s
 
 parseSink :: Game -> IOSink (Palette, [[WidgetLabel]])
 parseSink game = go (0 :: Int)
@@ -112,13 +112,15 @@ gameSource :: Game -> Dataset -> Bool -> IOSrc VisorSample
 gameSource game set shuf = datasetSource shuf set .| mapC (toSamples game)
 
 trainVisorC :: Visor -> Consumer VisorSample (ResourceT IO) Visor
-trainVisorC v =
-  do ms <- await
-     case ms of
-       Just s -> do (v', ds) <- trainVisor v s
-                    liftIO . print $ ds
-                    trainVisorC v'
-       Nothing -> return v
+trainVisorC v = go v (0::Int)
+  where
+    go v n =
+      do ms <- await
+         case ms of
+           Just s -> do (v', ds) <- trainVisor v s
+                        liftIO . putStrLn . (++ ('\t':show n)) . printLosses $ ds
+                        go v' (n+1)
+           Nothing -> return v
 
 -- | A conduit that drains all elements, shuffles them, and then
 --   yields those elements. Note that this cannot be used on
