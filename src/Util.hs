@@ -18,9 +18,9 @@ readDigit '9' = Label 9
 readDigit '0' = Label 0
 readDigit _   = Indeterminate
 
-type IOSrc a       = Source (ResourceT IO) a
+type IOSrc     a   = Source    (ResourceT IO) a
 type IOConduit a b = Conduit a (ResourceT IO) b
-type IOSink a      = Sink a (ResourceT IO) ()
+type IOSink    a   = Sink    a (ResourceT IO) ()
 
 data Rect a = Rect { rx :: a
                    , ry :: a

@@ -57,25 +57,6 @@ instance Show Layer3 where
       dimW = show . extent $ w
       dimB = show . extent $ b
 
--- | A network layer that takes vectors as both its input and output.
---   Note that, for now, there is no ReLU defined. This means that the only
---   uesful architecture for the output is a single FC layer, followed by a
---   single softmax layer.
-data Layer1
-  = FC -- ^ A fully connected layer as is usually employed in NN's.
-      Matrix -- ^ The weight matrix.
-      Vector -- ^ The bias vector
-  | SoftMax -- ^ A Softmax activation function layer.
-  deriving (Eq, Generic)
-instance Serialize Layer1
-
-instance Show Layer1 where
-  show SoftMax    = "SoftMax"
-  show (FC w b) = "FC dimW: " ++ dimW ++ " dimB: " ++ dimB
-    where
-      dimW = show . listOfShape . extent $ w
-      dimB = show . listOfShape . extent $ b
-
 -- | Apply a volume to a Layer3
 forward3 :: Monad m -- ^ Repa requires some monad in order to guarantee
                     --   that parallel evaluations are executed sequentially.
@@ -87,14 +68,30 @@ forward3 x (Conv w b) = w `corr` x >>= computeP . (+^ b)
 forward3 x ReLU       = computeP $ R.map (max 0) x
 forward3 x Pool       = pool x
 
--- | Layer1 equivalent of forward3
-forward1 :: Monad m => Vector -> Layer1 -> m Vector
-forward1 x (FC w b) = computeP $ x `vmmult` w +^ b
+softMax :: Monad m => Vector -> [Int] -> m Vector
+softMax x cs = do maxElem <- foldAllP max (-1/0) x
+                  (exps   :: Vector) <- computeP $ R.map (exp . subtract maxElem) x
+                  let splits = splitCs cs $ toUnboxed exps
+                      crossEntropy = DV.concat $ fmap normalize splits
+                  return $ fromUnboxed (extent x) crossEntropy
 
-forward1 x SoftMax = do maxElem <- foldAllP max (-1/0) x
-                        exps   :: Vector <- computeP $ R.map (exp . subtract maxElem) x
-                        sumExp :: Double <- sumAllP exps
-                        computeP $ R.map (/sumExp) exps
+splitCs :: [Int] -> DV.Vector Double -> [DV.Vector Double]
+splitCs [] _ = []
+splitCs (c:cs) rem = let (h,t) = DV.splitAt c rem in h:splitCs cs t
+
+normalize :: DV.Vector Double -> DV.Vector Double
+normalize vec = DV.map (/s) vec
+  where s = DV.sum vec
+
+softMaxBackward :: Monad m => Vector -> [Int] -> [Label] -> m Vector
+softMaxBackward vec cs ls = computeP$ R.traverse vec id lkFn
+  where
+    offsets = scanl (+) 0 cs
+    ixs = Prelude.zipWith (+) offsets (fromLabel <$> ls)
+    lkFn lkUp (Z:.i) = if i `elem` ixs then lkUp (ix1 i) -1 else lkUp (ix1 i)
+
+getMaxima :: Vector -> [Int] -> [Int]
+getMaxima = undefined
 
 -- | Propagate an error gradient backwards through a Layer3. Some arguments
 --   are calculated during the forward pass. We could recalculate them
@@ -123,16 +120,6 @@ backward3 Pool x y dy _ _ =
 backward3 ReLU _ y dy _ _ =
   do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) dy y
      return (ReLU, dx)
-
--- | Layer1 equivalent of backward3
-backward1 :: Monad m => Layer1 -> Vector -> Vector -> Vector -> Double -> Double -> m (Layer1, Vector)
-backward1 SoftMax  _ _ dy _ _ = return (SoftMax, dy)
-
-backward1 (FC w b) x _ dy _ α = do dx <- computeP $ dy `vmmult` transpose w
-                                   let df = transpose $ x `vvmult` dy
-                                   w' <- computeP $ R.zipWith (\x d -> x-d*α) w df
-                                   b' <- computeP $ R.zipWith (\x d -> x-d*α) b dy
-                                   return (FC w' b', dx)
 
 -- TODO: backprop van pooling moet extent-invariant worden
 -- | Max-pooling function for volumes
@@ -307,16 +294,6 @@ randomConvLayer ks kd kn iw ih seed = Conv w b
   where
     w = randomishDoubleArray (Z:.kn:.kd:.ks:.ks)       1e-2 (-1e-2) seed
     b = randomishDoubleArray (Z:.kn:.ih-ks+1:.iw-ks+1) 1e-2 (-1e-2) (seed+1)
-
-
-randomFCLayer :: Int -- ^ Input dimensionality
-              -> Int -- ^ Output dimensionality
-              -> Int -- ^ RNG Seed
-              -> Layer1
-randomFCLayer k d seed = FC w b
-  where
-    w = randomishDoubleArray (Z:.k:.d) 1e-2 (-1e-2) seed
-    b = randomishDoubleArray (Z:.d)    1e-2 (-1e-2) (seed+1)
 
 toCifarVolume :: [Word8] -> Volume
 toCifarVolume = fromListUnboxed (Z:.3:.32:.32) . fmap ((/255) . fromIntegral)

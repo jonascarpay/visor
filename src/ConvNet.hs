@@ -17,9 +17,8 @@ import Data.Serialize
 --   network. The reason there are multiple output layers is to leverage the
 --   fact that often features look similar and can therefore reuse convolution
 --   kernels.
-data ConvNet = ConvNet { l3s :: [Layer3]
-                       , l1s :: [[Layer1]]
-                       }
+data ConvNet = ConvNet [Layer3] [Int]
+
   deriving Generic
 instance Serialize ConvNet
 -- TODO: A good future optimization is
@@ -36,6 +35,8 @@ data ConvSample = ConvSample { sample :: Volume
                              } deriving (Eq, Show, Generic)
 instance Serialize ConvSample
 
+-- | When a widget occurs more than one in an image, extracting them
+--   gives a sequence of samples rather than a single sample
 type ConvSampleSequence = [ConvSample]
 type VisorSample = [ConvSampleSequence]
 
@@ -62,7 +63,7 @@ initCNet :: [LayerSpec] -- ^ Spec of the convolutional part of the network
         -> Int -- ^ Input height
         -> [Int] -- ^ Output dimensionalities
         -> ConvNet
-initCNet specs iw ih ds = ConvNet convs fcs
+initCNet specs iw ih ds = ConvNet convs ds
   where
     sq x = x^(2::Int)
 
