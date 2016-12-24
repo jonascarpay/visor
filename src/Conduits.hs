@@ -116,7 +116,7 @@ trainVisorC v =
   do ms <- await
      case ms of
        Just s -> do (v', ds) <- trainVisor v s
-                    liftIO . print $ ds
+                    liftIO . putStrLn . printLosses $ ds
                     trainVisorC v'
        Nothing -> return v
 
