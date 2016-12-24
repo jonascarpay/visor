@@ -53,14 +53,24 @@ greyScaleToImage img = do img' <- lerp img 0 255
     arrLkUp a x y = let v = a ! ix2 y x
                      in PixelRGB8 (round v) (round v) (round v)
 
+rgbNormalizeToImage :: Monad m => Volume -> m DynamicImage
+rgbNormalizeToImage img = do img' <- lerp img 0 255
+                             return . ImageRGB8 $ generateImage (arrLkUp img') w h
+  where
+    Z:.3:.h:.w = extent img
+    arrLkUp a x y = let r = a ! ix3 0 y x
+                        g = a ! ix3 1 y x
+                        b = a ! ix3 2 y x
+                     in PixelRGB8 (round r) (round g) (round b)
+
 -- The `take 1` hard codes this to only save images from the first layer
 saveWeightImages :: ConvNet -> IO ()
 saveWeightImages (ConvNet l3s _) = do ms <- Prelude.traverse splitW $ getWeights l3s
-                                      _ <-sequence [ saveFn m li wi | (li, m') <- zip [1..] (take 1 ms), (wi, m) <- zip [1..] m']
+                                      _  <- sequence [ saveFn m li wi | (li, m') <- zip [1..] (take 1 ms), (wi, m) <- zip [1..] m']
                                       return ()
   where
     saveFn m (li::Int) (wi::Int) =
-      do m' <- greyScaleToImage m
+      do m' <- rgbNormalizeToImage m
          createDirectoryIfMissing True ("data"</>"weights")
          savePngImage ("data" </> "weights" </> show li ++ "_" ++ show wi ++ ".png") m'
 
