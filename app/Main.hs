@@ -26,8 +26,7 @@ main' ["meleeRaw"] =
      saveWeightImages (head net)
 
 main' ["genBatch", read->n] =
-  runConduitRes $ gameSource melee dolphin_sets True
-               .| batchSink n
+  runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
 
 -- Test training on CIFAR-10 dataset
 main' ["cifar"] =
