@@ -11,6 +11,7 @@ import Data.Functor.Identity
 import Data.Serialize
 import Volume
 import Util
+import Label
 
 newtype VecA = VecA Vector deriving Show
 instance Arbitrary VecA where
@@ -55,14 +56,7 @@ instance Arbitrary Layer3A where
                  vElems <- vector (is*is*d)
                  return . Layer3A $ (l, fromListUnboxed (ix3 d is is) vElems)
 
-newtype Layer1A = Layer1A (Layer1, Vector) deriving Show
-instance Arbitrary Layer1A where
-  arbitrary = do Positive (Small k) <- arbitrary
-                 Positive (Small d) <- arbitrary
-                 seed <- arbitrary
-                 l <- elements [ SoftMax, randomFCLayer k d seed]
-                 vElems <- vector k
-                 return . Layer1A $ (l, fromListUnboxed (ix1 k) vElems)
+--TODO: Generate a softmax sample with arbitrary cardinalities and labels
 
 a `approx` b = abs (a-b) < 1e-3
 infix 4 `approx`
@@ -179,13 +173,13 @@ prop_corrScalarMultiplicationAssociativity (VolA a) (VolA b) (c :: Double) = onc
 
 -- SoftMax
 prop_SoftMaxSum1 (VecA a) = runIdentity $
-  do probs <- forward1 a SoftMax
-     sum <- sumAllP probs
+  do y <- softMax a [size . extent $ a]
+     sum <- sumAllP y
      return $ sum `approx` 1
 
 prop_SoftMaxMaxElemInvariant (VecA a) = runIdentity $
-  do probs <- forward1 a SoftMax
-     return $ maxIndex probs == maxIndex a
+  do y <- softMax a [size . extent $ a]
+     return $ maxIndex y == maxIndex a
 
 -- lerp
 prop_LerpMaxElemInvariant (MatA a) (lo) (Positive r) = runIdentity $
@@ -229,16 +223,10 @@ prop_backprop3ZeroGradientLayerInvariant (Layer3A (l, x)) = once$ runIdentity $
      (l', _) <- backward3 l x y d0 0 1
      return (l == l')
 
-prop_backprop1ShapeInvariant (Layer1A (l, x)) = runIdentity $
-  do y <- forward1 x l
-     (_, dx) <- backward1 l x y y 0 0
-     return (extent x == extent dx)
-
-prop_backprop1ZeroGradientLayerInvariant (Layer1A (l, x)) = runIdentity $
-  do y <- forward1 x l
-     d0 <- computeP $ map (const 0) y
-     (l', _) <- backward1 l x y d0 0 1
-     return (l == l')
+prop_softMaxBackwardShapeInvariant (VecA a) = runIdentity $
+  do y <- softMax a [size . extent $ a]
+     dx <- softMaxBackward y [size.extent$ a] [Indeterminate]
+     return (extent a == extent dx)
 
 -- Serialize
 prop_SerializePutGetInvariantW (WgtA a) = once$ pure a == (decode . encode $ a)

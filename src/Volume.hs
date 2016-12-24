@@ -91,7 +91,7 @@ softMaxBackward vec cs ls = computeP$ R.traverse vec id lkFn
     lkFn lkUp (Z:.i) = if i `elem` ixs then lkUp (ix1 i) -1 else lkUp (ix1 i)
 
 getMaxima :: Vector -> [Int] -> [Int]
-getMaxima = undefined
+getMaxima vec cs = DV.maxIndex <$> splitCs cs (toUnboxed vec)
 
 -- | Propagate an error gradient backwards through a Layer3. Some arguments
 --   are calculated during the forward pass. We could recalculate them
