@@ -3,6 +3,7 @@
 module Cifar where
 
 import Util
+import Visor
 import ConvNet
 import Volume
 import Label
@@ -64,15 +65,17 @@ rgbNormalizeToImage img = do img' <- lerp img 0 255
                      in PixelRGB8 (round r) (round g) (round b)
 
 -- The `take 1` hard codes this to only save images from the first layer
-saveWeightImages :: ConvNet -> IO ()
-saveWeightImages (ConvNet l3s _) = do ms <- Prelude.traverse splitW $ getWeights l3s
-                                      _  <- sequence [ saveFn m li wi | (li, m') <- zip [1..] (take 1 ms), (wi, m) <- zip [1..] m']
-                                      return ()
+saveWeightImages :: Visor -> IO ()
+saveWeightImages (Visor [ConvNet l3s _]) = do ms <- Prelude.traverse splitW $ getWeights l3s
+                                              _  <- sequence [ saveFn m li wi | (li, m') <- zip [1..] (take 1 ms), (wi, m) <- zip [1..] m']
+                                              return ()
   where
     saveFn m (li::Int) (wi::Int) =
       do m' <- rgbNormalizeToImage m
          createDirectoryIfMissing True ("data"</>"weights")
          savePngImage ("data" </> "weights" </> show li ++ "_" ++ show wi ++ ".png") m'
+
+saveWeightImages _ = error "Saving weight images not yet supported for multi-widget visors"
 
 imageSink :: IOSink ConvSample
 imageSink = go (0 :: Int)

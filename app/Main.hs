@@ -7,11 +7,8 @@ import Visor
 import Conduits
 import Data.Conduit.Async
 import Games.Melee
-import Data.Serialize
 import System.Environment
 import System.FilePath
-import System.Directory
-import qualified Data.ByteString as BS
 
 main :: IO ()
 main = getArgs >>= main'
@@ -24,22 +21,22 @@ main' ["parseTest"] = runResourceT $ buffer 1 (datasetSource False dolphin_sets)
 
 -- Trains the initial visor directly from the dataset, without intermediate batches
 main' ["meleeRaw"] =
-  do Visor net <- runResourceT $ buffer 1
+  do visor <- runResourceT $ buffer 1
                                    (loopC (gameSource melee dolphin_sets False) .| takeC 10000)
                                    (trainVisorC (gameVisor melee))
-     saveWeightImages (head net)
+     saveWeightImages visor
 
-main' ["melee", n] =
+main' ["meleeTrain", n] =
   do let dir = "data"</>"visor"
          vFile = dir</>"melee.visor"
-     --exist <- doesFileExist vFile
-     Visor net <- runResourceT $ buffer 1
+
+     visor  <- loadVisor vFile melee
+     visor' <- runResourceT $ buffer 1
                                    ( if n == "all" then batchSource
                                                    else loopC batchSource .| takeC (read n))
-                                   (trainVisorC (gameVisor melee))
-     saveWeightImages (head net)
-     createDirectoryIfMissing True dir
-     BS.writeFile vFile (encode (Visor net))
+                                   (trainVisorC visor)
+     saveWeightImages visor'
+     saveVisor vFile visor'
 
 main' ["genBatch", read->n] =
   runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
@@ -47,7 +44,7 @@ main' ["genBatch", read->n] =
 -- Test training on CIFAR-10 dataset
 main' ["cifar"] =
   do net <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 600) (trainC cifarNet)
-     saveWeightImages net
+     saveWeightImages (Visor [net])
 
 main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
 
