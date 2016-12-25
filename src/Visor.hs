@@ -1,10 +1,15 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Visor where
 
 import ConvNet
 import Game
 import Control.Monad
+import Data.Serialize
+import GHC.Generics (Generic)
 
-newtype Visor = Visor [ConvNet] deriving Show
+newtype Visor = Visor [ConvNet] deriving (Show, Generic)
+instance Serialize Visor
 
 -- | Specialized training function for monadic folding. The List of doubles
 --   accumulates losses.
