@@ -5,6 +5,7 @@ module Main where
 import Cifar
 import Visor
 import Conduits
+import Screen
 import Data.Conduit.Async
 import Games.Melee
 import System.Environment
@@ -27,8 +28,7 @@ main' ["meleeRaw"] =
      saveWeightImages visor
 
 main' ["meleeTrain", n] =
-  do let dir = "data"</>"visor"
-         vFile = dir</>"melee.visor"
+  do let vFile = "data"</>"visor"</>"melee.visor"
 
      visor  <- loadVisor vFile melee
      visor' <- runResourceT $ buffer 1
@@ -37,6 +37,12 @@ main' ["meleeTrain", n] =
                                    (trainVisorC visor)
      saveWeightImages visor'
      saveVisor vFile visor'
+
+main' ["meleeWatch", read -> x, read -> y, read -> w, read -> h] =
+  do let vFile = "data"</>"visor"</>"melee.visor"
+     visor <- loadVisor vFile undefined
+     runConduitRes $ screenSource x y w h
+                  .| watchSink visor melee 0.99
 
 main' ["genBatch", read->n] =
   runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
@@ -48,4 +54,4 @@ main' ["cifar"] =
 
 main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
 
-main' _ = putStrLn "No valid command line argument given"
+main' a = putStrLn $ "Invalid arguments: " ++ unwords a

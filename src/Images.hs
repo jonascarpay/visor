@@ -9,19 +9,34 @@ import Data.Array.Repa
 import Codec.Picture
 import Codec.Picture.Extra
 
-extractWidgets :: Game -> (Palette, [[WidgetLabel]]) -> [[(Palette, WidgetLabel)]]
-extractWidgets (Game _ ws) (img, ls) =
+extractWidgetsLabeled :: Game -> (Palette, [[WidgetLabel]]) -> [[(Palette, WidgetLabel)]]
+extractWidgetsLabeled g (img, ls) = pair imgs ls
+  where pair = Prelude.zipWith zip
+        imgs = extractWidgets g img
+
+extractWidgets :: Game -> Palette -> [[Palette]]
+extractWidgets (Game _ ws) img =
   let w = imageWidth img
       h = imageHeight img
       w' x = round $ x * fromIntegral w
       h' x = round $ x * fromIntegral h
       getWidgets (Widget r ps (rw, rh) _ _) =
         fmap (\(rx, ry) -> scaleBilinear r r $ crop (w' rx) (h' ry) (w' rw) (h' rh) img) ps
-      pair = Prelude.zipWith zip
-   in pair (fmap getWidgets ws) ls
+   in fmap getWidgets ws
 
 toVolume :: Palette -> Volume
 toVolume img = computeS $ fromFunction sh fn
+  where
+    w = imageWidth img
+    h = imageHeight img
+    sh = Z:.3:.h:.w
+    fn (Z:.0:.y:.x) = let PixelRGB8 r _ _ = pixelAt img x y in fromIntegral r / 255
+    fn (Z:.1:.y:.x) = let PixelRGB8 _ g _ = pixelAt img x y in fromIntegral g / 255
+    fn (Z:.2:.y:.x) = let PixelRGB8 _ _ b = pixelAt img x y in fromIntegral b / 255
+    fn _ = undefined
+
+toVolumeP :: Monad m => Palette -> m Volume
+toVolumeP img = computeP $ fromFunction sh fn
   where
     w = imageWidth img
     h = imageHeight img
@@ -38,4 +53,4 @@ toSamples :: Game -> (Palette, [[WidgetLabel]]) -> [[ConvSample]]
 toSamples game ins = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) extracted
   where
     extracted :: [[(Palette, WidgetLabel)]]
-    extracted = extractWidgets game ins
+    extracted = extractWidgetsLabeled game ins

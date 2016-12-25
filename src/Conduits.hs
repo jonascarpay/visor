@@ -88,7 +88,7 @@ parseSink game = go (0 :: Int)
   where go n = do mimg <- await
                   case mimg of
                     Just img ->
-                      do let labeledWidgets = concat $ extractWidgets game img
+                      do let labeledWidgets = concat $ extractWidgetsLabeled game img
                              dir = "data"</>"out"
                              saveWidget (widget, label) = writePng (dir</>show n ++ "_" ++ show label ++ ".png") widget
                          liftIO $ mapM_ saveWidget labeledWidgets
@@ -121,6 +121,11 @@ trainVisorC v = go v (0::Int)
                         liftIO . putStrLn . (++ ('\t':show n)) . printLosses $ ds
                         go v' (n+1)
            Nothing -> return v
+
+watchSink :: Visor -> Game -> Double -> IOSink Palette
+watchSink v g t = mapC (extractWidgets g)
+               .| mapMC (\img -> feedVisor v img t)
+               .| mapM_C (liftIO . print)
 
 -- | A conduit that drains all elements, shuffles them, and then
 --   yields those elements. Note that this cannot be used on

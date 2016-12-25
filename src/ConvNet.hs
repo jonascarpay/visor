@@ -81,6 +81,15 @@ feed (ConvNet l3s l1ss) v = do vol <- foldConv v
     foldConv vol = foldM forward3 vol l3s
     foldFC   vec = mapM (foldM forward1 vec) l1ss
 
+feedThresholded :: Monad m => Double -> ConvNet -> Volume -> m [Label]
+feedThresholded t (ConvNet l3s l1ss) v = do vol <- foldConv v
+                                            vec <- flatten vol
+                                            ys  <- foldFC vec
+                                            return $ fmap (findThreshold t) ys
+  where
+    foldConv vol = foldM forward3 vol l3s
+    foldFC   vec = mapM (foldM forward1 vec) l1ss
+
 train1 :: Monad m
        => [Layer1]
        -> Vector

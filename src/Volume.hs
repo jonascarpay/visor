@@ -280,6 +280,9 @@ dataLoss p (fromLabel -> i) = negate . log $ linearIndex p i
 maxIndex :: Vector -> Label
 maxIndex = toLabel . DV.maxIndex . toUnboxed
 
+findThreshold :: Double -> Vector -> Label
+findThreshold t = maybe Indeterminate Label . DV.findIndex (>t) . toUnboxed
+
 maxElem :: (Source r Double, Shape sh, Monad m) => Array r sh Double -> m Double
 maxElem = foldAllP max (-1/0)
 
