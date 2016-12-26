@@ -4,6 +4,7 @@ module Main where
 
 import Cifar
 import Visor
+import Images
 import Conduits
 import Screen
 import Data.Conduit.Async
@@ -18,7 +19,12 @@ main' :: [String] -> IO ()
 
 main' ["datasetTest"] = runResourceT $ buffer 1 (datasetSource False dolphin_sets) datasetSink
 
-main' ["parseTest"] = runResourceT $ buffer 1 (datasetSource False dolphin_sets) (parseSink melee)
+main' ["parseTest"] = runResourceT $ buffer 1 ( datasetSource False dolphin_sets
+                                             .| mapC (extractWidgetsLabeled melee)
+                                              )
+                                              parseSink
+
+main' ["batchParseTest"] = runResourceT $ buffer 1 (batchSource .| unpackBatch) parseSink
 
 -- Trains the initial visor directly from the dataset, without intermediate batches
 main' ["meleeRaw"] =
@@ -42,7 +48,8 @@ main' ["meleeWatch", read -> x, read -> y, read -> w, read -> h] =
   do let vFile = "data"</>"visor"</>"melee.visor"
      visor <- loadVisor vFile undefined
      runConduitRes $ screenSource x y w h
-                  .| watchSink visor melee 0.99
+                  .| watchC visor melee 0.99
+                  .| mapM_C (liftIO.print)
 
 main' ["genBatch", read->n] =
   runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)

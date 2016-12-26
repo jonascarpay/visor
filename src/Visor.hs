@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Visor where
 
@@ -6,6 +7,7 @@ import Label
 import ConvNet
 import Game
 import Images
+import Volume
 import Control.Monad
 import Data.Serialize
 import GHC.Generics (Generic)
@@ -58,3 +60,17 @@ loadVisor fp game = do exist <- doesFileExist fp
 saveVisor :: Serialize a => FilePath -> a -> IO ()
 saveVisor fp visor = do createDirectoryIfMissing True (takeDirectory fp)
                         BS.writeFile fp (encode visor)
+
+-- The `take 1` hard codes this to only save images from the first layer
+saveWeightImages :: Visor -> IO ()
+saveWeightImages (Visor [ConvNet l3s _]) = do ms <- Prelude.traverse splitW $ getWeights l3s
+                                              _  <- sequence [ saveFn m li wi | (li, m') <- zip [1..] (take 1 ms), (wi, m) <- zip [1..] m']
+                                              return ()
+  where
+    saveFn m (li::Int) (wi::Int) =
+      do m' <- rgbNormalizeToImage m
+         createDirectoryIfMissing True ("data"</>"weights")
+         savePngImage ("data" </> "weights" </> show li ++ "_" ++ show wi ++ ".png") m'
+
+saveWeightImages _ = error "Saving weight images not yet supported for multi-widget visors"
+

@@ -5,8 +5,8 @@ module Images where
 import Game
 import Volume
 import ConvNet
-import Visor
-import Data.Array.Repa
+--import Visor
+import Data.Array.Repa hiding ((++))
 import Codec.Picture
 import Codec.Picture.Extra
 
@@ -55,7 +55,7 @@ toSamples game ins = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) e
   where
     extracted :: [[(Palette, WidgetLabel)]]
     extracted = extractWidgetsLabeled game ins
---
+
 -- TODO: Enforce 0-1 normalization?
 rgbToImage :: Volume -> DynamicImage
 rgbToImage vol = ImageRGB8 $ generateImage convFn w h
@@ -84,25 +84,3 @@ rgbNormalizeToImage img = do img' <- lerp img 0 255
                         g = a ! ix3 1 y x
                         b = a ! ix3 2 y x
                      in PixelRGB8 (round r) (round g) (round b)
-
--- The `take 1` hard codes this to only save images from the first layer
-saveWeightImages :: Visor -> IO ()
-saveWeightImages (Visor [ConvNet l3s _]) = do ms <- Prelude.traverse splitW $ getWeights l3s
-                                              _  <- sequence [ saveFn m li wi | (li, m') <- zip [1..] (take 1 ms), (wi, m) <- zip [1..] m']
-                                              return ()
-  where
-    saveFn m (li::Int) (wi::Int) =
-      do m' <- rgbNormalizeToImage m
-         createDirectoryIfMissing True ("data"</>"weights")
-         savePngImage ("data" </> "weights" </> show li ++ "_" ++ show wi ++ ".png") m'
-
-saveWeightImages _ = error "Saving weight images not yet supported for multi-widget visors"
-
-imageSink :: IOSink ConvSample
-imageSink = go (0 :: Int)
-  where go n = do mimg <- await
-                  case mimg of
-                    Just (ConvSample x y) ->
-                      do liftIO $ savePngImage ("data" </> "cifar" </> show n ++ "_" ++ show y ++ ".png") (rgbToImage x)
-                         go (n+1)
-                    Nothing -> return ()
