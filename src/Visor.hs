@@ -48,9 +48,12 @@ feedVisor (Visor nets) imgss t = zipWithM (feedMany t) nets imgss
 loadVisor :: FilePath -> Game -> IO Visor
 loadVisor fp game = do exist <- doesFileExist fp
                        if exist then do bs <- BS.readFile fp
+                                        putStrLn $ "Loading " ++ fp
                                         let Right v = decode bs
                                         return v
-                                else return $ gameVisor game
+
+                                else do putStrLn $ "No visor found at " ++ fp ++", initializing new visor for game " ++ title game
+                                        return $ gameVisor game
 
 saveVisor :: Serialize a => FilePath -> a -> IO ()
 saveVisor fp visor = do createDirectoryIfMissing True (takeDirectory fp)
