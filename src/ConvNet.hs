@@ -113,7 +113,9 @@ train3 [] x cs ys α = do
   f <- flatten x
   p <- softMax f cs
   (df,losses) <- softMaxBackward p cs ys
-  dx <- R.computeP $ R.reshape (R.extent x) df
+  dx <- if any (>4) losses
+           then R.computeP $ R.fromFunction (R.extent x) (const 0)
+           else R.computeP $ R.reshape (R.extent x) df
   return (dx, [], losses)
 
 train3 (l:ls) x cs ys α =
