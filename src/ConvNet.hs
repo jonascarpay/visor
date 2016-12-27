@@ -104,40 +104,23 @@ feedThresholded t (ConvNet l3s l1ss) v = do vol <- foldConv v
     foldConv vol = foldM forward3 vol l3s
     foldFC   vec = mapM (foldM forward1 vec) l1ss
 
-train1 :: Monad m
-       => [Layer1]
-       -> Vector
-       -> Label
-       -> Double
-       -> m (Vector, [Layer1], Double)
-train1 [] x y _ = do dx <- subtractOneAt (fromLabel y) x
-                     return (dx, [], dataLoss x y)
-train1 (l:ls) x y α =
-  do f <- forward1 x l
-     (df, ls', loss) <- train1 ls f y α
-     (l', dx) <- backward1 l x f df 0 α
-     return (dx, l':ls', loss)
-
 train3 :: Monad m
-       => [Layer3]
-       -> [[Layer1]]
-       -> Volume
-       -> [Label]
-       -> Double
-       -> m (Volume, [Layer3], [[Layer1]], [Double])
-train3 [] l1ss x ys α = do
+       => [Layer3] -- ^ Network layers
+       -> Volume   -- ^ Input volume
+       -> [Int]    -- ^ Softmax output cardinalities
+       -> [Label]  -- ^ Correct labels
+       -> Double   -- ^ Learning rate
+       -> m (Volume, [Layer3], [Double])
+
+train3 [] x cs ys α = do
   f <- flatten x
-  rs <- forM (zip l1ss ys) (\ (l1,y) -> train1 l1 f y α)
-
-  let (dfs, l1s', losses) = unzip3 rs
-      df' = foldr1 (R.+^) (fmap R.delay dfs)
-
-  df :: Vector <- R.computeP df'
+  p <- softMax f cs
+  (df,losses) <- softMaxBackward p cs ys
   dx <- R.computeP $ R.reshape (R.extent x) df
-  return (dx, [], l1s', losses)
+  return (dx, [], losses)
 
-train3 (l:ls) l1s x y α =
+train3 (l:ls) x cs ys α =
   do f <- forward3 x l
-     (df, l3s', l1s', loss) <- train3 ls l1s f y α
+     (df, l3s', loss) <- train3 ls f cs ys α
      (l', dx) <- backward3 l x f df 0 α
-     return (dx, l':l3s', l1s', loss)
+     return (dx, l':l3s', loss)

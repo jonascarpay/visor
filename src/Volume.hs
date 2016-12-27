@@ -83,11 +83,13 @@ normalize :: DV.Vector Double -> DV.Vector Double
 normalize vec = DV.map (/s) vec
   where s = DV.sum vec
 
-softMaxBackward :: Monad m => Vector -> [Int] -> [Label] -> m Vector
-softMaxBackward vec cs ls = computeP$ R.traverse vec id lkFn
+softMaxBackward :: Monad m => Vector -> [Int] -> [Label] -> m (Vector, [Double])
+softMaxBackward y cs ls = do dx <- computeP$ R.traverse y id lkFn
+                             return (dx, losses)
   where
     offsets = scanl (+) 0 cs
-    ixs = Prelude.zipWith (+) offsets (fromLabel <$> ls)
+    ixs     = Prelude.zipWith (+) offsets (fromLabel <$> ls)
+    losses  = dataLoss y <$> ls
     lkFn lkUp (Z:.i) = if i `elem` ixs then lkUp (ix1 i) -1 else lkUp (ix1 i)
 
 getMaxima :: Vector -> [Int] -> [Int]
