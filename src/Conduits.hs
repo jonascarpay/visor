@@ -66,6 +66,15 @@ datasetSink = go (0 :: Int)
                          go (n+1)
                     Nothing -> return ()
 
+imageSink :: IOSink ConvSample
+imageSink = go (0 :: Int)
+  where go n = do mimg <- await
+                  case mimg of
+                    Just (ConvSample x y) ->
+                      do liftIO $ savePngImage ("data" </> "cifar" </> show n ++ "_" ++ show y ++ ".png") (rgbToImage x)
+                         go (n+1)
+                    Nothing -> return ()
+
 batchSink :: Int -> IOSink VisorSample
 batchSink batchSize = go (0::Int)
   where
@@ -76,6 +85,13 @@ batchSink batchSize = go (0::Int)
                                     BS.writeFile ("data"</>"batch"</>show n ++ ".vbatch") (encode s)
                          go (n+1)
 
+unpackBatch :: Monad m => Conduit VisorSample m [[(Palette,WidgetLabel)]]
+unpackBatch = mapMC (traverse.traverse$convert)
+  where
+    convert :: Monad m => ConvSample -> m (Palette, WidgetLabel)
+    convert (ConvSample vol ls) = do ImageRGB8 img <- rgbNormalizeToImage vol
+                                     return (img, ls)
+
 batchSource :: IOSrc VisorSample
 batchSource = sourceDirectoryDeep True ("data"</>"batch") .| awaitForever load
   where load fp = do bs <- liftIO$ BS.readFile fp
@@ -83,17 +99,22 @@ batchSource = sourceDirectoryDeep True ("data"</>"batch") .| awaitForever load
                        Left err -> liftIO$ putStrLn err
                        Right (s :: [VisorSample])  -> yieldMany s
 
-parseSink :: Game -> IOSink (Palette, [[WidgetLabel]])
-parseSink game = go (0 :: Int)
-  where go n = do mimg <- await
-                  case mimg of
-                    Just img ->
-                      do let labeledWidgets = concat $ extractWidgets game img
-                             dir = "data"</>"out"
-                             saveWidget (widget, label) = writePng (dir</>show n ++ "_" ++ show label ++ ".png") widget
-                         liftIO $ mapM_ saveWidget labeledWidgets
-                         go (n+1)
-                    Nothing -> return ()
+parseSink :: IOSink [[(Palette, WidgetLabel)]]
+parseSink = go (0 :: Int)
+  where
+    dir = "data"</>"out"
+    prep :: Show a => a -> ShowS
+    prep x s = show x ++ "_" ++ s
+    ix xs = zip xs [(1::Int)..]
+    go n = do ms <- await
+              case ms of
+                Just s  -> do liftIO . sequence_ $ [ writePng (dir</>(prep n . prep i . prep j . prep l $ ".png")) img
+                                                   | (s',i) <- ix s
+                                                   , ((img,l),j) <- ix s'
+                                                   ]
+                              liftIO.putStrLn$ "Writing sample " ++ show n
+                              go (n+1)
+                Nothing -> return ()
 
 loopC :: Monad m => m a -> m b
 loopC c = c >> loopC c
@@ -121,6 +142,14 @@ trainVisorC v = go v (0::Int)
                         liftIO . putStrLn . (++ ('\t':show n)) . printLosses $ ds
                         go v' (n+1)
            Nothing -> return v
+
+labelC :: Monad m => Visor -> Game -> Double -> Conduit Palette m [[WidgetLabel]]
+labelC v g t = mapC (extractWidgets g)
+            .| mapMC (\img -> feedVisor v img t)
+
+watchC :: Monad m => Visor -> Game -> Double -> Conduit Palette m [[(Palette,WidgetLabel)]]
+watchC v g t = mapC (extractWidgets g)
+            .| mapMC (\img -> (fmap (zipWith zip img)) $ feedVisor v img t)
 
 -- | A conduit that drains all elements, shuffles them, and then
 --   yields those elements. Note that this cannot be used on

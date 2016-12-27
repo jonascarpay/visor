@@ -52,10 +52,10 @@ dolphin_sets =
             let ["shot",_,stage,framesPassed,p1p,p1s,p2p,p2s] = splitOn "_" (takeBaseName f)
                 ingame = stage /= "0"
                 percentLegible p = take 3 $ if ingame && p /= "X" then asDigits p else repeat Indeterminate
-                p1p' = percentLegible p1p
-                p2p' = percentLegible p2p
-                p1Stocks = if ingame then Label (read p1s) else Indeterminate
-                p2Stocks = if ingame then Label (read p2s) else Indeterminate
+                p1p' = if p1s /= "0" then percentLegible p1p else replicate 3 Indeterminate
+                p2p' = if p2s /= "0" then percentLegible p2p else replicate 3 Indeterminate
+                p1Stocks = if ingame then Label (read p1s) else Label 0
+                p2Stocks = if ingame then Label (read p2s) else Label 0
                 matchLength = 8 * 60 * 60
                 time
                   | not ingame = replicate 3 Indeterminate

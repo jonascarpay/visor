@@ -41,5 +41,6 @@ printDoubleThresholded t x = (if x < t then green else red) ++ show x ++ reset
         reset = "\x1b[0m"
 
 printLosses :: [[[Double]]] -> String
-printLosses (head -> dss) = intercalate "\n" . fmap f $ dss
+printLosses dsss = dsss >>= (intercalate "\n" . fmap f)
   where f = intercalate "\t" . fmap (printDoubleThresholded 0.7)
+

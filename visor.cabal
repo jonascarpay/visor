@@ -24,6 +24,7 @@ library
                      , Images
                      , ConvNet
                      , Visor
+                     , Screen
                      , Cifar
   build-depends:       base
                      , hmatrix
@@ -68,6 +69,10 @@ executable visor-app
                      , QuickCheck
                      , conduit-combinators
                      , stm-conduit
+                     , filepath
+                     , directory
+                     , bytestring
+                     , cereal
 
 test-suite visor-spec
   type:                exitcode-stdio-1.0
