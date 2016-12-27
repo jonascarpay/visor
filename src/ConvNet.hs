@@ -67,22 +67,22 @@ initCNet specs iw ih ds = ConvNet convs ds
   where
     sq x = x^(2::Int)
 
-    (k,convs) = unroll3 specs iw ih 3 9
+    convs = unroll3 specs iw ih 3 9
 
-    unroll3 :: [LayerSpec] -> Int -> Int -> Int -> Int -> (Int, [Layer3])
-    unroll3 []         w h d _ = (d*w*h,[])
-    unroll3 (ReLUS:ls) w h d r = (ReLU :) <$> unroll3 ls w h d r
+    unroll3 :: [LayerSpec] -> Int -> Int -> Int -> Int -> [Layer3]
+    unroll3 []         w h d r = [randomConvLayer w d (sum ds) w h r]
+    unroll3 (ReLUS:ls) w h d r = ReLU : unroll3 ls w h d r
 
     unroll3 (FCS n:ls) w h d r
       | w == h = unroll3 (ConvS w n:ls) w h d r
       | otherwise = error "Non-square input when constructing FC layer"
 
     unroll3 (PoolS:ls)     w h d r
-      | 2 `divs` w && 2 `divs` h = (Pool :) <$> unroll3 ls (w `div` 2) (h `div` 2) d r
+      | 2 `divs` w && 2 `divs` h = Pool : unroll3 ls (w `div` 2) (h `div` 2) d r
       | otherwise = error "Non-even dimensions when constructing pooling layer"
 
     unroll3 (ConvS s n:ls) w h d r
-      | w-s+1 > 0 && h-s+1 > 0 = (randomConvLayer s d n w h r :) <$> unroll3 ls (w-s+1) (h-s+1) n (sq r)
+      | w-s+1 > 0 && h-s+1 > 0 = randomConvLayer s d n w h r : unroll3 ls (w-s+1) (h-s+1) n (sq r)
       | otherwise = error "Convolution kernel is too large"
 
 feed :: Monad m => ConvNet -> Volume -> m [Label]

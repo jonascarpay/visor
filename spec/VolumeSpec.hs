@@ -225,7 +225,7 @@ prop_backprop3ZeroGradientLayerInvariant (Layer3A (l, x)) = once$ runIdentity $
 
 prop_softMaxBackwardShapeInvariant (VecA a) = runIdentity $
   do y <- softMax a [size . extent $ a]
-     dx <- softMaxBackward y [size.extent$ a] [Indeterminate]
+     (dx, _) <- softMaxBackward y [size.extent$ a] [Indeterminate]
      return (extent a == extent dx)
 
 -- Serialize
