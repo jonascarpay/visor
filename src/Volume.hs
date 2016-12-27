@@ -89,7 +89,7 @@ softMaxBackward y cs ls = do dx <- computeP$ R.traverse y id lkFn
   where
     offsets = scanl (+) 0 cs
     ixs     = Prelude.zipWith (+) offsets (fromLabel <$> ls)
-    losses  = dataLoss y <$> ls
+    losses  = dataLoss y . toLabel <$> ixs
     lkFn lkUp (Z:.i) = if i `elem` ixs then lkUp (ix1 i) -1 else lkUp (ix1 i)
 
 getMaxima :: Vector -> [Int] -> [Int]

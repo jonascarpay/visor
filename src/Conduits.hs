@@ -120,13 +120,13 @@ loopC :: Monad m => m a -> m b
 loopC c = c >> loopC c
 
 trainC :: ConvNet -> Consumer ConvSample (ResourceT IO) ConvNet
-trainC n@(ConvNet l3s l1s) =
+trainC n@(ConvNet l3s cs) =
   do ms <- await
      case ms of
        Just (ConvSample x y) ->
-         do (_, l3s', l1s', loss) <- train3 l3s l1s x y 1e-2
+         do (_, l3s', loss) <- train3 l3s x cs y 1e-2
             liftIO . print $ loss
-            trainC (ConvNet l3s' l1s')
+            trainC (ConvNet l3s' cs)
        Nothing -> return n
 
 gameSource :: Game -> Dataset -> Bool -> IOSrc VisorSample
