@@ -39,10 +39,10 @@ gameVisor :: Game -> Visor
 gameVisor (Game _ ws) = Visor (fmap widgetNet ws)
   where widgetNet (Widget res _ _ cs spec) = initCNet spec res res ((+1) <$> cs) -- +1 to account for Indeterminate in cardinality
 
-feedVisor :: Monad m => Visor -> [[Palette]] -> Double -> m [[[Label]]]
+feedVisor :: Monad m => Visor -> [[Palette]] -> Double -> m [[WidgetLabel]]
 feedVisor (Visor nets) imgss t = zipWithM (feedMany t) nets imgss
   where
-    feedMany :: Monad m => Double -> ConvNet -> [Palette] -> m [[Label]]
+    feedMany :: Monad m => Double -> ConvNet -> [Palette] -> m [WidgetLabel]
     feedMany t net imgs = mapM (feed' t net) imgs
     feed' t net img = do vol <- toVolumeP img
                          feedThresholded t net vol

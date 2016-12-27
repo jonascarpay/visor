@@ -48,8 +48,15 @@ main' ["meleeWatch", read -> x, read -> y, read -> w, read -> h] =
   do let vFile = "data"</>"visor"</>"melee.visor"
      visor <- loadVisor vFile undefined
      runConduitRes $ screenSource x y w h
-                  .| watchC visor melee 0.99
+                  .| labelC visor melee 0.99
                   .| mapM_C (liftIO.print)
+
+main' ["watchTest", read -> x, read -> y, read -> w, read -> h] =
+  do let vFile = "data"</>"visor"</>"melee.visor"
+     visor <- loadVisor vFile undefined
+     runConduitRes $ screenSource x y w h
+                  .| watchC visor melee 0.5
+                  .| parseSink
 
 main' ["genBatch", read->n] =
   runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
