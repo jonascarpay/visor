@@ -68,7 +68,6 @@ initCNet specs iw ih ds = ConvNet convs ds
     sq x = x^(2::Int)
 
     (k,convs) = unroll3 specs iw ih 3 9
-    fcs = fmap (\(d,i) -> [randomFCLayer k d (99 + i), SoftMax]) (zip ds [1..])
 
     unroll3 :: [LayerSpec] -> Int -> Int -> Int -> Int -> (Int, [Layer3])
     unroll3 []         w h d _ = (d*w*h,[])
@@ -87,22 +86,20 @@ initCNet specs iw ih ds = ConvNet convs ds
       | otherwise = error "Convolution kernel is too large"
 
 feed :: Monad m => ConvNet -> Volume -> m [Label]
-feed (ConvNet l3s l1ss) v = do vol <- foldConv v
-                               vec <- flatten vol
-                               ys  <- foldFC vec
-                               return $ fmap maxIndex ys
+feed (ConvNet l3s cs) v = do vol <- foldConv v
+                             vec <- flatten vol
+                             ys  <- softMax vec cs
+                             return $ toLabel <$> getMaxima ys cs
   where
     foldConv vol = foldM forward3 vol l3s
-    foldFC   vec = mapM (foldM forward1 vec) l1ss
 
 feedThresholded :: Monad m => Double -> ConvNet -> Volume -> m [Label]
-feedThresholded t (ConvNet l3s l1ss) v = do vol <- foldConv v
-                                            vec <- flatten vol
-                                            ys  <- foldFC vec
-                                            return $ fmap (findThreshold t) ys
+feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
+                                          vec <- flatten vol
+                                          ys  <- softMax vec cs
+                                          return $ getMaximaThresholded ys cs t
   where
     foldConv vol = foldM forward3 vol l3s
-    foldFC   vec = mapM (foldM forward1 vec) l1ss
 
 train3 :: Monad m
        => [Layer3] -- ^ Network layers

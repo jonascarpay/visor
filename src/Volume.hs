@@ -95,18 +95,27 @@ softMaxBackward y cs ls = do dx <- computeP$ R.traverse y id lkFn
 getMaxima :: Vector -> [Int] -> [Int]
 getMaxima vec cs = DV.maxIndex <$> splitCs cs (toUnboxed vec)
 
+findThreshold :: Double -> Vector -> Label
+findThreshold t = maybe Indeterminate toLabel . DV.findIndex (>t) . toUnboxed
+
+getMaximaThresholded ::  Vector -> [Int] -> Double -> [Label]
+getMaximaThresholded vec cs t = find <$> vecs
+  where
+    vecs = splitCs cs (toUnboxed vec)
+    find vec = maybe Indeterminate toLabel . DV.findIndex (>t) $ vec
+
 -- | Propagate an error gradient backwards through a Layer3. Some arguments
 --   are calculated during the forward pass. We could recalculate them
 --   during the backwards pass, but for the sake of both efficiency
 --   and clarity I chose to reuse them from the forward pass. The recursive
 --   definition of the training function makes this work out quite nicely.
 backward3 :: Monad m -- ^ Required by repa for parallel computations
-          => Layer3 -- ^ Layer to backprop through
-          -> Volume -- ^ Input for this layer during the forward pass
-          -> Volume -- ^ Output for this layer during the forward pass
-          -> Volume -- ^ Error gradient on the output of this layer
-          -> Double -- ^ Regularization loss factor. Not yet implemented.
-          -> Double -- ^ Step size/learning rate
+          => Layer3  -- ^ Layer to backprop through
+          -> Volume  -- ^ Input for this layer during the forward pass
+          -> Volume  -- ^ Output for this layer during the forward pass
+          -> Volume  -- ^ Error gradient on the output of this layer
+          -> Double  -- ^ Regularization loss factor. Not yet implemented.
+          -> Double  -- ^ Step size/learning rate
           -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
 backward3 (Conv w b) x _ dy _ α =
   do dx <- w `fullConv` dy
@@ -268,9 +277,6 @@ dataLoss p (fromLabel -> i) = negate . log $ linearIndex p i
 --   converts it into a label.
 maxIndex :: Vector -> Label
 maxIndex = toLabel . DV.maxIndex . toUnboxed
-
-findThreshold :: Double -> Vector -> Label
-findThreshold t = maybe Indeterminate toLabel . DV.findIndex (>t) . toUnboxed
 
 maxElem :: (Source r Double, Shape sh, Monad m) => Array r sh Double -> m Double
 maxElem = foldAllP max (-1/0)
