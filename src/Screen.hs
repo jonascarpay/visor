@@ -8,25 +8,28 @@ import Codec.Picture
 import Codec.Picture.Extra
 import System.Directory
 import System.Process
-import Debug.Trace
 import Data.Word
 import Data.Array.Repa hiding ((++))
 import Data.Array.Repa.IO.BMP
+import Volume
 
 screenSource :: Int -> Int -> Int -> Int -> IOSrc Palette
-screenSource x y w h = do img <- liftIO$ do _ <- trace"ssss"$ system "screencapture -xm /Users/jmc/Desktop/out.png"
+screenSource x y w h = do img <- liftIO$ do _ <- system "screencapture -xm /Users/jmc/Desktop/out.png"
                                             Right dimg <- readImage "/Users/jmc/Desktop/out.png"
                                             removeFile "/Users/jmc/Desktop/out.png"
-                                            trace"aaa"$ return dimg
+                                            return dimg
                           yield $ crop x y w h (convertRGB8 img)
                           screenSource x y w h
 
 screenSourceRepa :: Int -> Int -> Int -> Int -> IOSrc (Array U DIM2 (Word8, Word8, Word8))
 screenSourceRepa x y w h = do img <- liftIO$ do let string = "screencapture -xm -R" ++ show x ++ ',':show y ++ ',':show w ++ ',':show h ++ " -t bmp /Users/jmc/Desktop/out.bmp"
-                                                _ <- trace string$ system $ string
+                                                _ <- system $ string
                                                 Right img <- readImageFromBMP "/Users/jmc/Desktop/out.bmp"
-                                                removeFile "/Users/jmc/Desktop/out.bmp"
-                                                trace"aaa"$ return img
+                                                return img
                               yield img
                               screenSourceRepa x y w h
 
+repasink :: IOSink [[Volume]]
+repasink = do Just vss <- await
+              v <- volToBmp$ head.head$vss
+              liftIO$ writeImageToBMP "/Users/jmc/Desktop/ttt.bmp" v

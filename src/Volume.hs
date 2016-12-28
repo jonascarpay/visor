@@ -324,15 +324,22 @@ splitW arr = Prelude.traverse computeP slices
 cropFast :: Monad m => Int -> Int -> Int -> Int -> Int -> Array U DIM2 (Word8, Word8, Word8) -> m Volume
 cropFast r rx ry rw rh img = computeP$ fromFunction (Z:.3:.r:.r) lookup
   where
+    Z:.h:._ = extent img
     {-# INLINE toX #-}
-    toX x = rx + x * rw `div` r
+    toX x = rx + (x * rw) `div` r
     {-# INLINE toY #-}
-    toY y = ry + y * rh `div` r
+    toY y = h - ry - (y * rh) `div` r
     {-# INLINE lookup #-}
     lookup (Z:.0:.y:.x) = let (r,_,_) = img `unsafeIndex` (ix2 (toY y) (toX x)) in fromIntegral r / 255
     lookup (Z:.1:.y:.x) = let (_,g,_) = img `unsafeIndex` (ix2 (toY y) (toX x)) in fromIntegral g / 255
     lookup (Z:.2:.y:.x) = let (_,_,b) = img `unsafeIndex` (ix2 (toY y) (toX x)) in fromIntegral b / 255
     lookup _ = undefined
+
+volToBmp :: Monad m => Volume -> m (Array U DIM2 (Word8, Word8, Word8))
+volToBmp vol = computeP $ R.traverse vol (\(_:.h:.w) -> Z:.h:.w) fn
+  where
+    fn f (Z:.y:.x) = (f' 0 y x, f' 1 y x, f' 2 y x)
+      where f' n y x = round . (*255) $ f (ix3 n y x)
 
 getWeights :: [Layer3] -> [Weights]
 getWeights [] = []
