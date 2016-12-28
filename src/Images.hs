@@ -1,11 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Strict #-}
 
 module Images where
 
 import Game
 import Volume
 import ConvNet
---import Visor
 import Data.Array.Repa hiding ((++))
 import Codec.Picture
 import Codec.Picture.Extra
@@ -24,6 +24,15 @@ extractWidgets (Game _ ws) img =
       getWidgets (Widget r ps (rw, rh) _ _) =
         fmap (\(rx, ry) -> scaleBilinear r r $ crop (w' rx) (h' ry) (w' rw) (h' rh) img) ps
    in fmap getWidgets ws
+
+cropScale :: Monad m => Game -> Palette -> m [[Volume]]
+cropScale (Game _ ws) img = mapM getWidget ws
+  where
+    w = imageWidth img
+    h = imageHeight img
+    xAbs x = round$ x * fromIntegral w
+    yAbs y = round$ y * fromIntegral h
+    getWidget (Widget r ps (rw, rh) _ _) = mapM (\(rx, ry) -> cropFast r (xAbs rx) (yAbs ry) (xAbs rw) (yAbs rh) img) ps
 
 toVolume :: Palette -> Volume
 toVolume img = computeS $ fromFunction sh fn

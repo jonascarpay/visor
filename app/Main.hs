@@ -47,9 +47,8 @@ main' ["meleeTrain", n] =
 main' ["meleeWatch", read -> x, read -> y, read -> w, read -> h] =
   do let vFile = "data"</>"visor"</>"melee.visor"
      visor <- loadVisor vFile undefined
-     runConduitRes $ screenSource x y w h
-                  .| labelC visor melee 0.99
-                  .| mapM_C (liftIO.print)
+     runResourceT $ buffer 1 (screenSource x y w h .| mapMC (cropScale melee))
+                             (mapMC (\img -> feedVisorFast visor img 0.99) .| mapM_C (liftIO.print))
 
 main' ["watchTest", read -> x, read -> y, read -> w, read -> h] =
   do let vFile = "data"</>"visor"</>"melee.visor"

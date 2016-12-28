@@ -147,9 +147,13 @@ labelC :: Monad m => Visor -> Game -> Double -> Conduit Palette m [[WidgetLabel]
 labelC v g t = mapC (extractWidgets g)
             .| mapMC (\img -> feedVisor v img t)
 
+labelFastC :: Monad m => Visor -> Game -> Double -> Conduit Palette m [[WidgetLabel]]
+labelFastC v g t = mapMC (cropScale g)
+                .| mapMC (\img -> feedVisorFast v img t)
+
 watchC :: Monad m => Visor -> Game -> Double -> Conduit Palette m [[(Palette,WidgetLabel)]]
 watchC v g t = mapC (extractWidgets g)
-            .| mapMC (\img -> (fmap (zipWith zip img)) $ feedVisor v img t)
+            .| mapMC (\img -> (zipWith zip img) <$> feedVisor v img t)
 
 -- | A conduit that drains all elements, shuffles them, and then
 --   yields those elements. Note that this cannot be used on

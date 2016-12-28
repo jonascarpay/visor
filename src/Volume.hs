@@ -19,6 +19,7 @@ import qualified Data.Vector.Unboxed as DV
 import Data.Array.Repa.Algorithms.Randomish
 import GHC.Generics (Generic)
 import Data.Serialize
+import Codec.Picture
 
 type Weights = Array U DIM4 Double
 type Volume  = Array U DIM3 Double
@@ -321,6 +322,16 @@ splitW arr = Prelude.traverse computeP slices
     slices :: [DVolume]
     slices = [ slice arr (Z:.ni:.All:.All:.All) | ni <- [0..n-1]]
 
+cropFast :: Monad m => Int -> Int -> Int -> Int -> Int -> Palette -> m Volume
+cropFast r rx ry rw rh img = computeP$ fromFunction (Z:.3:.r:.r) lookup
+  where
+    toX x = rx + x * rw `div` r
+    toY y = ry + y * rh `div` r
+    {-# INLINE lookup #-}
+    lookup (Z:.0:.y:.x) = let PixelRGB8 r _ _ = pixelAt img (toX x) (toY y) in fromIntegral r / 255
+    lookup (Z:.1:.y:.x) = let PixelRGB8 _ g _ = pixelAt img (toX x) (toY y) in fromIntegral g / 255
+    lookup (Z:.2:.y:.x) = let PixelRGB8 _ _ b = pixelAt img (toX x) (toY y) in fromIntegral b / 255
+    lookup _ = undefined
 
 getWeights :: [Layer3] -> [Weights]
 getWeights [] = []
