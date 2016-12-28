@@ -85,4 +85,11 @@ data GameState = Menu
                         , p1s :: Int
                         , p2p :: Int
                         , p2s :: Int
-                        } deriving Eq
+                        } deriving (Eq, Show)
+showMelee :: GameState -> String
+showMelee Menu = "Not in game"
+showMelee (Ingame _ 0 _ 0) = "Not in game"
+showMelee (Ingame _ 0 _ _) = "P2 wins!"
+showMelee (Ingame _ _ _ 0) = "P1 wins!"
+showMelee (Ingame p1p p1s p2p p2s) = show p1s ++ ' ':show p1p ++ '\t':show p2s ++ ' ':show p2p
+

@@ -4,6 +4,7 @@ module Games.MeleeWatch where
 
 import Game
 import Games.Melee
+import Games.MeleeDiagram
 import Util
 import Label
 import Conduit
@@ -33,13 +34,6 @@ gameOver (Ingame _ _ _ 0) = True
 gameOver (Ingame _ 0 _ _) = True
 gameOver _ = False
 
-showMelee :: GameState -> String
-showMelee Menu = "Not in game"
-showMelee (Ingame _ 0 _ 0) = "Not in game"
-showMelee (Ingame _ 0 _ _) = "P2 wins!"
-showMelee (Ingame _ _ _ 0) = "P1 wins!"
-showMelee (Ingame p1p p1s p2p p2s) = show p1s ++ ' ':show p1p ++ '\t':show p2s ++ ' ':show p2p
-
 validate :: GameState -> GameState -> Bool
 validate Menu Menu = True
 validate Menu (Ingame _ s1 _ s2) = s1 < 2 || s2 < 2
@@ -66,9 +60,9 @@ meleeC = go newgame []
                     Nothing -> return ()
                     Just s ->
                       let st' = updateMelee (parseState s) st
-                          (_, o:_) = st'
+                          (_, currentFrame:_) = st'
                           gameNr = length gs + 1
-                       in do liftIO$ putStrLn ("Game " ++ show gameNr ++ '\t':showMelee o)
-                             if gameOver o
-                                then go newgame (st':gs)
+                       in do liftIO$ putStrLn ("Game " ++ show gameNr ++ '\t':showMelee currentFrame ++ ' ':show currentFrame)
+                             if gameOver currentFrame
+                                then liftIO (gameDiagram (snd st'))
                                 else go st' gs

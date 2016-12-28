@@ -9,6 +9,7 @@ import Conduits
 import Screen
 import Data.Conduit.Async
 import Games.Melee
+import Games.MeleeWatch
 import System.Environment
 import System.FilePath
 
