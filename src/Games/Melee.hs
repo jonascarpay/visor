@@ -71,18 +71,15 @@ dolphin_sets =
           , distort = True
           }
 
-delabelMelee :: [Maybe Int] -> String
-delabelMelee [p11, p21, p110, p210, p1100, p2100, td1, td2, td3, p1s, p2s] = filename
-  where
-    filename = intercalate "_" . fmap p $ [p1p, p1s, p2p, p2s, mins, secs]
-    secs = liftA2 (+) ((*10) <$> td2) td3
-    mins = td1
-    p = maybe "X" show
-    p1p = case p11 of
-            Nothing   -> Nothing
-            Just p11' -> Just $ p11' + fromMaybe 0 p110 * 10 + fromMaybe 0 p1100 * 100
-    p2p = case p21 of
-            Nothing   -> Nothing
-            Just p21' -> Just $ p21' + fromMaybe 0 p210 * 10 + fromMaybe 0 p2100 * 100
-
+delabelMelee :: [[[Label]]] -> String
+delabelMelee [[p1widget, p2widget]] = delabelWidget p1widget ++ "\t" ++ delabelWidget p2widget
 delabelMelee _ = undefined
+
+delabelWidget :: [Label] -> String
+delabelWidget (Indeterminate:_) = "-"
+delabelWidget [p1, p10, p100, stocks] = unwords [show $ parse stocks, percent]
+  where percent = show$ parse p1 + 10 * parse p10 + 100 * parse p100
+        parse Indeterminate = 0
+        parse (Label n) = n
+
+delabelWidget _ = "-"

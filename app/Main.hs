@@ -50,7 +50,7 @@ main' ["meleeWatch", read -> x, read -> y, read -> w, read -> h] =
      runConduitRes $ screenSourceRepa x y w h
                   .| mapMC (cropScale melee)
                   .| mapMC (\img -> feedVisorFast visor img 0.99)
-                  .| mapM_C (liftIO.print)
+                  .| mapM_C (liftIO.putStrLn.delabelMelee)
 
 main' ["watchTest", read -> x, read -> y, read -> w, read -> h] =
   do let vFile = "data"</>"visor"</>"melee.visor"
