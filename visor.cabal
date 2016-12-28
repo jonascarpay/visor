@@ -19,6 +19,8 @@ library
                      , Util
                      , Conduits
                      , Games.Melee
+                     , Games.MeleeWatch
+                     , Games.MeleeDiagram
                      , Volume
                      , Label
                      , Images
