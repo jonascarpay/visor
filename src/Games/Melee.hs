@@ -21,6 +21,16 @@ dmgStocks = Widget { resolution = 32
                    , netSpec = [ConvS 13 64, ReLUS, PoolS, ConvS 5 64, ReLUS, PoolS]
                    }
 
+-- Time is not yet included. It adds little important information, and is pretty inefficient
+-- until support for non-square inputs
+time :: Widget
+time = Widget { resolution = 40
+              , position = [(w 482, h 42)]
+              , dimensions = (w 262, h 262)
+              , cardinalities = [10,10,10]
+              , netSpec = [ConvS 13 16, ReLUS, PoolS, ConvS 5 16, ReLUS, PoolS]
+              }
+
 screenWidth, screenHeight :: Double
 screenWidth = 1252
 screenHeight = 1028
