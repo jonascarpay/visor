@@ -109,7 +109,7 @@ train3 :: Monad m
        -> Double   -- ^ Learning rate
        -> m (Volume, [Layer3], [Double])
 
-train3 [] x cs ys α = do
+train3 [] x cs ys _ = do
   f <- flatten x
   p <- softMax f cs
   (df,losses) <- softMaxBackward p cs ys

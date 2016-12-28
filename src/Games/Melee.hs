@@ -6,9 +6,6 @@ import Util
 import Label
 import System.FilePath.Posix
 import Data.List.Split
-import Data.List (intercalate)
-import Data.Maybe
-import Control.Applicative
 
 -- | Game definition for SSBM.
 melee :: Game
@@ -59,13 +56,15 @@ dolphin_sets =
                 matchLength = 8 * 60 * 60
                 time
                   | not ingame = replicate 3 Indeterminate
-                  | ingame = let frames = matchLength - read framesPassed
-                                 secsTotal = frames `div` 60
-                                 (mins, secs) = secsTotal `divMod` 60
-                                 (secs10, secs1) = secs `divMod` 10
-                              in Label <$> [mins, secs10, secs1]
+                  | otherwise  = let frames = matchLength - read framesPassed
+                                     secsTotal = frames `div` 60
+                                     (mins, secs) = secsTotal `divMod` 60
+                                     (secs10, secs1) = secs `divMod` 10
+                                  in Label <$> [mins, secs10, secs1]
 
-             in [[p1p' ++ [p1Stocks], p2p' ++ [p2Stocks]]]
+             in [ [p1p' ++ [p1Stocks], p2p' ++ [p2Stocks]]
+                , [time]
+                ]
           , cropRect = Rect 335 50 1251 1027
           , wiggle = 30
           , distort = True

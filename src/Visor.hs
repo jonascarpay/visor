@@ -3,7 +3,6 @@
 
 module Visor where
 
-import Label
 import ConvNet
 import Game
 import Images

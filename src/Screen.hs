@@ -11,7 +11,6 @@ import System.Process
 import Data.Word
 import Data.Array.Repa hiding ((++))
 import Data.Array.Repa.IO.BMP
-import Volume
 
 screenSource :: Int -> Int -> Int -> Int -> IOSrc Palette
 screenSource x y w h = do img <- liftIO$ do _ <- system "screencapture -xm /Users/jmc/Desktop/out.png"
@@ -23,13 +22,9 @@ screenSource x y w h = do img <- liftIO$ do _ <- system "screencapture -xm /User
 
 screenSourceRepa :: Int -> Int -> Int -> Int -> IOSrc (Array U DIM2 (Word8, Word8, Word8))
 screenSourceRepa x y w h = do img <- liftIO$ do let string = "screencapture -xm -R" ++ show x ++ ',':show y ++ ',':show w ++ ',':show h ++ " -t bmp /Users/jmc/Desktop/out.bmp"
-                                                _ <- system $ string
+                                                _ <- system string
                                                 Right img <- readImageFromBMP "/Users/jmc/Desktop/out.bmp"
+                                                removeFile "/Users/jmc/Desktop/out.bmp"
                                                 return img
                               yield img
                               screenSourceRepa x y w h
-
-repasink :: IOSink [[Volume]]
-repasink = do Just vss <- await
-              v <- volToBmp$ head.head$vss
-              liftIO$ writeImageToBMP "/Users/jmc/Desktop/ttt.bmp" v
