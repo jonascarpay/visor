@@ -48,10 +48,11 @@ feedVisor (Visor nets) imgss t = zipWithM (feedMany t) nets imgss
                          feedThresholded t net vol
 
 feedVisorFast :: Monad m => Visor -> [[Volume]] -> Double -> m [[WidgetLabel]]
-feedVisorFast (Visor nets) volss t = zipWithM (feedMany t) nets volss
+feedVisorFast (Visor nets) volss t = do zipWithM (feedMany t) nets volss
   where
     feedMany :: Monad m => Double -> ConvNet -> [Volume] -> m [WidgetLabel]
     feedMany t net vols = mapM (feedThresholded t net) vols
+
 
 loadVisor :: FilePath -> Game -> IO Visor
 loadVisor fp game = do exist <- doesFileExist fp
