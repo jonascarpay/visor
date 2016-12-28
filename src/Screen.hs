@@ -21,10 +21,10 @@ screenSource x y w h = do img <- liftIO$ do _ <- system "screencapture -xm /User
                           screenSource x y w h
 
 screenSourceRepa :: Int -> Int -> Int -> Int -> IOSrc (Array U DIM2 (Word8, Word8, Word8))
-screenSourceRepa x y w h = do img <- liftIO$ do let string = "screencapture -xm -R" ++ show x ++ ',':show y ++ ',':show w ++ ',':show h ++ " -t bmp /Users/jmc/Desktop/out.bmp"
+screenSourceRepa x y w h = do img <- liftIO$ do let string = "screencapture -xm -R" ++ show x ++ ',':show y ++ ',':show w ++ ',':show h ++ " -t bmp out.bmp"
                                                 _ <- system string
-                                                Right img <- readImageFromBMP "/Users/jmc/Desktop/out.bmp"
-                                                removeFile "/Users/jmc/Desktop/out.bmp"
+                                                Right img <- readImageFromBMP "out.bmp"
+                                                removeFile "out.bmp"
                                                 return img
                               yield img
                               screenSourceRepa x y w h
