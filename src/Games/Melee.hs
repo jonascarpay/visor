@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Games.Melee where
 
 import Game
@@ -80,15 +82,42 @@ dolphin_sets =
           , distort = True
           }
 
-delabelMelee :: [[[Label]]] -> String
-delabelMelee [[p1widget, p2widget]] = delabelWidget p1widget ++ "\t" ++ delabelWidget p2widget
-delabelMelee _ = undefined
+parseState :: [[WidgetLabel]] -> Maybe MeleeState
+parseState [[p1w, p2w]] = case (parseWidget p1w, parseWidget p2w) of
+                            (Just (p1p, p1s), Just (p2p, p2s)) -> Just $ Ingame p1p p1s p2p p2s
+                            (Nothing, Nothing)                 -> Just Menu
+                            _                                  -> Nothing
+  where
+    parseLabel Indeterminate = 0
+    parseLabel (Label n) = n
 
-delabelWidget :: [Label] -> String
-delabelWidget (Indeterminate:_) = "-"
-delabelWidget [p1, p10, p100, stocks] = unwords [show $ parse stocks, percent]
-  where percent = show$ parse p1 + 10 * parse p10 + 100 * parse p100
-        parse Indeterminate = 0
-        parse (Label n) = n
+    parseWidget [_, _, _, Indeterminate] = Nothing
+    parseWidget [Indeterminate, _, _, _] = Nothing
+    parseWidget [parseLabel -> p1, parseLabel -> p10, parseLabel -> p100, parseLabel -> stocks] = Just (p1 + 10*p10 + 100*p100, stocks)
+    parseWidget _ = undefined
+parseState _ = undefined
 
-delabelWidget _ = "-"
+data MeleeState = Menu
+                | Ingame { p1p :: Int
+                         , p1s :: Int
+                         , p2p :: Int
+                         , p2s :: Int
+                         } deriving Eq
+
+newGame :: MeleeState
+newGame = Ingame 0 4 0 4
+
+validate :: MeleeState -> MeleeState -> Bool
+validate Menu Menu = True
+validate (Ingame p1p' p1s' p2p' p2s') (Ingame p1p p1s p2p p2s) = and [ p1s' <= p1s , p2s' <= p2s
+                                                                     , p1p' >= p1p || p1p' == 0
+                                                                     , p2p' >= p2p || p2p' == 0
+                                                                     ]
+validate _ _ = False
+
+updateMelee :: Maybe MeleeState -> (MeleeState, [MeleeState]) -> (MeleeState, [MeleeState])
+updateMelee Nothing m = m
+updateMelee _ (_, []) = error "uninitialized game state"
+updateMelee (Just m') (mBuf, m:ms)
+  | m' == mBuf && m' `validate` m = (m', m':m:ms)
+  | otherwise = (m', m:ms)

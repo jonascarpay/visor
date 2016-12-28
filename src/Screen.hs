@@ -11,7 +11,6 @@ import System.Process
 import Data.Word
 import Data.Array.Repa hiding ((++))
 import Data.Array.Repa.IO.BMP
-import Volume
 
 screenSource :: Int -> Int -> Int -> Int -> IOSrc Palette
 screenSource x y w h = do img <- liftIO$ do _ <- system "screencapture -xm /Users/jmc/Desktop/out.png"
