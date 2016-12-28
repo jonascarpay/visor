@@ -44,6 +44,7 @@ library
                      , process
                      , deepseq
                      , repa
+                     , repa-io
                      , repa-algorithms
                      , JuicyPixels
                      , JuicyPixels-extra

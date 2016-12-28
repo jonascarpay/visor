@@ -9,6 +9,7 @@ import ConvNet
 import Data.Array.Repa hiding ((++))
 import Codec.Picture
 import Codec.Picture.Extra
+import Data.Word
 
 extractWidgetsLabeled :: Game -> (Palette, [[WidgetLabel]]) -> [[(Palette, WidgetLabel)]]
 extractWidgetsLabeled g (img, ls) = pair imgs ls
@@ -25,11 +26,10 @@ extractWidgets (Game _ ws) img =
         fmap (\(rx, ry) -> scaleBilinear r r $ crop (w' rx) (h' ry) (w' rw) (h' rh) img) ps
    in fmap getWidgets ws
 
-cropScale :: Monad m => Game -> Palette -> m [[Volume]]
+cropScale :: Monad m => Game -> Array U DIM2 (Word8, Word8, Word8) -> m [[Volume]]
 cropScale (Game _ ws) img = mapM getWidget ws
   where
-    w = imageWidth img
-    h = imageHeight img
+    Z:.h:.w = extent img
     xAbs x = round$ x * fromIntegral w
     yAbs y = round$ y * fromIntegral h
     getWidget (Widget r ps (rw, rh) _ _) = mapM (\(rx, ry) -> cropFast r (xAbs rx) (yAbs ry) (xAbs rw) (yAbs rh) img) ps
