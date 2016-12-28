@@ -6,6 +6,7 @@ import Game
 import ConvNet
 import Util
 import Label
+import Conduit
 import System.FilePath.Posix
 import Data.List.Split
 
@@ -104,6 +105,9 @@ data MeleeState = Menu
                          , p2s :: Int
                          } deriving Eq
 
+showMelee Menu = "Not in game"
+showMelee (Ingame p1p p1s p2p p2s) = show p1p ++ ' ':show p1s ++ '\t':show p2p ++ ' ':show p2s
+
 newGame :: MeleeState
 newGame = Ingame 0 4 0 4
 
@@ -121,3 +125,15 @@ updateMelee _ (_, []) = error "uninitialized game state"
 updateMelee (Just m') (mBuf, m:ms)
   | m' == mBuf && m' `validate` m = (m', m':m:ms)
   | otherwise = (m', m:ms)
+
+meleeC :: IOSink [[WidgetLabel]]
+meleeC = go (newGame, [newGame])
+  where
+    go st = do ms <- await
+               case ms of
+                 Nothing -> return ()
+                 Just s ->
+                   let st' = updateMelee (parseState s) st
+                       (_, o:_) = st'
+                    in do liftIO$ putStrLn (showMelee o)
+                          go st'
