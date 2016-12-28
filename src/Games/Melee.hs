@@ -85,13 +85,16 @@ dolphin_sets =
 
 parseState :: [[WidgetLabel]] -> Maybe MeleeState
 parseState [[p1w, p2w]] = case (parseWidget p1w, parseWidget p2w) of
-                            (Just (p1p, p1s), Just (p2p, p2s)) -> Just $ Ingame p1p p1s p2p p2s
                             (Nothing, Nothing)                 -> Just Menu
+                            (Just (0,0), Just (0,0))           -> Just Menu
+                            (Just (p1p, p1s), Just (p2p, p2s)) -> Just $ Ingame p1p p1s p2p p2s
                             _                                  -> Nothing
   where
     parseLabel Indeterminate = 0
     parseLabel (Label n) = n
 
+    parseWidget [Indeterminate, _, _, Indeterminate] = Just (0,0)
+    parseWidget [Indeterminate, _, _, parseLabel -> 0] = Just (0,0)
     parseWidget [_, _, _, Indeterminate] = Nothing
     parseWidget [Indeterminate, _, _, _] = Nothing
     parseWidget [parseLabel -> p1, parseLabel -> p10, parseLabel -> p100, parseLabel -> stocks] = Just (p1 + 10*p10 + 100*p100, stocks)
@@ -105,17 +108,20 @@ data MeleeState = Menu
                          , p2s :: Int
                          } deriving Eq
 
+showMelee :: MeleeState -> String
 showMelee Menu = "Not in game"
-showMelee (Ingame p1p p1s p2p p2s) = show p1p ++ ' ':show p1s ++ '\t':show p2p ++ ' ':show p2s
-
-newGame :: MeleeState
-newGame = Ingame 0 4 0 4
+showMelee (Ingame _ 0 _ 0) = "Not in game"
+showMelee (Ingame _ 0 _ _) = "P2 wins!"
+showMelee (Ingame _ _ _ 0) = "P1 wins!"
+showMelee (Ingame p1p p1s p2p p2s) = show p1s ++ ' ':show p1p ++ '\t':show p2s ++ ' ':show p2p
 
 validate :: MeleeState -> MeleeState -> Bool
 validate Menu Menu = True
+validate Menu (Ingame _ s1 _ s2) = s1 < 2 || s2 < 2
+validate (Ingame 0 4 0 4) Menu = True
 validate (Ingame p1p' p1s' p2p' p2s') (Ingame p1p p1s p2p p2s) = and [ p1s' <= p1s , p2s' <= p2s
-                                                                     , p1p' >= p1p || p1p' == 0
-                                                                     , p2p' >= p2p || p2p' == 0
+                                                                     , p1p' >= p1p && p1s' == p1s || p1p' == 0 && p1s' == p1s -1
+                                                                     , p2p' >= p2p && p2s' == p2s || p2p' == 0 && p2s' == p2s -1
                                                                      ]
 validate _ _ = False
 
@@ -123,11 +129,11 @@ updateMelee :: Maybe MeleeState -> (MeleeState, [MeleeState]) -> (MeleeState, [M
 updateMelee Nothing m = m
 updateMelee _ (_, []) = error "uninitialized game state"
 updateMelee (Just m') (mBuf, m:ms)
-  | m' == mBuf && m' `validate` m = (m', m':m:ms)
+  | mBuf == m' && m' `validate` m = (m', m':m:ms)
   | otherwise = (m', m:ms)
 
 meleeC :: IOSink [[WidgetLabel]]
-meleeC = go (newGame, [newGame])
+meleeC = go (Menu, [Menu])
   where
     go st = do ms <- await
                case ms of
