@@ -26,7 +26,7 @@ datasetSource :: Bool -- ^ Whether or not the list should be in shuffled order.
                       --   Note that this will build a large cache of filenames
                       --   and might be slow, especially for large datasets.
               -> Dataset
-              -> IOSrc (Palette, [[WidgetLabel]])
+              -> IOSrc LabeledImage
 datasetSource shuf set =
   filePathSource set shuf .| mapMC (liftIO . loadImage set)
 
@@ -36,7 +36,7 @@ filePathSource (Dataset root _ _ _ _) shuf =
   where source = sourceDirectoryDeep True root
                   .| filterC ((/='.') . head . takeFileName)
 
-loadImage :: Dataset -> FilePath -> IO (Palette, [[WidgetLabel]])
+loadImage :: Dataset -> FilePath -> IO LabeledImage
 loadImage (Dataset _ lblFn (Rect x y w h) wig dist) fp =
   do putStrLn $ "Loading " ++ fp
      Right img' <- readImage fp
@@ -54,7 +54,7 @@ loadImage (Dataset _ lblFn (Rect x y w h) wig dist) fp =
          distorted = pixelMap distortColor imgCropped
      return (if dist then distorted else imgCropped, lblFn fp)
 
-datasetSink :: IOSink (Palette, [[WidgetLabel]])
+datasetSink :: IOSink LabeledImage
 datasetSink = go (0 :: Int)
   where go n = do mimg <- await
                   case mimg of

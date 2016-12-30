@@ -11,7 +11,9 @@ import Codec.Picture
 import Codec.Picture.Extra
 import Data.Word
 
-extractWidgetsLabeled :: Game -> (Palette, [[WidgetLabel]]) -> [[(Palette, WidgetLabel)]]
+type LabeledImage = (Palette, [[WidgetLabel]])
+
+extractWidgetsLabeled :: Game -> LabeledImage -> [[(Palette, WidgetLabel)]]
 extractWidgetsLabeled g (img, ls) = pair imgs ls
   where pair = Prelude.zipWith zip
         imgs = extractWidgets g img
@@ -59,7 +61,7 @@ toVolumeP img = computeP $ fromFunction sh fn
 -- | Turns an image and its labels into a list of lists of samples
 --   The elements of the outer list each associate with a different
 --   widget, the inner lists are different occurrences of single widget.
-toSamples :: Game -> (Palette, [[WidgetLabel]]) -> [[ConvSample]]
+toSamples :: Game -> LabeledImage -> [[ConvSample]]
 toSamples game ins = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) extracted
   where
     extracted :: [[(Palette, WidgetLabel)]]
