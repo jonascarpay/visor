@@ -117,11 +117,11 @@ backward3 :: Monad m -- ^ Required by repa for parallel computations
           -> Double  -- ^ Regularization loss factor. Not yet implemented.
           -> Double  -- ^ Step size/learning rate
           -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
-backward3 (Conv w b) x _ dy _ α =
+backward3 (Conv w b) x _ dy λ α =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
      db <- computeP$ b -^ R.map (*α) dy
-     w' <- computeP$ w -^ R.map (*α) dw
+     w' <- computeP$ w -^ R.map (*α) dw -^ R.map (*λ) w
      return (Conv w' db, dx)
 
 backward3 Pool x y dy _ _ =

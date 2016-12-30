@@ -119,5 +119,5 @@ train3 [] x cs ys _ = do
 train3 (l:ls) x cs ys α =
   do f <- forward3 x l
      (df, l3s', loss) <- train3 ls f cs ys α
-     (l', dx) <- backward3 l x f df 0 α
+     (l', dx) <- backward3 l x f df 1e-4 α
      return (dx, l':l3s', loss)
