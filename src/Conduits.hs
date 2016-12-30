@@ -27,7 +27,7 @@ datasetSource :: Bool -- ^ Whether or not the list should be in shuffled order.
                       --   and might be slow, especially for large datasets.
               -> Dataset
               -> IOSrc (Palette, [[WidgetLabel]])
-datasetSource shuf (Dataset root lblFn (Rect x y w h) wig dist) =
+datasetSource shuf set@(Dataset root lblFn (Rect x y w h) wig dist) =
        sourceDirectoryDeep True root
     .| filterC ((/='.') . head . takeFileName)
     .| (if shuf then shuffleConduit .| loadImageC else loadImageC)
@@ -35,24 +35,25 @@ datasetSource shuf (Dataset root lblFn (Rect x y w h) wig dist) =
     loadImageC :: IOConduit FilePath (Palette, [[WidgetLabel]])
     loadImageC = awaitForever$
       \fp -> do liftIO.putStrLn$ "Loading " ++ fp
-                o <- liftIO $ loadImage fp
+                o <- liftIO $ loadImage fp set
                 yield o
 
-    loadImage :: FilePath -> IO (Palette, [[WidgetLabel]])
-    loadImage fp = do Right img' <- readImage fp
-                      dx <- randomRIO (0, wig)
-                      dy <- randomRIO (0, wig)
-                      dw <- randomRIO (0, wig)
-                      dh <- randomRIO (0, wig)
-                      dr :: Double <- randomRIO (0.9, 1.1)
-                      dg :: Double <- randomRIO (0.9, 1.1)
-                      db :: Double <- randomRIO (0.9, 1.1)
-                      let img = convertRGB8 img'
-                          imgCropped = crop (x+dx) (y+dy) (w-dx-dw) (h-dy-dh) img
-                          scaleMax x c = round $ min 255 $ fromIntegral x * c
-                          distortColor (PixelRGB8 r g b) = PixelRGB8 (scaleMax r dr) (scaleMax g dg) (scaleMax b db)
-                          distorted = pixelMap distortColor imgCropped
-                      return (if dist then distorted else imgCropped, lblFn fp)
+loadImage :: FilePath -> Dataset -> IO (Palette, [[WidgetLabel]])
+loadImage fp (Dataset root lblFn (Rect x y w h) wig dist) =
+  do Right img' <- readImage fp
+     dx <- randomRIO (0, wig)
+     dy <- randomRIO (0, wig)
+     dw <- randomRIO (0, wig)
+     dh <- randomRIO (0, wig)
+     dr :: Double <- randomRIO (0.9, 1.1)
+     dg :: Double <- randomRIO (0.9, 1.1)
+     db :: Double <- randomRIO (0.9, 1.1)
+     let img = convertRGB8 img'
+         imgCropped = crop (x+dx) (y+dy) (w-dx-dw) (h-dy-dh) img
+         scaleMax x c = round $ min 255 $ fromIntegral x * c
+         distortColor (PixelRGB8 r g b) = PixelRGB8 (scaleMax r dr) (scaleMax g dg) (scaleMax b db)
+         distorted = pixelMap distortColor imgCropped
+     return (if dist then distorted else imgCropped, lblFn fp)
 
 datasetSink :: IOSink (Palette, [[WidgetLabel]])
 datasetSink = go (0 :: Int)
