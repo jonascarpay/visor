@@ -27,20 +27,19 @@ datasetSource :: Bool -- ^ Whether or not the list should be in shuffled order.
                       --   and might be slow, especially for large datasets.
               -> Dataset
               -> IOSrc (Palette, [[WidgetLabel]])
-datasetSource shuf set@(Dataset root lblFn (Rect x y w h) wig dist) =
-       sourceDirectoryDeep True root
-    .| filterC ((/='.') . head . takeFileName)
-    .| (if shuf then shuffleConduit .| loadImageC else loadImageC)
-  where
-    loadImageC :: IOConduit FilePath (Palette, [[WidgetLabel]])
-    loadImageC = awaitForever$
-      \fp -> do liftIO.putStrLn$ "Loading " ++ fp
-                o <- liftIO $ loadImage fp set
-                yield o
+datasetSource shuf set =
+  filePathSource set shuf .| mapMC (liftIO . loadImage set)
 
-loadImage :: FilePath -> Dataset -> IO (Palette, [[WidgetLabel]])
-loadImage fp (Dataset root lblFn (Rect x y w h) wig dist) =
-  do Right img' <- readImage fp
+filePathSource (Dataset root _ _ _ _) shuf =
+  if shuf then source .| shuffleConduit
+          else source
+  where source = sourceDirectoryDeep True root
+                  .| filterC ((/='.') . head . takeFileName)
+
+loadImage :: Dataset -> FilePath -> IO (Palette, [[WidgetLabel]])
+loadImage (Dataset _ lblFn (Rect x y w h) wig dist) fp =
+  do putStrLn $ "Loading " ++ fp
+     Right img' <- readImage fp
      dx <- randomRIO (0, wig)
      dy <- randomRIO (0, wig)
      dw <- randomRIO (0, wig)
