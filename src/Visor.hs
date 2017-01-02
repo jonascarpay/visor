@@ -19,7 +19,8 @@ import Control.Monad.Trans.State.Strict
 newtype Visor = Visor [ConvNet] deriving (Show, Generic)
 instance Serialize Visor
 
-type VisorTrainer = State [TrainState]
+type VisorTrainState = [TrainState]
+type VisorTrainer = State VisorTrainState
 
 trainVisor :: VisorSample -> VisorTrainer [[LossVector]]
 trainVisor s = do nets  <- get
@@ -28,7 +29,8 @@ trainVisor s = do nets  <- get
                   put nets'
                   return losses
 
-initVisorTrainer :: Visor -> [TrainState]
+initVisorTrainState :: Visor -> [TrainState]
+initVisorTrainState (Visor nets) = initTrainState 1e-3 1e-5 0.9 <$> nets
 
 gameVisor :: Game -> Visor
 gameVisor (Game _ ws) = Visor (fmap widgetNet ws)

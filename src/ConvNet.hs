@@ -114,6 +114,10 @@ data TrainState = TrainState { network :: ConvNet
                              , velocity :: [Layer3]
                              }
 
+initTrainState :: Double -> Double -> Double -> ConvNet -> TrainState
+initTrainState α λ γ net = TrainState net α λ γ (initVelocities net)
+  where initVelocities (ConvNet ls _) = initVelocity <$> ls
+
 train :: ConvSample -> Trainer LossVector
 train (ConvSample x y) = do TrainState (ConvNet l3s cs) α λ γ vs <- get
                             (_, deltas, lvec) <- getDeltas l3s x cs y

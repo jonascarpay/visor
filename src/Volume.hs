@@ -58,8 +58,7 @@ instance Show Layer3 where
       dimB = show . extent $ b
 
 -- | Apply a volume to a Layer3
-forward3 :: Monad m -- ^ Repa requires some monad in order to guarantee
-                    --   that parallel evaluations are executed sequentially.
+forward3 :: Monad m
          => Volume
          -> Layer3
          -> m Volume
@@ -144,6 +143,10 @@ applyDelta (Conv dw db) (Conv w b) (Conv vw vb) α λ γ =
      return (Conv w' b', Conv vw' vb')
 
 applyDelta _ l v _ _ _ = return (l,v)
+
+initVelocity :: Layer3 -> Layer3
+initVelocity (Conv w b) = Conv (computeS$ R.map (const 0) w) (computeS$ R.map (const 0) b)
+initVelocity x = x
 
 -- TODO: backprop van pooling moet extent-invariant worden
 -- | Max-pooling function for volumes
