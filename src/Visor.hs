@@ -32,6 +32,8 @@ trainVisor s = do nets  <- get
 initVisorTrainState :: Visor -> [TrainState]
 initVisorTrainState (Visor nets) = initTrainState 1e-3 1e-5 0.9 <$> nets
 
+toVisor states = Visor $ network <$> states
+
 gameVisor :: Game -> Visor
 gameVisor (Game _ ws) = Visor (fmap widgetNet ws)
   where widgetNet (Widget res _ _ cs spec) = initCNet spec res res ((+1) <$> cs) -- +1 to account for Indeterminate in cardinality

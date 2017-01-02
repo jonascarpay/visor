@@ -37,11 +37,13 @@ main' ["meleeRaw"] =
 main' ["meleeTrain", n] =
   do let vFile = "data"</>"visor"</>"melee.visor"
 
-     visor  <- loadVisor vFile melee
-     visor' <- runResourceT $ buffer 1
-                                   ( if n == "all" then batchSource
-                                                   else loopC batchSource .| takeC (read n))
-                                   (trainVisorC visor)
+     --visor  <- loadVisor vFile melee
+     let visor = gameVisor melee
+     visor' <- runConduitRes (( if n == "all" then batchSource else loopC batchSource .| takeC (read n)) .| (trainVisorC visor))
+     {-visor' <- runResourceT $ buffer 1-}
+                                   {-( if n == "all" then batchSource-}
+                                                   {-else loopC batchSource .| takeC (read n))-}
+                                   {-(trainVisorC visor)-}
      saveWeightImages visor'
      saveVisor vFile visor'
 
@@ -62,11 +64,6 @@ main' ["watchTest", read -> x, read -> y, read -> w, read -> h] =
 
 main' ["genBatch", read->n] =
   runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
-
--- Test training on CIFAR-10 dataset
-main' ["cifar"] =
-  do net <- runResourceT $ buffer 1 (loopC sourceCifar .| takeC 600) (trainC cifarNet)
-     saveWeightImages (Visor [net])
 
 main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
 

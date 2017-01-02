@@ -20,6 +20,7 @@ import System.Directory
 import System.FilePath
 import System.Random
 import System.Random.Shuffle
+import Control.Monad.Trans.State.Strict
 
 -- | Loads an image and applies desired transformations
 datasetSource :: Bool -- ^ Whether or not the list should be in shuffled order.
@@ -119,29 +120,19 @@ parseSink = go (0 :: Int)
 loopC :: Monad m => m a -> m b
 loopC c = c >> loopC c
 
-trainC :: ConvNet -> Consumer ConvSample (ResourceT IO) ConvNet
-trainC n@(ConvNet l3s cs) =
-  do ms <- await
-     case ms of
-       Just (ConvSample x y) ->
-         do (_, l3s', loss) <- train3 l3s x cs y 1e-2
-            liftIO . print $ loss
-            trainC (ConvNet l3s' cs)
-       Nothing -> return n
-
 gameSource :: Game -> Dataset -> Bool -> IOSrc VisorSample
 gameSource game set shuf = datasetSource shuf set .| mapC (toSamples game)
 
 trainVisorC :: Visor -> Consumer VisorSample (ResourceT IO) Visor
-trainVisorC v = go v (0::Int)
+trainVisorC v = go (initVisorTrainState v) (0::Int)
   where
     go v n =
       do ms <- await
          case ms of
-           Just s -> do (v', ds) <- trainVisor v s
+           Just s -> do let (ds, v') = runState (trainVisor s) v
                         liftIO . putStrLn . (++ ('\t':show n)) . printLosses $ ds
                         go v' (n+1)
-           Nothing -> return v
+           Nothing -> return $ toVisor v
 
 labelC :: Monad m => Visor -> Game -> Double -> Conduit Palette m [[WidgetLabel]]
 labelC v g t = mapC (extractWidgets g)
