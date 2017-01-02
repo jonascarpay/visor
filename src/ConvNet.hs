@@ -9,7 +9,7 @@ import Util
 import Control.Monad
 import GHC.Generics (Generic)
 import qualified Data.Array.Repa as R
-import Data.Serialize
+import Data.Serialize (Serialize)
 import Control.Monad.Trans.State.Strict
 
 -- | A convolutional network for image processing. The [Layer3] part represents
@@ -102,23 +102,31 @@ feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
   where
     foldConv vol = foldM forward3 vol l3s
 
+-- TODO: lenses
 data TrainState = TrainState { network :: ConvNet
                              , learningRate :: Double
                              , regularizationLoss :: Double
                              , velocity :: [Layer3]
                              }
 
-type Trainer = State TrainState
+train :: Volume -> [Label] -> Trainer LossVector
+train x y = do TrainState (ConvNet l3s cs) α λ vs <- get
+               (_, deltas, lvec) <- getDeltas l3s x cs y
+               put $ TrainState (ConvNet undefined cs) α λ vs
+               return lvec
 
-train3 :: Monad m
+
+type Trainer = State TrainState
+type LossVector = [Double]
+
+getDeltas :: Monad m
        => [Layer3] -- ^ Network layers
        -> Volume   -- ^ Input volume
        -> [Int]    -- ^ Softmax output cardinalities
        -> [Label]  -- ^ Correct labels
-       -> Double   -- ^ Learning rate
        -> m (Volume, [Layer3], [Double])
 
-train3 [] x cs ys _ = do
+getDeltas [] x cs ys = do
   f <- flatten x
   p <- softMax f cs
   (df,losses) <- softMaxBackward p cs ys
@@ -127,8 +135,8 @@ train3 [] x cs ys _ = do
            else R.computeP $ R.reshape (R.extent x) df
   return (dx, [], losses)
 
-train3 (l:ls) x cs ys α =
+getDeltas (l:ls) x cs ys =
   do f <- forward3 x l
-     (df, l3s', loss) <- train3 ls f cs ys α
-     (l', dx) <- backward3 l x f df 1e-4 α
+     (df, l3s', loss) <- getDeltas ls f cs ys
+     (l', dx) <- backward3 l x f df
      return (dx, l':l3s', loss)

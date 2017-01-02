@@ -114,21 +114,17 @@ backward3 :: Monad m -- ^ Required by repa for parallel computations
           -> Volume  -- ^ Input for this layer during the forward pass
           -> Volume  -- ^ Output for this layer during the forward pass
           -> Volume  -- ^ Error gradient on the output of this layer
-          -> Double  -- ^ Regularization loss factor. Not yet implemented.
-          -> Double  -- ^ Step size/learning rate
-          -> m (Layer3, Volume) -- ^ Updated Layer3 with new weights, and error gradient on this layer's input.
-backward3 (Conv w b) x _ dy λ α =
+          -> m (Layer3, Volume) -- ^ Weight deltas, and error gradient on this layer's input.
+backward3 (Conv w b) x _ dy =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
-     db <- computeP$ b -^ R.map (*α) dy
-     w' <- computeP$ w -^ R.map (*α) dw -^ R.map (*λ) w
-     return (Conv w' db, dx)
+     return (Conv dw dy, dx)
 
-backward3 Pool x y dy _ _ =
+backward3 Pool x y dy =
   do dx <- poolBackprop x y dy
      return (Pool, dx)
 
-backward3 ReLU _ y dy _ _ =
+backward3 ReLU _ y dy =
   do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) dy y
      return (ReLU, dx)
 
