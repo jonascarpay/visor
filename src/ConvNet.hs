@@ -112,9 +112,14 @@ data TrainState = TrainState { network :: ConvNet
 train :: Volume -> [Label] -> Trainer LossVector
 train x y = do TrainState (ConvNet l3s cs) α λ vs <- get
                (_, deltas, lvec) <- getDeltas l3s x cs y
-               put $ TrainState (ConvNet undefined cs) α λ vs
+               (l3s', vs') <- applyDeltas deltas l3s vs
+               put $ TrainState (ConvNet l3s cs) α λ vs'
                return lvec
 
+applyDeltas :: Monad m => [Layer3] -> [Layer3] -> [Layer3] -> m ([Layer3], [Layer3])
+applyDeltas [] [] [] = return ([], [])
+applyDeltas (dl:dls) (l:ls) (v:vs) = undefined
+applyDeltas _ _ _ = error "Network size mismatch when updating layers"
 
 type Trainer = State TrainState
 type LossVector = [Double]
@@ -137,6 +142,6 @@ getDeltas [] x cs ys = do
 
 getDeltas (l:ls) x cs ys =
   do f <- forward3 x l
-     (df, l3s', loss) <- getDeltas ls f cs ys
-     (l', dx) <- backward3 l x f df
-     return (dx, l':l3s', loss)
+     (df, dls, loss) <- getDeltas ls f cs ys
+     (dl, dx) <- backward3 l x f df
+     return (dx, dl:dls, loss)
