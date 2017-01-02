@@ -115,7 +115,7 @@ backward3 :: Monad m -- ^ Required by repa for parallel computations
           -> Volume  -- ^ Output for this layer during the forward pass
           -> Volume  -- ^ Error gradient on the output of this layer
           -> m (Layer3, Volume) -- ^ Weight deltas, and error gradient on this layer's input.
-backward3 (Conv w b) x _ dy =
+backward3 (Conv w _) x _ dy =
   do dx <- w `fullConv` dy
      dw <- dy `corrVolumes` x
      return (Conv dw dy, dx)

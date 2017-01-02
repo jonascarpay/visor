@@ -8,31 +8,27 @@ import Game
 import Images
 import Volume
 import Control.Monad
-import Data.Serialize
+import Data.Serialize (Serialize, decode, encode)
 import GHC.Generics (Generic)
 import qualified Data.ByteString as BS
 import System.Directory
 import System.FilePath
 import Codec.Picture
+import Control.Monad.Trans.State.Strict
 
 newtype Visor = Visor [ConvNet] deriving (Show, Generic)
 instance Serialize Visor
 
--- | Specialized training function for monadic folding. The List of doubles
---   accumulates losses.
-train' :: Monad m => Double -> (ConvNet, [[Double]]) -> ConvSample -> m (ConvNet, [[Double]])
-train' α (ConvNet l3s cs, losses) (ConvSample i o) =
-  do (_, l3s', loss) <- train3 l3s i cs o α
-     return (ConvNet l3s' cs, loss:losses)
+type VisorTrainer = State [TrainState]
 
-trainVisor :: Monad m => Visor -> VisorSample -> m (Visor, [[[Double]]])
-trainVisor (Visor nets) css = do zs <- z
-                                 let (nets, losses) = unzip zs
-                                 return (Visor nets, losses)
-  where
-    f :: Monad m => ConvNet -> ConvSampleSequence -> m (ConvNet, [[Double]])
-    f net cs = foldM (train' 5e-3) (net, []) cs
-    z = zipWithM f nets css
+trainVisor :: VisorSample -> VisorTrainer [[LossVector]]
+trainVisor s = do nets  <- get
+                  let trainers :: [Trainer [LossVector]] = mapM train <$> s
+                      (losses, nets') = unzip$ zipWith runState trainers nets
+                  put nets'
+                  return losses
+
+initVisorTrainer :: Visor -> [TrainState]
 
 gameVisor :: Game -> Visor
 gameVisor (Game _ ws) = Visor (fmap widgetNet ws)

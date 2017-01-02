@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Strict #-}
 
 module ConvNet where
 
@@ -102,6 +103,9 @@ feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
   where
     foldConv vol = foldM forward3 vol l3s
 
+type Trainer = State TrainState
+type LossVector = [Double]
+
 -- TODO: lenses
 data TrainState = TrainState { network :: ConvNet
                              , learningRate :: Double
@@ -110,12 +114,12 @@ data TrainState = TrainState { network :: ConvNet
                              , velocity :: [Layer3]
                              }
 
-train :: Volume -> [Label] -> Trainer LossVector
-train x y = do TrainState (ConvNet l3s cs) α λ γ vs <- get
-               (_, deltas, lvec) <- getDeltas l3s x cs y
-               (l3s', vs') <- applyDeltas deltas l3s vs α λ γ
-               put $ TrainState (ConvNet l3s' cs) α λ γ vs'
-               return lvec
+train :: ConvSample -> Trainer LossVector
+train (ConvSample x y) = do TrainState (ConvNet l3s cs) α λ γ vs <- get
+                            (_, deltas, lvec) <- getDeltas l3s x cs y
+                            (l3s', vs') <- applyDeltas deltas l3s vs α λ γ
+                            put $ TrainState (ConvNet l3s' cs) α λ γ vs'
+                            return lvec
 
 applyDeltas :: Monad m
             => [Layer3] -- ^ Delta layers
@@ -132,9 +136,6 @@ applyDeltas (dl:dls) (l:ls) (v:vs) α λ γ =
 
 applyDeltas [] [] [] _ _ _ = return ([], [])
 applyDeltas _  _  _  _ _ _ = error "Network size mismatch when updating layers"
-
-type Trainer = State TrainState
-type LossVector = [Double]
 
 getDeltas :: Monad m
        => [Layer3] -- ^ Network layers
