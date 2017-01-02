@@ -128,7 +128,22 @@ backward3 ReLU _ y dy =
   do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) dy y
      return (ReLU, dx)
 
-applyDelta = undefined
+applyDelta :: Monad m
+           => Layer3
+           -> Layer3
+           -> Layer3
+           -> Double
+           -> Double
+           -> Double
+           -> m (Layer3, Layer3)
+applyDelta (Conv dw db) (Conv w b) (Conv vw vb) α λ γ =
+  do vw' <- computeP$ R.zipWith (\v d -> γ*v-α*d) vw dw
+     vb' <- computeP$ R.zipWith (\v d -> γ*v-α*d) vb vb
+     w'  <- computeP$ w +^ vw'
+     b'  <- computeP$ b +^ vb'
+     return (Conv w' b', Conv vw' vb')
+
+applyDelta _ l v _ _ _ = return (l,v)
 
 -- TODO: backprop van pooling moet extent-invariant worden
 -- | Max-pooling function for volumes
