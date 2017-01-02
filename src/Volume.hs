@@ -137,10 +137,10 @@ applyDelta :: Monad m
            -> Double
            -> m (Layer3, Layer3)
 applyDelta (Conv dw db) (Conv w b) (Conv vw vb) α λ γ =
-  do vw' <- computeP$ R.zipWith (\v d -> γ*v-α*d) vw dw
-     vb' <- computeP$ R.zipWith (\v d -> γ*v-α*d) vb vb
-     w'  <- computeP$ w +^ vw'
-     b'  <- computeP$ b +^ vb'
+  do vw' <- computeP$ R.zipWith (\v d -> γ*v - α*d) vw dw
+     vb' <- computeP$ R.zipWith (\v d -> γ*v - α*d) vb db
+     w'  <- computeP$ R.zipWith (\w v -> w + v - λ*w) w vw'
+     b'  <- computeP$ R.zipWith (\b v -> b + v - λ*b) b vb'
      return (Conv w' b', Conv vw' vb')
 
 applyDelta _ l v _ _ _ = return (l,v)
