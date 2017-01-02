@@ -128,6 +128,8 @@ backward3 ReLU _ y dy =
   do dx <- computeP $ R.zipWith (\x t -> if t > 0 then x else 0) dy y
      return (ReLU, dx)
 
+applyDelta = undefined
+
 -- TODO: backprop van pooling moet extent-invariant worden
 -- | Max-pooling function for volumes
 pool :: Monad m => Volume -> m Volume

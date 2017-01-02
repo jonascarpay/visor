@@ -106,20 +106,31 @@ feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
 data TrainState = TrainState { network :: ConvNet
                              , learningRate :: Double
                              , regularizationLoss :: Double
+                             , momentumFactor :: Double
                              , velocity :: [Layer3]
                              }
 
 train :: Volume -> [Label] -> Trainer LossVector
-train x y = do TrainState (ConvNet l3s cs) α λ vs <- get
+train x y = do TrainState (ConvNet l3s cs) α λ γ vs <- get
                (_, deltas, lvec) <- getDeltas l3s x cs y
-               (l3s', vs') <- applyDeltas deltas l3s vs
-               put $ TrainState (ConvNet l3s cs) α λ vs'
+               (l3s', vs') <- applyDeltas deltas l3s vs α λ γ
+               put $ TrainState (ConvNet l3s cs) α λ γ vs'
                return lvec
 
-applyDeltas :: Monad m => [Layer3] -> [Layer3] -> [Layer3] -> m ([Layer3], [Layer3])
-applyDeltas [] [] [] = return ([], [])
-applyDeltas (dl:dls) (l:ls) (v:vs) = undefined
-applyDeltas _ _ _ = error "Network size mismatch when updating layers"
+applyDeltas :: Monad m
+            => [Layer3]
+            -> [Layer3]
+            -> [Layer3]
+            -> Double
+            -> Double
+            -> Double
+            -> m ([Layer3], [Layer3])
+applyDeltas [] [] [] _ _ _ = return ([], [])
+applyDeltas (dl:dls) (l:ls) (v:vs) α λ γ =
+  do (ls', vs') <- applyDeltas dls ls vs α λ γ
+     (l',v') <- applyDelta dl l v α λ γ
+     return (l':ls', v':vs')
+applyDeltas _ _ _ _ _ _ = error "Network size mismatch when updating layers"
 
 type Trainer = State TrainState
 type LossVector = [Double]
