@@ -10,6 +10,7 @@ import Control.Monad
 import GHC.Generics (Generic)
 import qualified Data.Array.Repa as R
 import Data.Serialize
+import Control.Monad.Trans.State.Strict
 
 -- | A convolutional network for image processing. The [Layer3] part represents
 --   the part of the network whose outputs are volumes, i.e. the convolutional
@@ -100,6 +101,14 @@ feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
                                           return $ getMaximaThresholded ys cs t
   where
     foldConv vol = foldM forward3 vol l3s
+
+data TrainState = TrainState { network :: ConvNet
+                             , learningRate :: Double
+                             , regularizationLoss :: Double
+                             , velocity :: [Layer3]
+                             }
+
+type Trainer = State TrainState
 
 train3 :: Monad m
        => [Layer3] -- ^ Network layers
