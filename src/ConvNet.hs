@@ -106,11 +106,14 @@ feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
 type Trainer = State TrainState
 type LossVector = [Double]
 
+data NetParams = NetParams { learningRate :: Double
+                           , regularizationLoss :: Double
+                           , momentumFactor :: Double
+                           }
+
 -- TODO: lenses
 data TrainState = TrainState { network :: ConvNet
-                             , learningRate :: Double
-                             , regularizationLoss :: Double
-                             , momentumFactor :: Double
+                             , netParams :: NetParams
                              , velocity :: [Layer3]
                              }
 

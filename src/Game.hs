@@ -7,11 +7,17 @@ import Util
 import Label
 import ConvNet
 
--- | A Game defines where to get a certain data set,
--- and what features to extract from it
-data Game = Game { title   :: String
-                 , widgets :: [Widget]
-                 }
+data GameConfig = GameConfig { defaultParams :: NetParams
+                             , widgets   :: [Widget]
+                             }
+
+class GameState a where
+  fromFilename  :: String -> a
+  fromLabel     :: [Label] -> a
+  toLabel       :: a -> [Label]
+  validate      :: a -> a -> Bool
+  config        :: p a -> GameConfig
+
 
 -- | A widget represents a (possibly repeating) rectangular area of
 --   the screen containing information to be extracted.
