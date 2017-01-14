@@ -117,32 +117,30 @@ data TrainState = TrainState { network :: ConvNet
                              , velocity :: [Layer3]
                              }
 
-initTrainState :: Double -> Double -> Double -> ConvNet -> TrainState
-initTrainState α λ γ net = TrainState net α λ γ (initVelocities net)
+initTrainState :: NetParams -> ConvNet -> TrainState
+initTrainState p net = TrainState net p (initVelocities net)
   where initVelocities (ConvNet ls _) = initVelocity <$> ls
 
 train :: ConvSample -> Trainer LossVector
-train (ConvSample x y) = do TrainState (ConvNet l3s cs) α λ γ vs <- get
+train (ConvSample x y) = do TrainState (ConvNet l3s cs) p vs <- get
                             (_, deltas, lvec) <- getDeltas l3s x cs y
-                            (l3s', vs') <- applyDeltas deltas l3s vs α λ γ
-                            put $ TrainState (ConvNet l3s' cs) α λ γ vs'
+                            (l3s', vs') <- applyDeltas deltas l3s vs p
+                            put $ TrainState (ConvNet l3s' cs) p vs'
                             return lvec
 
 applyDeltas :: Monad m
             => [Layer3] -- ^ Delta layers
             -> [Layer3] -- ^ Network layers
             -> [Layer3] -- ^ Velocity layers
-            -> Double   -- ^ Learning rate
-            -> Double   -- ^ Regularization loss
-            -> Double   -- ^ Momentum factor
+            -> NetParams
             -> m ([Layer3], [Layer3])
-applyDeltas (dl:dls) (l:ls) (v:vs) α λ γ =
-  do (ls', vs') <- applyDeltas dls ls vs α λ γ
+applyDeltas (dl:dls) (l:ls) (v:vs) p@(NetParams α λ γ) =
+  do (ls', vs') <- applyDeltas dls ls vs p
      (l' , v')  <- applyDelta  dl  l  v  α λ γ
      return (l':ls', v':vs')
 
-applyDeltas [] [] [] _ _ _ = return ([], [])
-applyDeltas _  _  _  _ _ _ = error "Network size mismatch when updating layers"
+applyDeltas [] [] [] _ = return ([], [])
+applyDeltas _  _  _  _ = error "Network size mismatch when updating layers"
 
 getDeltas :: Monad m
        => [Layer3] -- ^ Network layers
