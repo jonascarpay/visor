@@ -6,12 +6,31 @@ module Images where
 import Game
 import Volume
 import ConvNet
+import Util
 import Data.Array.Repa hiding ((++))
 import Codec.Picture
 import Codec.Picture.Extra
 import Data.Word
 
 type LabeledImage = (Palette, [[WidgetLabel]])
+
+loadImage :: Dataset -> FilePath -> IO LabeledImage
+loadImage (Dataset _ lblFn (Rect x y w h) wig dist) fp =
+  do putStrLn $ "Loading " ++ fp
+     Right img' <- readImage fp
+     dx <- randomRIO (0, wig)
+     dy <- randomRIO (0, wig)
+     dw <- randomRIO (0, wig)
+     dh <- randomRIO (0, wig)
+     dr :: Double <- randomRIO (0.9, 1.1)
+     dg :: Double <- randomRIO (0.9, 1.1)
+     db :: Double <- randomRIO (0.9, 1.1)
+     let img = convertRGB8 img'
+         imgCropped = crop (x+dx) (y+dy) (w-dx-dw) (h-dy-dh) img
+         scaleMax x c = round $ min 255 $ fromIntegral x * c
+         distortColor (PixelRGB8 r g b) = PixelRGB8 (scaleMax r dr) (scaleMax g dg) (scaleMax b db)
+         distorted = pixelMap distortColor imgCropped
+     return (if dist then distorted else imgCropped, lblFn fp)
 
 extractWidgetsLabeled :: Game -> LabeledImage -> [[(Palette, WidgetLabel)]]
 extractWidgetsLabeled g (img, ls) = pair imgs ls
