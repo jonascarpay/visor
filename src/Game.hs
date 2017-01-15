@@ -7,21 +7,20 @@ import Util
 import Label
 import ConvNet
 
-data GameConfig = GameConfig { defaultParams :: NetParams
-                             , widgets   :: [Widget]
-                             }
+data GameConfig a = GameConfig { defaultParams :: NetParams
+                               , widgets   :: [Widget a]
+                               }
 
 class GameState a where
   fromFilename  :: String -> a
   fromLabel     :: [Label] -> a
   toLabel       :: a -> [Label]
   validate      :: a -> a -> Bool
-  config        :: p a -> GameConfig
-
+  config        :: p a -> GameConfig a
 
 -- | A widget represents a (possibly repeating) rectangular area of
 --   the screen containing information to be extracted.
-data Widget =
+data Widget a =
   Widget
     { -- ^ The resolution at which this is fed to the network. Higher means
       --   slower convergence, easier overfitting, and worse performance.
@@ -47,7 +46,7 @@ data Widget =
 type WidgetLabel = [Label]
 
 -- | A data set defines a set of samples for some game
-data Dataset =
+data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
