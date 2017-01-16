@@ -12,12 +12,13 @@ data GameConfig a = GameConfig { defaultParams :: NetParams
                                , widgetDfn     :: [Widget a]
                                }
 
-class GameState a where
+class Show a => GameState a where
   fromFilename  :: FilePath -> a
   fromLabel     :: [[WidgetLabel]] -> a
   toLabel       :: a -> [[WidgetLabel]]
   validate      :: a -> a -> Bool
   config        :: p a -> GameConfig a
+  showFancy     :: a -> String
 
 -- | A widget represents a (possibly repeating) rectangular area of
 --   the screen containing information to be extracted.
