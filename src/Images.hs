@@ -1,5 +1,4 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Strict #-}
 
 module Images where
 
@@ -11,11 +10,13 @@ import Data.Array.Repa hiding ((++))
 import Codec.Picture
 import Codec.Picture.Extra
 import Data.Word
+import System.Random
 
-type LabeledImage = (Palette, [[WidgetLabel]])
+newtype LabeledWidgets a = LabeledWidgets { getWidgets :: [[(Palette, WidgetLabel)]] }
+newtype LabeledImage   a = LabeledImage (Palette, [[WidgetLabel]])
 
-loadImage :: Dataset -> FilePath -> IO LabeledImage
-loadImage (Dataset _ lblFn (Rect x y w h) wig dist) fp =
+loadImage :: forall a. GameState a => Dataset a -> FilePath -> IO (LabeledImage a)
+loadImage (Dataset _ mRect wig dist) fp =
   do putStrLn $ "Loading " ++ fp
      Right img' <- readImage fp
      dx <- randomRIO (0, wig)
@@ -26,19 +27,25 @@ loadImage (Dataset _ lblFn (Rect x y w h) wig dist) fp =
      dg :: Double <- randomRIO (0.9, 1.1)
      db :: Double <- randomRIO (0.9, 1.1)
      let img = convertRGB8 img'
-         imgCropped = crop (x+dx) (y+dy) (w-dx-dw) (h-dy-dh) img
+         imgCropped = case mRect of
+                        Nothing             -> img
+                        Just (Rect x y w h) -> crop (x+dx) (y+dy) (w-dx-dw) (h-dy-dh) img
          scaleMax x c = round $ min 255 $ fromIntegral x * c
          distortColor (PixelRGB8 r g b) = PixelRGB8 (scaleMax r dr) (scaleMax g dg) (scaleMax b db)
          distorted = pixelMap distortColor imgCropped
-     return (if dist then distorted else imgCropped, lblFn fp)
+         imgFinal = if dist then distorted else imgCropped
+         labels = toLabel (fromFilename fp :: a)
 
-extractWidgetsLabeled :: Game -> LabeledImage -> [[(Palette, WidgetLabel)]]
-extractWidgetsLabeled g (img, ls) = pair imgs ls
-  where pair = Prelude.zipWith zip
-        imgs = extractWidgets g img
+     return $! LabeledImage (imgFinal, labels)
 
-extractWidgets :: Game -> Palette -> [[Palette]]
-extractWidgets (Game _ ws) img =
+extractWidgetsLabeled :: GameState a => LabeledImage a -> LabeledWidgets a
+extractWidgetsLabeled i@(LabeledImage (img, labels)) = LabeledWidgets $ pair imgs labels
+  where pair = Prelude.zipWith (zip)
+        imgs = extractWidgets widgets img
+        widgets = widgetDfn . config $ i
+
+extractWidgets :: [Widget a] -> Palette -> [[Palette]]
+extractWidgets ws img =
   let w = imageWidth img
       h = imageHeight img
       w' x = round $ x * fromIntegral w
@@ -47,8 +54,8 @@ extractWidgets (Game _ ws) img =
         fmap (\(rx, ry) -> scaleBilinear r r $ crop (w' rx) (h' ry) (w' rw) (h' rh) img) ps
    in fmap getWidgets ws
 
-cropScale :: Monad m => Game -> Array U DIM2 (Word8, Word8, Word8) -> m [[Volume]]
-cropScale (Game _ ws) img = mapM getWidget ws
+cropScale :: Monad m => [Widget a] -> Array U DIM2 (Word8, Word8, Word8) -> m [[Volume]]
+cropScale ws img = mapM getWidget ws
   where
     Z:.h:.w = extent img
     xAbs x = round$ x * fromIntegral w
@@ -80,11 +87,11 @@ toVolumeP img = computeP $ fromFunction sh fn
 -- | Turns an image and its labels into a list of lists of samples
 --   The elements of the outer list each associate with a different
 --   widget, the inner lists are different occurrences of single widget.
-toSamples :: Game -> LabeledImage -> [[ConvSample]]
-toSamples game ins = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) extracted
+toSamples :: GameState a => LabeledImage a -> [[ConvSample]]
+toSamples i@(LabeledImage (img, ls)) = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) extracted
   where
     extracted :: [[(Palette, WidgetLabel)]]
-    extracted = extractWidgetsLabeled game ins
+    extracted = getWidgets $ extractWidgetsLabeled i
 
 -- TODO: Enforce 0-1 normalization?
 rgbToImage :: Volume -> DynamicImage

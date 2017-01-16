@@ -55,6 +55,8 @@ library
                       -fno-warn-name-shadowing
                       -fno-warn-orphans
                       -O2
+  extensions:          BangPatterns
+
 executable visor-app
   hs-source-dirs:      app
   default-language:    Haskell2010

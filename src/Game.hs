@@ -8,13 +8,13 @@ import Label
 import ConvNet
 
 data GameConfig a = GameConfig { defaultParams :: NetParams
-                               , widgets   :: [Widget a]
+                               , widgetDfn     :: [Widget a]
                                }
 
 class GameState a where
-  fromFilename  :: String -> a
-  fromLabel     :: [Label] -> a
-  toLabel       :: a -> [Label]
+  fromFilename  :: FilePath -> a
+  fromLabel     :: [[WidgetLabel]] -> a
+  toLabel       :: a -> [[WidgetLabel]]
   validate      :: a -> a -> Bool
   config        :: p a -> GameConfig a
 
@@ -50,13 +50,10 @@ data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
-      -- ^ The labels to extract from an image. The order and length
-      --   of the labels should be the same as the total number of
-      --   feature positions for the given game. Paths are absolute.
-      labels :: FilePath -> [[WidgetLabel]],
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
-      cropRect :: Rect Int,
+      --   Nothing implies the entire image
+      cropRect :: Maybe (Rect Int),
       -- ^ Indicates the number of extra pixels we can crop off
       --  in all directions. This is used to apply a random
       --  translation to the image.
