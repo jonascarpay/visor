@@ -8,6 +8,7 @@ import Label
 import ConvNet
 
 data GameConfig a = GameConfig { defaultParams :: NetParams
+                               , title         :: String
                                , widgetDfn     :: [Widget a]
                                }
 
