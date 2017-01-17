@@ -18,6 +18,7 @@ newtype LabeledImage   a = LabeledImage (Palette, [[WidgetLabel]])
 newtype FullImage   a = UnlabeledImage Palette
 newtype WidgetImage a = UnlabeledWidget [[Palette]]
 
+
 loadImage :: forall a. GameState a => Dataset a -> FilePath -> IO (LabeledImage a)
 loadImage (Dataset _ parseFn mRect wig dist) fp =
   do putStrLn $ "Loading " ++ fp
@@ -37,7 +38,7 @@ loadImage (Dataset _ parseFn mRect wig dist) fp =
          distortColor (PixelRGB8 r g b) = PixelRGB8 (scaleMax r dr) (scaleMax g dg) (scaleMax b db)
          distorted = pixelMap distortColor imgCropped
          imgFinal = if dist then distorted else imgCropped
-         labels = toLabel (parseFn fp :: a)
+         labels = parseFn fp
 
      return $! LabeledImage (imgFinal, labels)
 

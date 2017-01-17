@@ -1,8 +1,10 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Games.Melee where
 
 import Game
+import Util
 import ConvNet
 import Data.List.Split
 
@@ -51,6 +53,14 @@ dolphinShots =
           , distort = True
           }
 
-fromFilename (splitOn "x" -> []) = undefined
+fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
+                                  "p1", "g", g1, "c", _, "s", read -> s1 :: Int, "p", read -> p1 :: Int,
+                                  "p2", "g", g2, "c", _, "s", read -> s2 :: Int, "p", read -> p2 :: Int,
+                                  "p3", "g", g3, "c", _, "s", read -> s3 :: Int, "p", read -> p3 :: Int,
+                                  "p4", "g", g4, "c", _, "s", read -> s4 :: Int, "p", read -> p4 :: Int] )
+  | count "1" [g1,g2,g3,g4] == 2 = undefined
+  | count "1" [g1,g2,g3,g4] == 4 = undefined
+  | otherwise = undefined
+
 fromFilename _ = error "Invalid filename"
 

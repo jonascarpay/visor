@@ -51,7 +51,7 @@ data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
-      parseFilename :: FilePath -> a,
+      parseFilename :: FilePath -> [[WidgetLabel]],
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       --   Nothing implies the entire image

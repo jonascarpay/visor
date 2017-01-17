@@ -44,3 +44,5 @@ printLosses :: [[[Double]]] -> String
 printLosses dsss = dsss >>= (intercalate "\n" . fmap f)
   where f = intercalate "\t" . fmap (printDoubleThresholded 0.7)
 
+count :: Eq a => a -> [a] -> Int
+count needle = length . filter (==needle)
