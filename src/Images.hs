@@ -5,6 +5,7 @@ module Images where
 import Game
 import Volume
 import ConvNet
+import Label
 import Util
 import Data.Array.Repa hiding ((++))
 import Codec.Picture
@@ -12,12 +13,12 @@ import Codec.Picture.Extra
 import Data.Word
 import System.Random
 
+newtype WidgetLabel a = WidgetLabel [Label]
+newtype ImageLabel  a = ImageLabel  [[WidgetLabel a]]
+newtype SplitImage a = SplitImage [[Palette]]
+
 newtype LabeledWidgets a = LabeledWidgets { getWidgets :: [[(Palette, WidgetLabel)]] }
-newtype LabeledImage   a = LabeledImage (Palette, [[WidgetLabel]])
-
-newtype FullImage   a = UnlabeledImage Palette
-newtype WidgetImage a = UnlabeledWidget [[Palette]]
-
+newtype LabeledImage   a = LabeledImage (FullImage a, ImageLabel a)
 
 loadImage :: forall a. GameState a => Dataset a -> FilePath -> IO (LabeledImage a)
 loadImage (Dataset _ parseFn mRect wig dist) fp =

@@ -44,8 +44,6 @@ data Widget a =
       netSpec :: [LayerSpec]
     }
 
-type WidgetLabel = [Label]
-
 -- | A data set defines a set of samples for some game
 data Dataset a =
   Dataset
