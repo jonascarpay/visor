@@ -1,4 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -9,7 +10,6 @@ import Conduits
 import Screen
 import Data.Conduit.Async
 import Games.Melee
-import Games.MeleeWatch
 import System.Environment
 import System.FilePath
 
@@ -18,10 +18,10 @@ main = getArgs >>= main'
 
 main' :: [String] -> IO ()
 
-main' ["datasetTest"] = runResourceT $ buffer 1 (datasetSource False dolphin_sets) datasetSink
+main' ["datasetTest"] = runResourceT $ buffer 1 (datasetSource False dolphinShots) datasetSink
 
-main' ["parseTest"] = runResourceT $ buffer 1 ( datasetSource False dolphin_sets
-                                             .| mapC (extractWidgetsLabeled melee)
+main' ["parseTest"] = runResourceT $ buffer 1 ( datasetSource False dolphinShots
+                                             .| mapC extractWidgetsLabeled
                                               )
                                               parseSink
 
@@ -30,40 +30,27 @@ main' ["batchParseTest"] = runResourceT $ buffer 1 (batchSource .| unpackBatch) 
 -- Trains the initial visor directly from the dataset, without intermediate batches
 main' ["meleeRaw"] =
   do visor <- runResourceT $ buffer 1
-                                   (loopC (gameSource melee dolphin_sets False) .| takeC 10000)
-                                   (trainVisorC (gameVisor melee))
+                                   (loopC (gameSource dolphinShots False) .| takeC 10000)
+                                   (trainVisorC (initVisor :: Visor Melee))
      saveWeightImages visor
 
 main' ["meleeTrain", n] =
   do let vFile = "data"</>"visor"</>"melee.visor"
-
-     --visor  <- loadVisor vFile melee
-     let visor = gameVisor melee
-     visor' <- runConduitRes (( if n == "all" then batchSource else loopC batchSource .| takeC (read n)) .| (trainVisorC visor))
-     {-visor' <- runResourceT $ buffer 1-}
-                                   {-( if n == "all" then batchSource-}
-                                                   {-else loopC batchSource .| takeC (read n))-}
-                                   {-(trainVisorC visor)-}
+     let visor = initVisor :: Visor Melee -- Hardcoded to generate a new visor
+     visor' <- runConduitRes (( if n == "all" then batchSource else loopC batchSource .| takeC (read n)) .| trainVisorC visor)
      saveWeightImages visor'
      saveVisor vFile visor'
 
 main' ["meleeWatch", read -> x, read -> y, read -> w, read -> h] =
   do let vFile = "data"</>"visor"</>"melee.visor"
-     visor <- loadVisor vFile undefined
+     (visor :: Visor Melee) <- loadVisor vFile
      runConduitRes $ screenSourceRepa x y w h
-                  .| mapMC (cropScale melee)
+                  .| mapMC (cropScale (undefined :: p Melee))
                   .| mapMC (\img -> feedVisorFast visor img 0.99)
-                  .| meleeC
-
-main' ["watchTest", read -> x, read -> y, read -> w, read -> h] =
-  do let vFile = "data"</>"visor"</>"melee.visor"
-     visor <- loadVisor vFile undefined
-     runConduitRes $ screenSource x y w h
-                  .| watchC visor melee 0.5
-                  .| parseSink
+                  .| undefined
 
 main' ["genBatch", read->n] =
-  runResourceT $ buffer n (gameSource melee dolphin_sets True) (batchSink n)
+  runResourceT $ buffer n (gameSource dolphinShots True) (batchSink n)
 
 main' ["processCifar"] = runConduitRes $ sourceCifar .| imageSink
 

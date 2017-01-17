@@ -15,6 +15,9 @@ import System.Random
 newtype LabeledWidgets a = LabeledWidgets { getWidgets :: [[(Palette, WidgetLabel)]] }
 newtype LabeledImage   a = LabeledImage (Palette, [[WidgetLabel]])
 
+newtype FullImage   a = UnlabeledImage Palette
+newtype WidgetImage a = UnlabeledWidget [[Palette]]
+
 loadImage :: forall a. GameState a => Dataset a -> FilePath -> IO (LabeledImage a)
 loadImage (Dataset _ mRect wig dist) fp =
   do putStrLn $ "Loading " ++ fp
@@ -54,11 +57,12 @@ extractWidgets ws img =
         fmap (\(rx, ry) -> scaleBilinear r r $ crop (w' rx) (h' ry) (w' rw) (h' rh) img) ps
    in fmap getWidgets ws
 
-cropScale :: Monad m => [Widget a] -> Array U DIM2 (Word8, Word8, Word8) -> m [[Volume]]
-cropScale ws img = mapM getWidget ws
+cropScale :: (GameState a, Monad m) => p a -> Array U DIM2 (Word8, Word8, Word8) -> m [[Volume]]
+cropScale proxy img = mapM getWidget ws
   where
     Z:.h:.w = extent img
     xAbs x = round$ x * fromIntegral w
+    ws = widgetDfn . config $ proxy
     yAbs y = round$ y * fromIntegral h
     getWidget (Widget r ps (rw, rh) _ _) = mapM (\(rx, ry) -> cropFast r (xAbs rx) (yAbs ry) (xAbs rw) (yAbs rh) img) ps
 
@@ -88,7 +92,7 @@ toVolumeP img = computeP $ fromFunction sh fn
 --   The elements of the outer list each associate with a different
 --   widget, the inner lists are different occurrences of single widget.
 toSamples :: GameState a => LabeledImage a -> [[ConvSample]]
-toSamples i@(LabeledImage (img, ls)) = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) extracted
+toSamples i = (fmap.fmap) (\ (img, ls) -> ConvSample (toVolume img) ls) extracted
   where
     extracted :: [[(Palette, WidgetLabel)]]
     extracted = getWidgets $ extractWidgetsLabeled i
