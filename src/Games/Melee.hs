@@ -1,7 +1,10 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Games.Melee where
 
 import Game
 import ConvNet
+import Data.List.Split
 
 -- | Game definition for SSBM.
 data Melee = Menu
@@ -43,6 +46,11 @@ dolphinShots :: Dataset Melee
 dolphinShots =
   Dataset { rootDir = "/Users/jmc/tmp/"
           , cropRect = Nothing
+          , parseFilename = fromFilename
           , wiggle = 30
           , distort = True
           }
+
+fromFilename (splitOn "x" -> []) = undefined
+fromFilename _ = error "Invalid filename"
+

@@ -31,7 +31,7 @@ datasetSource :: GameState a
 datasetSource shuf set =
   filePathSource set shuf .| mapMC (liftIO . loadImage set)
 
-filePathSource (Dataset root _ _ _) shuf =
+filePathSource (Dataset root _ _ _ _) shuf =
   if shuf then source .| shuffleConduit
           else source
   where source = sourceDirectoryDeep True root

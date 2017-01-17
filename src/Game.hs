@@ -13,7 +13,6 @@ data GameConfig a = GameConfig { defaultParams :: NetParams
                                }
 
 class Show a => GameState a where
-  fromFilename  :: FilePath -> a
   fromLabel     :: [[WidgetLabel]] -> a
   toLabel       :: a -> [[WidgetLabel]]
   validate      :: a -> a -> Bool
@@ -52,6 +51,7 @@ data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
+      parseFilename :: FilePath -> a,
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       --   Nothing implies the entire image
