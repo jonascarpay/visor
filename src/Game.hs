@@ -12,12 +12,10 @@ data GameConfig a = GameConfig { defaultParams :: NetParams
                                , widgetDfn     :: [Widget a]
                                }
 
--- | If x1 and x2 are values for some x in two subsequent ingame
---   frames, then x1 `canTransition` x2
+-- | If x1 and x2 could be the values for some x in two
+--   subsequent screen polls, then x1 ->? x2
 class Transitions a where
-  canTransition :: a -> a -> Bool
-
-(->?) = canTransition
+  (->?) :: a -> a -> Bool
 
 class Show a => GameState a where
   fromLabel     :: [[WidgetLabel]] -> a
