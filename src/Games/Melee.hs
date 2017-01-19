@@ -14,16 +14,31 @@ data PlayerState = PlayerState { stocks :: Int
                                } deriving (Eq, Show)
 
 instance Transitions PlayerState where
-  PlayerState s1 p1 ->? PlayerState s2 p2
-    | s1 == s2 && p1 <= p2 = True
-    | p1 >  0  && p2 == 0  = s2 == s1 - 1
-    | otherwise            = False
+  PlayerState s p ->? PlayerState s' p'
+    | s' == s && p' >= p = True
+    | p  >  0 && p' == 0 = s' == s - 1
+    | otherwise          = False
 
 -- | Game definition for SSBM.
 data Melee = Menu
            | Ingame2P PlayerState PlayerState
            | Ingame4P PlayerState PlayerState PlayerState PlayerState
          deriving (Eq, Show)
+
+instance Transitions GameState where
+  Menu ->? Menu                                                                             = True
+  Menu ->? Ingame2P (PlayerState 0 0) (PlayerState 0 0)                                     = True
+  Menu ->? Ingame4P (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) = True
+
+  Ingame2P (PlayerState 0 0) _ ->? Menu = True
+  Ingame2P _ (PlayerState 0 0) ->? Menu = True
+  Ingame2P p1 p2 ->? Ingame2P p1' p2'   = p1 ->? p1' && p2 ->? p2'
+
+  Ingame4P p1 p2 p3 p4 ->? Menu                     = count (PlayerState 0 0) [p1, p2, p3, p4] > 1
+  Ingame4P p1 p2 p3 p4 ->? Ingame4P p1' p2' p3' p4' = p1 == p1' && p2 == p2' && p3 == p3' && p4 == p4'
+
+  _ ->? _ = False
+
 
 instance GameState Melee where
 
