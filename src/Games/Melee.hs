@@ -8,15 +8,22 @@ import Util
 import ConvNet
 import Data.List.Split
 
+-- | The state of a player in a game
+data PlayerState = PlayerState { stocks :: Int
+                               , percent :: Int
+                               } deriving (Eq, Show)
+
+instance Transitions PlayerState where
+  PlayerState s1 p1 ->? PlayerState s2 p2
+    | s1 == s2 && p1 <= p2 = True
+    | p1 >  0  && p2 == 0  = s2 == s1 - 1
+    | otherwise            = False
+
 -- | Game definition for SSBM.
 data Melee = Menu
            | Ingame2P PlayerState PlayerState
            | Ingame4P PlayerState PlayerState PlayerState PlayerState
          deriving (Eq, Show)
-
-data PlayerState = PlayerState { stocks :: Int
-                               , percent :: Int
-                               } deriving (Eq, Show)
 
 instance GameState Melee where
 
