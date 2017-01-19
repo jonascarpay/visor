@@ -17,6 +17,8 @@ data GameConfig a = GameConfig { defaultParams :: NetParams
 class Transitions a where
   canTransition :: a -> a -> Bool
 
+(->?) = canTransition
+
 class Show a => GameState a where
   fromLabel     :: [[WidgetLabel]] -> a
   toLabel       :: a -> [[WidgetLabel]]
