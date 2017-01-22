@@ -15,8 +15,9 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src, spec
   default-language:    Haskell2010
-  exposed-modules:     Game
+  exposed-modules:     Types
                      , Util
+                     , Game
                      , Conduits
                      , Games.Melee
                      , Games.MeleeDiagram
@@ -29,6 +30,7 @@ library
                      , Cifar
   build-depends:       base
                      , hmatrix
+                     , singletons
                      , vector
                      , directory
                      , filepath
