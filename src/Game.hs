@@ -12,14 +12,15 @@ data GameConfig a = GameConfig { defaultParams :: NetParams
                                , widgetDfn     :: [Widget a]
                                }
 
+type WidgetTemp = Int
 -- | If x1 and x2 could be the values for some x in two
 --   subsequent screen polls, then x1 ->? x2
 class Transitions a where
   (->?) :: a -> a -> Bool
 
 class Show a => GameState a where
-  fromLabel     :: [[WidgetLabel]] -> a
-  toLabel       :: a -> [[WidgetLabel]]
+  fromLabel     :: [[WidgetTemp]] -> a
+  toLabel       :: a -> [[WidgetTemp]]
   validate      :: a -> a -> Bool
   config        :: p a -> GameConfig a
   showFancy     :: a -> String
@@ -54,7 +55,7 @@ data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
-      parseFilename :: FilePath -> [[WidgetLabel]],
+      parseFilename :: FilePath -> [[WidgetTemp]],
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       --   Nothing implies the entire image

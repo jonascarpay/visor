@@ -17,8 +17,10 @@ newtype WidgetLabel a = WidgetLabel [Label]
 newtype ImageLabel  a = ImageLabel  [[WidgetLabel a]]
 newtype SplitImage a = SplitImage [[Palette]]
 
-newtype LabeledWidgets a = LabeledWidgets { getWidgets :: [[(Palette, WidgetLabel)]] }
+newtype LabeledWidgets a = LabeledWidgets { getWidgets :: [[(Palette, WidgetLabel a)]] }
 newtype LabeledImage   a = LabeledImage (FullImage a, ImageLabel a)
+
+type FullImage a = Int
 
 loadImage :: forall a. GameState a => Dataset a -> FilePath -> IO (LabeledImage a)
 loadImage (Dataset _ parseFn mRect wig dist) fp =
