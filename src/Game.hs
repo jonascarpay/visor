@@ -13,10 +13,6 @@ data GameConfig a = GameConfig { defaultParams :: NetParams
                                }
 
 type WidgetTemp = Int
--- | If x1 and x2 could be the values for some x in two
---   subsequent screen polls, then x1 ->? x2
-class Transitions a where
-  (->?) :: a -> a -> Bool
 
 class Show a => GameState a where
   fromLabel     :: [[WidgetTemp]] -> a
