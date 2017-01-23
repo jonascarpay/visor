@@ -2,6 +2,7 @@
 
 module Util where
 
+import Types
 import Conduit
 import Label
 import Data.List
@@ -23,11 +24,6 @@ type IOSrc     a   = Source    (ResourceT IO) a
 type IOConduit a b = Conduit a (ResourceT IO) b
 type IOSink    a   = Sink    a (ResourceT IO) ()
 
-data Rect a = Rect { rx :: a
-                   , ry :: a
-                   , rw :: a
-                   , rh :: a }
-
 relToAbs :: Int -> Int -> Rect Double -> Rect Int
 relToAbs (fromIntegral -> w) (fromIntegral -> h) (Rect rx ry rw rh)
   = Rect (round $ w*rx) (round $ h*ry) (round $ w*rw) (round $ h*rh)
@@ -46,3 +42,5 @@ printLosses dsss = dsss >>= (intercalate "\n" . fmap f)
 
 count :: Eq a => a -> [a] -> Int
 count needle = length . filter (==needle)
+
+digit

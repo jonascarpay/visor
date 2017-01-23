@@ -6,8 +6,6 @@
 
 module Types where
 
-import Util
-import ConvNet
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude
 
@@ -71,3 +69,24 @@ data Dataset a =
       --   sample images
       distort :: Bool
     }
+
+data Rect a = Rect { rx :: a
+                   , ry :: a
+                   , rw :: a
+                   , rh :: a }
+
+data NetParams = NetParams { learningRate :: Double
+                           , regularizationLoss :: Double
+                           , momentumFactor :: Double
+                           }
+
+-- | Defines the parameters for the construction of a convolutional layer
+data LayerSpec
+  = ConvS
+      Int -- ^ Kernel size
+      Int -- ^ Kernel count
+  | ReLUS
+  | PoolS
+  | FCS Int
+  deriving (Eq, Show)
+

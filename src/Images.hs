@@ -2,7 +2,6 @@
 
 module Images where
 
-import Game
 import Volume
 import ConvNet
 import Label

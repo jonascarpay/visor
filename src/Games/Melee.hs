@@ -3,10 +3,10 @@
 
 module Games.Melee where
 
-import Game
 import Util
 import ConvNet
 import Data.List.Split
+import Types
 
 -- | The state of a player in a game
 data PlayerState = PlayerState { stocks :: Int
@@ -19,9 +19,12 @@ instance Transitions PlayerState where
     | p  >  0 && p' == 0 = s' == s - 1
     | otherwise          = False
 
+instance WidgetData PlayerState
+
+
 -- | Game definition for SSBM.
 data Melee = Menu
-           | Ingame2P PlayerState PlayerState
+           | Ingame2P PlayerState Int PlayerState Int
            | Ingame4P PlayerState PlayerState PlayerState PlayerState
          deriving (Eq, Show)
 
@@ -39,7 +42,6 @@ instance Transitions GameState where
 
   _ ->? _ = False
 
-
 instance GameState Melee where
 
 dmgStocks :: Widget Melee
@@ -49,16 +51,6 @@ dmgStocks = Widget { resolution = 32
                    , cardinalities = [10, 10, 10, 5]
                    , netSpec = [ConvS 13 64, ReLUS, PoolS, ConvS 5 64, ReLUS, PoolS]
                    }
-
--- Time is not yet included. It adds little important information, and is pretty inefficient
--- until support for non-square inputs
-time :: Widget Melee
-time = Widget { resolution = 40
-              , position = [(w 482, h 42)]
-              , dimensions = (w 262, h 262)
-              , cardinalities = [10,10,10]
-              , netSpec = [ConvS 9 16, PoolS, ReLUS, ConvS 5 16, PoolS, ReLUS]
-              }
 
 w, h :: Double -> Double
 w x = x / screenWidth

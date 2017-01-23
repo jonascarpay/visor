@@ -49,16 +49,6 @@ instance Show ConvNet where
       l3str = fmap (indent . show) l3s
       l1str = fmap (indent . show) l1s
 
--- | Defines the parameters for the construction of a convolutional layer
-data LayerSpec
-  = ConvS
-      Int -- ^ Kernel size
-      Int -- ^ Kernel count
-  | ReLUS
-  | PoolS
-  | FCS Int
-  deriving (Eq, Show)
-
 -- TODO: enforce square inputs
 initCNet :: [LayerSpec] -- ^ Spec of the convolutional part of the network
         -> Int -- ^ Input width
@@ -105,11 +95,6 @@ feedThresholded t (ConvNet l3s cs) v = do vol <- foldConv v
 
 type Trainer = State TrainState
 type LossVector = [Double]
-
-data NetParams = NetParams { learningRate :: Double
-                           , regularizationLoss :: Double
-                           , momentumFactor :: Double
-                           }
 
 -- TODO: lenses
 data TrainState = TrainState { network :: ConvNet
