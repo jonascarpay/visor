@@ -6,6 +6,7 @@
 
 module Types where
 
+import Util
 import ConvNet
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude
@@ -18,7 +19,9 @@ data Widget (sh :: [Nat]) where
 
 data Widgets (n :: Nat) (sh :: [Nat]) where
   WBNil  :: Widgets 0 sh
-  WBCons :: Widget sh -> (Double, Double) -> Widgets n sh -> Widgets (n :+ 1) sh
+  WBCons :: Widget sh -> Widgets n sh -> Widgets (n :+ 1) sh
+
+class GameState a where
 
 -- | If x1 and x2 could be the values for some x in two
 --   subsequent screen polls, then x1 ->? x2.
@@ -50,6 +53,21 @@ data PVec (n :: Nat) where
   PNil  :: PVec 0
   PCons :: (Double, Double) -> PVec n -> PVec (n :+ 1)
 
-wcat :: Widget as -> Widget bs -> Widget (as :++ bs)
-wcat WNil           bs = bs
-wcat (a `WCons` as) bs = a `WCons` wcat as bs
+-- | A data set defines a set of samples for some game
+data Dataset a =
+  Dataset
+    { -- ^ Absolute paths to the images in the data set
+      rootDir :: FilePath,
+      parseFilename :: FilePath -> a,
+      -- ^ The rectangle to crop the images to. This should be the
+      --   largest possible area that only captures the game screen.
+      --   Nothing implies the entire image
+      cropRect :: Maybe (Rect Int),
+      -- ^ Indicates the number of extra pixels we can crop off
+      --  in all directions. This is used to apply a random
+      --  translation to the image.
+      wiggle :: Int,
+      -- ^ Whether or not to apply random color distortion to the
+      --   sample images
+      distort :: Bool
+    }
