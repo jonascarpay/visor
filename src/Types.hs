@@ -17,12 +17,13 @@ import Data.Singletons.Prelude
 --   explicit that classification may fail, by
 --   returning NoParse. This is useful for indicating
 --   that a feature (does|did) not occur on screen.
-data Label (c :: Nat) = Label Int | NoParse
-  deriving (Eq, Show)
+data Label (c :: Nat) where
+  Label   :: KnownNat c => !Int -> Label c
+  NoParse :: KnownNat c => Label c
 
 data Widget (sh :: [Nat]) where
   WNil  :: Widget '[]
-  WCons :: Label c -> Widget cs -> Widget (c ': cs)
+  WCons :: KnownNat c => !(Label c) -> !(Widget cs) -> Widget (c ': cs)
 
 data Widgets (n :: Nat) (sh :: [Nat]) where
   WBNil  :: Widgets 0 sh
@@ -100,4 +101,5 @@ data LayerSpec
   deriving (Eq, Show)
 
 data LabelType = OneHot | Probabilities
-newtype LabelV (t :: LabelType) = LabelV (Vector Double)
+newtype LabelV  (t :: LabelType) = LabelV  {getLabelV  :: (Vector Double)}
+newtype WidgetV (t :: LabelType) = WidgetV {getWidgetV :: (Vector Double)}
