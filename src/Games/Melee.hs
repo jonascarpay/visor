@@ -21,7 +21,6 @@ instance Transitions PlayerState where
 
 instance WidgetData PlayerState
 
-
 -- | Game definition for SSBM.
 data Melee = Menu
            | Ingame2P PlayerState Int PlayerState Int
@@ -30,7 +29,7 @@ data Melee = Menu
 
 instance Transitions GameState where
   Menu ->? Menu                                                                             = True
-  Menu ->? Ingame2P (PlayerState 0 0) (PlayerState 0 0)                                     = True
+  Menu ->? Ingame2P (PlayerState 0 0) _ (PlayerState 0 0) _                                 = True
   Menu ->? Ingame4P (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) = True
 
   Ingame2P (PlayerState 0 0) _ ->? Menu = True

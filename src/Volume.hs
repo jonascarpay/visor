@@ -12,7 +12,7 @@
 
 module Volume where
 
-import Label
+import Types
 import Data.Word
 import Data.Array.Repa as R hiding ((++))
 import qualified Data.Vector.Unboxed as DV

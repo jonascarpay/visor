@@ -4,8 +4,12 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Types where
+module Types
+  ( module Types
+  , module Data.Singletons.TypeLits
+  ) where
 
+import Data.Vector.Unboxed
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude
 
@@ -95,3 +99,5 @@ data LayerSpec
   | FCS Int
   deriving (Eq, Show)
 
+data LabelType = OneHot | Probabilities
+newtype LabelV (t :: LabelType) = LabelV (Vector Double)
