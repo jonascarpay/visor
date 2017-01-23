@@ -9,7 +9,12 @@ module Types where
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude
 
+-- | A label for some image classification. We make
+--   explicit that classification may fail, by
+--   returning NoParse. This is useful for indicating
+--   that a feature (does|did) not occur on screen.
 data Label (c :: Nat) = Label Int | NoParse
+  deriving (Eq, Show)
 
 data Widget (sh :: [Nat]) where
   WNil  :: Widget '[]
@@ -28,9 +33,9 @@ class Transitions a where
   (->?) :: a -> a -> Bool
 
 class Transitions a => WidgetData a where
-  type Shape a :: [Nat]
-  toWidget     :: a -> Widget (Shape a)
-  fromWidget   :: Widget (Shape a) -> a
+  type Size a :: [Nat]
+  toWidget     :: a -> Widget (Size a)
+  fromWidget   :: Widget (Size a) -> a
 
 class Transitions a => WidgetBatch a where
   type Rows a :: Nat
