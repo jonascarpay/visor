@@ -37,11 +37,18 @@ class Transitions a => WidgetBatch a where
   fromWidgets :: Widgets (Rows a) sh -> a
   config      :: p a -> WidgetConfig a
 
-data WidgetConfig a = WidgetConfig { defaultParams :: NetParams
-                                   , resolution    :: Int
-                                   , dimensions    :: (Double, Double)
-                                   , netSpec       :: [LayerSpec]
-                                   }
+data WidgetConfig a where
+  WidgetConfig :: WidgetBatch a
+               => { defaultParams :: NetParams
+                  , resolution    :: Int
+                  , dimensions    :: (Double, Double)
+                  , netSpec       :: [LayerSpec]
+                  , positions     :: PVec (Rows a)
+                  } -> WidgetConfig a
+
+data PVec (n :: Nat) where
+  PNil  :: PVec 0
+  PCons :: (Double, Double) -> PVec n -> PVec (n :+ 1)
 
 wcat :: Widget as -> Widget bs -> Widget (as :++ bs)
 wcat WNil           bs = bs
