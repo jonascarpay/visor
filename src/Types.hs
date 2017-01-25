@@ -10,6 +10,7 @@ module Types
   ) where
 
 import Data.Vector.Unboxed
+import Data.Array.Repa
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude
 
@@ -101,5 +102,6 @@ data LayerSpec
   deriving (Eq, Show)
 
 data LabelType = OneHot | Probabilities
-newtype LabelV  (t :: LabelType) = LabelV  {getLabelV  :: (Vector Double)}
-newtype WidgetV (t :: LabelType) = WidgetV {getWidgetV :: (Vector Double)}
+newtype LabelV       (t :: LabelType) = LabelV  {getLabelV  :: (Vector Double)}
+newtype WidgetV      (t :: LabelType) = WidgetV {getWidgetV :: (Vector Double)}
+newtype WidgetBatchA (t :: LabelType) = WidgetBatchA {getWidgetBatchA :: Array U DIM2 Double}

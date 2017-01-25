@@ -9,9 +9,9 @@
 module Conversions where
 
 import Types
-import Data.Singletons.Prelude.List
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as UM
+import qualified Data.Array.Repa as R
 import Control.Monad.ST
 
 -- | Conversions should be homomorphisms (I think)
@@ -32,10 +32,20 @@ instance KnownNat n => Convertible (Label n) (LabelV 'OneHot) where
 --       constructed from labels were skipped. I am leaving
 --       the slow implementation for now, as I think this
 --       is only called when generating batches, which
---       does not need to be fast
+--       does not need to be fast. The same argument could
+--       be made for widget batches below
 instance Convertible (Widget sh) (WidgetV 'OneHot) where
   convert w = WidgetV . U.concat . fmap getLabelV $ toList w
     where
       toList :: Widget sh' -> [LabelV 'OneHot]
       toList WNil = []
       toList (WCons l ws) = convert l : toList ws
+
+instance KnownNat n => Convertible (Widgets n sh) (WidgetBatchA 'OneHot) where
+  convert ws = WidgetBatchA . R.fromUnboxed (R.ix2 rows (U.length array `div` rows)) $ array
+    where
+      rows = (fromIntegral $ natVal (undefined :: p n)) :: Int
+      array = U.concat . fmap getWidgetV . toList $ ws
+      toList :: Widgets n' sh' -> [WidgetV 'OneHot]
+      toList WBNil = []
+      toList (WBCons w ws) = convert w : toList ws
