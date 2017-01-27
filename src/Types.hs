@@ -1,4 +1,5 @@
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
@@ -30,8 +31,6 @@ data Widgets (n :: Nat) (sh :: [Nat]) where
   WBNil  :: Widgets 0 sh
   WBCons :: Widget sh -> Widgets n sh -> Widgets (n :+ 1) sh
 
-class GameState a where
-
 -- | If x1 and x2 could be the values for some x in two
 --   subsequent screen polls, then x1 ->? x2.
 --   This is used for discarding bad classifications in noisy streams.
@@ -48,6 +47,14 @@ class Transitions a => WidgetBatch a where
   toWidgets   :: a -> Widgets (Rows a) sh
   fromWidgets :: Widgets (Rows a) sh -> a
   config      :: p a -> WidgetConfig a
+
+class Transitions a => GameState a where
+  type Config a :: Game
+
+data Game = Game
+  Symbol -- Title
+  Nat    -- Width in px
+  Nat    -- Height in px
 
 data WidgetConfig a where
   WidgetConfig :: WidgetBatch a
