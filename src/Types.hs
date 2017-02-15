@@ -5,69 +5,40 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Types
-  ( module Types
-  , module Data.Singletons.TypeLits
-  ) where
+module Types where
+
+import Static
 
 import Data.Vector.Unboxed
 import Data.Array.Repa
 import Data.Singletons.TypeLits
-import Data.Singletons.Prelude
+import Data.Singletons.Prelude.List
 
--- | A label for some image classification. We make
---   explicit that classification may fail, by
---   returning NoParse. This is useful for indicating
---   that a feature (does|did) not occur on screen.
-data Label (c :: Nat) where
-  Label   :: KnownNat c => !Int -> Label c
-  NoParse :: KnownNat c => Label c
-
-data Widget (sh :: [Nat]) where
-  WNil  :: Widget '[]
-  WCons :: KnownNat c => !(Label c) -> !(Widget cs) -> Widget (c ': cs)
-
-data Widgets (n :: Nat) (sh :: [Nat]) where
-  WBNil  :: Widgets 0 sh
-  WBCons :: Widget sh -> Widgets n sh -> Widgets (n :+ 1) sh
-
--- | If x1 and x2 could be the values for some x in two
+-- | If x1 and x2 could be values for some x in two
 --   subsequent screen polls, then x1 ->? x2.
 --   This is used for discarding bad classifications in noisy streams.
 class Transitions a where
   (->?) :: a -> a -> Bool
 
-class Transitions a => WidgetData a where
-  type Size a :: [Nat]
-  toWidget     :: a -> Widget (Size a)
-  fromWidget   :: Widget (Size a) -> a
-
-class Transitions a => WidgetBatch a where
-  type Rows a :: Nat
-  toWidgets   :: a -> Widgets (Rows a) sh
-  fromWidgets :: Widgets (Rows a) sh -> a
-  config      :: p a -> WidgetConfig a
-
 class Transitions a => GameState a where
-  type Config a :: Game
+  fromFilename :: String -> a
+  type Title  a :: Symbol
+  type ScreenWidth  a :: Nat
+  type ScreenHeight a :: Nat
+  type WidgetConfig a :: Widgets
 
-data Game = Game
-  Symbol -- Title
-  Nat    -- Width in px
-  Nat    -- Height in px
+  type Positions a :: [(Nat, Nat)]
+  type DataShape a :: [Nat]
+  type Width  a    :: Nat
+  type Height a    :: Nat
 
-data WidgetConfig a where
-  WidgetConfig :: WidgetBatch a
-               => { defaultParams :: NetParams
-                  , resolution    :: Int
-                  , dimensions    :: (Double, Double)
-                  , netSpec       :: [LayerSpec]
-                  , positions     :: PVec (Rows a)
-                  } -> WidgetConfig a
+data Widgets where
+  WNil :: Widgets
+  WCons :: Nat
+        -> Nat
+        -> [Nat]
+        -> Widgets
 
-data PVec (n :: Nat) where
-  PNil  :: PVec 0
-  PCons :: (Double, Double) -> PVec n -> PVec (n :+ 1)
 
 -- | A data set defines a set of samples for some game
 data Dataset a =

@@ -4,13 +4,12 @@
 module Games.Melee where
 
 import Util
-import ConvNet
 import Data.List.Split
 import Types
 
 -- | The state of a player in a game
-data PlayerState = PlayerState { stocks :: Int
-                               , percent :: Int
+data PlayerState = PlayerState { stocks  :: !Int
+                               , percent :: !Int
                                } deriving (Eq, Show)
 
 instance Transitions PlayerState where
@@ -27,7 +26,7 @@ data Melee = Menu
            | Ingame4P PlayerState PlayerState PlayerState PlayerState
          deriving (Eq, Show)
 
-instance Transitions GameState where
+instance Transitions Melee where
   Menu ->? Menu                                                                             = True
   Menu ->? Ingame2P (PlayerState 0 0) _ (PlayerState 0 0) _                                 = True
   Menu ->? Ingame4P (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) = True

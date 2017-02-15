@@ -2,9 +2,6 @@
 
 module Images where
 
-import Volume
-import ConvNet
-import Label
 import Util
 import Data.Array.Repa hiding ((++))
 import Codec.Picture
