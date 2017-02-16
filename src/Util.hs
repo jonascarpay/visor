@@ -3,9 +3,7 @@
 
 module Util where
 
-import Types
 import Conduit
-import Data.List
 
 type RTSource  a   = Source    (ResourceT IO) a
 type RTConduit a b = Conduit a (ResourceT IO) b

@@ -7,6 +7,12 @@ import Util
 import Data.List.Split
 import Types
 
+-- | Game definition for SSBM.
+data Melee = Menu
+           | Ingame2P PlayerState Int PlayerState Int
+           | Ingame4P PlayerState PlayerState PlayerState PlayerState
+         deriving (Eq, Show)
+
 -- | The state of a player in a game
 data PlayerState = PlayerState { stocks  :: !Int
                                , percent :: !Int
@@ -17,14 +23,6 @@ instance Transitions PlayerState where
     | s' == s && p' >= p = True
     | p  >  0 && p' == 0 = s' == s - 1
     | otherwise          = False
-
-instance WidgetData PlayerState
-
--- | Game definition for SSBM.
-data Melee = Menu
-           | Ingame2P PlayerState Int PlayerState Int
-           | Ingame4P PlayerState PlayerState PlayerState PlayerState
-         deriving (Eq, Show)
 
 instance Transitions Melee where
   Menu ->? Menu                                                                             = True

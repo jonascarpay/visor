@@ -21,7 +21,6 @@ library
                      , Games.Melee
                      , Games.MeleeDiagram
                      , Images
-                     , Visor
                      , Screen
   build-depends:       base
                      , convoluted
@@ -31,7 +30,11 @@ library
                      , filepath
                      , split
                      , unix
+                     , process
+                     , repa
+                     , repa-io
                      , cereal
+                     , random
                      , conduit-combinators
                      , conduit-extra
                      , cereal-conduit
