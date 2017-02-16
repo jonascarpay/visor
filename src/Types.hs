@@ -10,7 +10,6 @@ module Types where
 import Static
 
 import Data.Vector.Unboxed
-import Data.Array.Repa
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 
@@ -22,22 +21,26 @@ class Transitions a where
 
 class Transitions a => GameState a where
   fromFilename :: String -> a
-  type Title  a :: Symbol
+  widgets :: a -> WidgetVec (Widgets a)
+
+  type Title  a       :: Symbol
   type ScreenWidth  a :: Nat
   type ScreenHeight a :: Nat
-  type WidgetConfig a :: Widgets
+  type Widgets a      :: [*]
 
+class Transitions a => Widget a where
+  toArray :: a -> SArray U (ZZ ::. Length (Positions a) ::. Sum (DataShape a))
   type Positions a :: [(Nat, Nat)]
   type DataShape a :: [Nat]
   type Width  a    :: Nat
   type Height a    :: Nat
 
-data Widgets where
-  WNil :: Widgets
-  WCons :: Nat
-        -> Nat
-        -> [Nat]
-        -> Widgets
+data WidgetVec (ws :: [*]) where
+  WNil  :: WidgetVec '[]
+  WCons :: Widget a
+        => ! a
+        -> ! (WidgetVec ws)
+        -> WidgetVec (a ': ws)
 
 
 -- | A data set defines a set of samples for some game
@@ -49,7 +52,7 @@ data Dataset a =
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       --   Nothing implies the entire image
-      cropRect :: Maybe (Rect Int),
+      cropRect :: Maybe Rect,
       -- ^ Indicates the number of extra pixels we can crop off
       --  in all directions. This is used to apply a random
       --  translation to the image.
@@ -59,27 +62,4 @@ data Dataset a =
       distort :: Bool
     }
 
-data Rect a = Rect { rx :: a
-                   , ry :: a
-                   , rw :: a
-                   , rh :: a }
-
-data NetParams = NetParams { learningRate :: Double
-                           , regularizationLoss :: Double
-                           , momentumFactor :: Double
-                           }
-
--- | Defines the parameters for the construction of a convolutional layer
-data LayerSpec
-  = ConvS
-      Int -- ^ Kernel size
-      Int -- ^ Kernel count
-  | ReLUS
-  | PoolS
-  | FCS Int
-  deriving (Eq, Show)
-
-data LabelType = OneHot | Probabilities
-newtype LabelV       (t :: LabelType) = LabelV  {getLabelV  :: (Vector Double)}
-newtype WidgetV      (t :: LabelType) = WidgetV {getWidgetV :: (Vector Double)}
-newtype WidgetBatchA (t :: LabelType) = WidgetBatchA {getWidgetBatchA :: Array U DIM2 Double}
+data Rect = Rect !Int !Int !Int !Int
