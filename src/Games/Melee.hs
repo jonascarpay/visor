@@ -29,9 +29,13 @@ instance Transitions Melee where
   Menu ->? Ingame2P (PlayerState 0 0) _ (PlayerState 0 0) _                                 = True
   Menu ->? Ingame4P (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) (PlayerState 0 0) = True
 
-  Ingame2P (PlayerState 0 0) _ ->? Menu = True
-  Ingame2P _ (PlayerState 0 0) ->? Menu = True
-  Ingame2P p1 p2 ->? Ingame2P p1' p2'   = p1 ->? p1' && p2 ->? p2'
+  Ingame2P (PlayerState 0 0) _ _ _ ->? Menu = True
+  Ingame2P _ _ (PlayerState 0 0) _ ->? Menu = True
+  Ingame2P p1 s1 p2 s2 ->? Ingame2P p1' s1' p2' s2'   = and [ s1 == s1'
+                                                            , s2 == s2'
+                                                            , p1 ->? p1'
+                                                            , p2 ->? p2'
+                                                            ]
 
   Ingame4P p1 p2 p3 p4 ->? Menu                     = count (PlayerState 0 0) [p1, p2, p3, p4] > 1
   Ingame4P p1 p2 p3 p4 ->? Ingame4P p1' p2' p3' p4' = p1 == p1' && p2 == p2' && p3 == p3' && p4 == p4'
@@ -39,20 +43,6 @@ instance Transitions Melee where
   _ ->? _ = False
 
 instance GameState Melee where
-
-dmgStocks :: Widget Melee
-dmgStocks = Widget { resolution = 32
-                   , position = [(w 36, h 762), (w 336, h 762)]
-                   , dimensions = (w 300, h 260)
-                   , cardinalities = [10, 10, 10, 5]
-                   , netSpec = [ConvS 13 64, ReLUS, PoolS, ConvS 5 64, ReLUS, PoolS]
-                   }
-
-w, h :: Double -> Double
-w x = x / screenWidth
-  where screenWidth = 1252
-h y = y / screenHeight
-  where screenHeight = 1028
 
 dolphinShots :: Dataset Melee
 dolphinShots =
