@@ -9,9 +9,6 @@ module Games.Melee where
 import Util
 import Network.Label
 import Data.List.Split
-import Data.Singletons.TypeLits
-import Data.Singletons.Prelude.Num
-import Data.Singletons.Prelude
 import Types
 
 -- | Game definition for SSBM.
@@ -36,8 +33,8 @@ instance Transitions Melee where
 
   Ingame (PlayerState 0 0) _ _ _ ->? Menu = True
   Ingame _ _ (PlayerState 0 0) _ ->? Menu = True
-  Ingame p1 s1 p2 s2 ->? Ingame p1' s1' p2' s2'   = and [ s1 ==  s1', s2 ==  s2'
-                                                        , p1 ->? p1', p2 ->? p2' ]
+  Ingame p1 s1 p2 s2 ->? Ingame p1' s1' p2' s2' = and [ s1 ==  s1', s2 ==  s2'
+                                                      , p1 ->? p1', p2 ->? p2' ]
 
   _ ->? _ = False
 
@@ -45,6 +42,8 @@ instance GameState Melee where
   type Title        Melee = "Melee"
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
+  type Widgets      Melee = '[Melee]
+  widgets st = st `WCons` WNil
 
 instance Widget Melee where
   type Width     Melee = 140
@@ -55,13 +54,12 @@ instance Widget Melee where
                           , '(294, 356)
                           , '(432, 356) ]
 
-  toLabel Menu = noParse
-  toLabel (Ingame p1 s1 p2 s2) = undefined
-
-type Label' c = LabelSingle (c :+ 1)
-digit x = singleton (x+1) :: Label' 10
-stock x = singleton (x+1) :: Label' 5
-noParse = maxed
+  toLabel Menu = fill 0
+  toLabel (Ingame p1 s1 p2 s2) = get 1 <-> get 2 <-> get 3 <-> get 4
+    where get n
+            | n == s1   = playerLabel p1
+            | n == s2   = playerLabel p2
+            | otherwise = fill 0
 
 playerLabel :: PlayerState -> LabelComposite 1 '[10, 10, 10, 5]
 playerLabel (PlayerState 0 _) = fill 0
