@@ -8,7 +8,9 @@
 module Types where
 
 import Static
+import Network.Label
 import Data.Singletons.TypeLits
+import Data.Singletons.Prelude.Num
 import Data.Singletons.Prelude.List
 
 -- | If x1 and x2 could be values for some x in two
@@ -17,16 +19,19 @@ import Data.Singletons.Prelude.List
 class Transitions a where
   (->?) :: a -> a -> Bool
 
+-- | A GameState is a data type that fully describes a games' state.
 class Transitions a => GameState a where
   widgets :: a -> WidgetVec (Widgets a)
 
   type Title  a       :: Symbol
-  type ScreenWidth  a :: Nat
+  type ScreenWidth  a :: Nat -- ^ The width of a screen of this game in pixels.
+                             --   This value and the height are mostly used to
+                             --   scale the positions and dimensions of widgets
   type ScreenHeight a :: Nat
   type Widgets a      :: [*]
 
 class Transitions a => Widget a where
-  toArray :: a -> SArray U (ZZ ::. Length (Positions a) ::. Sum (DataShape a))
+  toLabel :: a -> LabelComposite (Length (Positions a)) (DataShape a)
   type Positions a :: [(Nat, Nat)]
   type DataShape a :: [Nat]
   type Width  a    :: Nat
