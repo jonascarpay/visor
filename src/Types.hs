@@ -7,10 +7,8 @@
 
 module Types where
 
-import Static
 import Network.Label
 import Data.Singletons.TypeLits
-import Data.Singletons.Prelude.Num
 import Data.Singletons.Prelude.List
 
 -- | If x1 and x2 could be values for some x in two
@@ -31,16 +29,19 @@ class Transitions a => GameState a where
   type Widgets a      :: [*]
 
 class Transitions a => Widget a where
-  toLabel :: a -> LabelComposite (Length (Positions a)) (DataShape a)
+  toLabel   :: a -> WLabel a
+  fromLabel :: LabelParser a
   type Positions a :: [(Nat, Nat)]
   type DataShape a :: [Nat]
   type Width  a    :: Nat
   type Height a    :: Nat
 
+type WLabel a = LabelComposite (Length (Positions a)) (DataShape a)
+
 data WidgetVec (ws :: [*]) where
   WNil  :: WidgetVec '[]
   WCons :: Widget a
-        => ! a
+        => ! (WLabel a)
         -> ! (WidgetVec ws)
         -> WidgetVec (a ': ws)
 
@@ -49,7 +50,7 @@ data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
-      parseFilename :: FilePath -> Either a (WidgetVec (Widgets a)),
+      parseFilename :: FilePath -> WidgetVec (Widgets a),
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       --   Nothing implies the entire image

@@ -1,15 +1,20 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Games.Melee where
+module Games.Melee (
+  Melee (..),
+  dolphinShots
+) where
 
 import Util
 import Network.Label
 import Data.List.Split
 import Types
+import Control.Monad
 
 -- | Game definition for SSBM.
 data Melee = Menu
@@ -43,7 +48,7 @@ instance GameState Melee where
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
-  widgets st = st `WCons` WNil
+  widgets st = toLabel st `WCons` WNil
 
 instance Widget Melee where
   type Width     Melee = 140
@@ -61,6 +66,16 @@ instance Widget Melee where
             | n == s2   = playerLabel p2
             | otherwise = fill 0
 
+  fromLabel = do players <- replicateM 4 playerParser
+                 case count ingame players of
+                   2 -> let [(p1, s1), (p2, s2)] = filter (ingame.fst) $ zip players [1..]
+                         in return$! Ingame p1 s1 p2 s2
+                   _ -> return Menu
+
+ingame :: PlayerState -> Bool
+ingame (PlayerState 0 _) = False
+ingame _ = True
+
 playerLabel :: PlayerState -> LabelComposite 1 '[10, 10, 10, 5]
 playerLabel (PlayerState 0 _) = fill 0
 playerLabel (PlayerState stocks percent) =
@@ -69,6 +84,15 @@ playerLabel (PlayerState stocks percent) =
    <|> singleton d1
    <|> singleton stocks
   where (d100, d10, d1) = splitDigits percent
+
+playerParser :: LabelParser PlayerState
+playerParser = do d100   <- pop
+                  d10    <- pop
+                  d1     <- pop
+                  stocks <- pop
+                  let dmg | stocks == 0 = 0
+                          | otherwise = 100 * d100 + 10 * d10 + 1 * d1
+                  return $! PlayerState stocks dmg
 
 dolphinShots :: Dataset Melee
 dolphinShots =
@@ -84,9 +108,14 @@ fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
                                   "p2", "g", g2, "c", _, "s", read -> s2 :: Int, "p", read -> p2 :: Int,
                                   "p3", "g", g3, "c", _, "s", read -> s3 :: Int, "p", read -> p3 :: Int,
                                   "p4", "g", g4, "c", _, "s", read -> s4 :: Int, "p", read -> p4 :: Int] )
-  | count "1" [g1,g2,g3,g4] == 2 = undefined
-  | count "1" [g1,g2,g3,g4] == 4 = undefined
-  | otherwise = undefined
+  | psd == "1" = (fill 0) `WCons` WNil
+  | otherwise  = ((get g1 s1 p1) <->
+                  (get g2 s2 p2) <->
+                  (get g3 s3 p3) <->
+                  (get g4 s4 p4)) `WCons` WNil
+
+   where get "0" _ _ = fill 0
+         get "1" s p = playerLabel $ PlayerState s p
 
 fromFilename _ = error "Invalid filename"
 
