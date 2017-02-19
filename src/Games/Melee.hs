@@ -11,7 +11,7 @@ module Games.Melee (
   dolphinShots
 ) where
 
-import Util
+import Lib
 import Types
 import Network.Label
 import Layers

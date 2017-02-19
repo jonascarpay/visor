@@ -16,7 +16,7 @@ library
   hs-source-dirs:      src, spec
   default-language:    Haskell2010
   exposed-modules:     Types
-                     , Util
+                     , Lib
                      , Visor
                      , Games.Melee
                      , Games.MeleeDiagram

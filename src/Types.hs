@@ -10,6 +10,7 @@
 module Types where
 
 import Network
+import Util
 import Static
 import Network.Label
 import Data.Singletons.TypeLits
@@ -81,7 +82,7 @@ instance ( Serialize (Network i ls)
     do put n
        put ns
   get =
-    do n <- get
+    do n  <- get
        ns <- get
        return$! n `VCons` ns
 
