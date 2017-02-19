@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Types where
 
@@ -13,6 +14,7 @@ import Static
 import Network.Label
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
+import Data.Serialize
 
 -- | If x1 and x2 could be values for some x in two
 --   subsequent screen polls, then x1 ->? x2.
@@ -46,8 +48,8 @@ class Transitions a => Widget a where
   type SampleHeight a :: Nat
   type NetConfig    a :: [*]
 
-type WidgetLabel a   = LabelComposite (Length (Positions a)) (DataShape a)
-type WNetwork a = Network (ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a)
+type WidgetLabel a = LabelComposite (Length (Positions a)) (DataShape a)
+type WNetwork    a = Network (ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a)
                           (NetConfig a)
 
 type Networks (gameState :: *) = Networks' (Widgets gameState)
@@ -56,8 +58,8 @@ type family Networks' a :: [*] where
   Networks' (w ': ws) = WNetwork w ': Networks' ws
 
 data LabelVec (ws :: [*]) where
-  WNil  :: LabelVec '[]
-  WCons :: Widget a
+  LNil  :: LabelVec '[]
+  LCons :: Widget a
         => ! (WidgetLabel a)
         -> ! (LabelVec ws)
         -> LabelVec (a ': ws)
@@ -68,7 +70,37 @@ data NetworkVec (ws :: [*]) where
         -> ! (NetworkVec ns)
         -> NetworkVec (Network i ls ': ns)
 
-newtype Visor a = Visor (NetworkVec (Networks a))
+instance Serialize (NetworkVec '[]) where
+  put _ = return ()
+  get   = return VNil
+
+instance ( Serialize (Network i ls)
+         , Serialize (NetworkVec ns)
+         ) => Serialize (NetworkVec (Network i ls ': ns)) where
+  put (n `VCons` ns) =
+    do put n
+       put ns
+  get =
+    do n <- get
+       ns <- get
+       return$! n `VCons` ns
+
+instance Creatable (NetworkVec '[]) where
+  seeded _ = VNil
+
+instance ( Creatable (Network i ls)
+         , Creatable (NetworkVec ns)
+         ) => Creatable (NetworkVec (Network i ls ': ns)) where
+  seeded s = seeded s `VCons` seeded s
+
+newtype Visor game = Visor (NetworkVec (Networks game))
+
+instance (Serialize (NetworkVec (Networks game))) => Serialize (Visor game) where
+  put (Visor v) = put v
+  get = Visor <$> get
+
+instance (Creatable (NetworkVec (Networks game))) => Creatable (Visor game) where
+  seeded s = Visor$ seeded s
 
 -- | A data set defines a set of samples for some game
 data Dataset a =

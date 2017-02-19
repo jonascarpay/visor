@@ -17,6 +17,7 @@ library
   default-language:    Haskell2010
   exposed-modules:     Types
                      , Util
+                     , Visor
                      , Games.Melee
                      , Games.MeleeDiagram
                      , Images

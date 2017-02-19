@@ -51,7 +51,7 @@ instance GameState Melee where
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
-  labels st = toLabel st `WCons` WNil
+  labels st = toLabel st `LCons` LNil
 
 instance Widget Melee where
   type Width     Melee = 140
@@ -125,11 +125,11 @@ fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
                                   "p2", "g", g2, "c", _, "s", read -> s2 :: Int, "p", read -> p2 :: Int,
                                   "p3", "g", g3, "c", _, "s", read -> s3 :: Int, "p", read -> p3 :: Int,
                                   "p4", "g", g4, "c", _, "s", read -> s4 :: Int, "p", read -> p4 :: Int] )
-  | psd == "1" = (fill 0) `WCons` WNil
+  | psd == "1" = (fill 0) `LCons` LNil
   | otherwise  = ((get g1 s1 p1) <->
                   (get g2 s2 p2) <->
                   (get g3 s3 p3) <->
-                  (get g4 s4 p4)) `WCons` WNil
+                  (get g4 s4 p4)) `LCons` LNil
 
    where get "0" _ _ = fill 0
          get "1" s p = playerLabel $ PlayerState s p

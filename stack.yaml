@@ -2,7 +2,7 @@ resolver: lts-7.12
 packages:
 - location:
    git: https://github.com/jonascarpay/convoluted.git
-   commit: d5907dfc088efa59e749571d9d15c6c392cc1b8d
+   commit: e04a60f1df5ff3eaf1b7497bf3f95b9cc666b6a8
   extra-dep: true
 - '.'
 extra-deps:
