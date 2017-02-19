@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Games.Melee (
   Melee (..),
@@ -11,14 +12,16 @@ module Games.Melee (
 ) where
 
 import Util
-import Network.Label
-import Data.List.Split
 import Types
+import Network.Label
+import Layers
+import Data.Singletons.Prelude.List
+import Data.List.Split
 import Control.Monad
 
 -- | Game definition for SSBM.
 data Melee = Menu
-           | Ingame PlayerState Int PlayerState Int
+           | Ingame !PlayerState !Int !PlayerState !Int
          deriving (Eq, Show)
 
 -- | The state of a player in a game
@@ -48,7 +51,7 @@ instance GameState Melee where
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
-  widgets st = toLabel st `WCons` WNil
+  labels st = toLabel st `WCons` WNil
 
 instance Widget Melee where
   type Width     Melee = 140
@@ -58,6 +61,20 @@ instance Widget Melee where
                           , '(156, 356)
                           , '(294, 356)
                           , '(432, 356) ]
+
+  type SampleWidth  Melee = 32
+  type SampleHeight Melee = 32
+  type NetConfig    Melee = '[ Convolution 16 3 9 9 24 24
+                             , Pool
+                             , Pool
+                             , ReLU
+                             , Flatten
+                             , FC 576 100
+                             , ReLU
+                             , FC 100 (Sum (DataShape Melee))
+                             , MultiSoftMax (DataShape Melee)
+                             ]
+
 
   toLabel Menu = fill 0
   toLabel (Ingame p1 s1 p2 s2) = get 1 <-> get 2 <-> get 3 <-> get 4

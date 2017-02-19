@@ -3,10 +3,13 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Types where
 
+import Network
+import Static
 import Network.Label
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
@@ -19,7 +22,7 @@ class Transitions a where
 
 -- | A GameState is a data type that fully describes a games' state.
 class Transitions a => GameState a where
-  widgets :: a -> WidgetVec (Widgets a)
+  labels :: a -> LabelVec (Widgets a)
 
   type Title  a       :: Symbol
   type ScreenWidth  a :: Nat -- ^ The width of a screen of this game in pixels.
@@ -29,28 +32,50 @@ class Transitions a => GameState a where
   type Widgets a      :: [*]
 
 class Transitions a => Widget a where
-  toLabel   :: a -> WLabel a
+  toLabel   :: a -> WidgetLabel a
   fromLabel :: LabelParser a
+
+  -- Widget description
   type Positions a :: [(Nat, Nat)]
   type DataShape a :: [Nat]
-  type Width  a    :: Nat
-  type Height a    :: Nat
+  type Width     a :: Nat
+  type Height    a :: Nat
 
-type WLabel a = LabelComposite (Length (Positions a)) (DataShape a)
+  -- Widget classifier configuration
+  type SampleWidth  a :: Nat
+  type SampleHeight a :: Nat
+  type NetConfig    a :: [*]
 
-data WidgetVec (ws :: [*]) where
-  WNil  :: WidgetVec '[]
+type WidgetLabel a   = LabelComposite (Length (Positions a)) (DataShape a)
+type WNetwork a = Network (ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a)
+                          (NetConfig a)
+
+type Networks (gameState :: *) = Networks' (Widgets gameState)
+type family Networks' a :: [*] where
+  Networks' '[]       = '[]
+  Networks' (w ': ws) = WNetwork w ': Networks' ws
+
+data LabelVec (ws :: [*]) where
+  WNil  :: LabelVec '[]
   WCons :: Widget a
-        => ! (WLabel a)
-        -> ! (WidgetVec ws)
-        -> WidgetVec (a ': ws)
+        => ! (WidgetLabel a)
+        -> ! (LabelVec ws)
+        -> LabelVec (a ': ws)
+
+data NetworkVec (ws :: [*]) where
+  VNil  :: NetworkVec '[]
+  VCons :: ! (Network i ls)
+        -> ! (NetworkVec ns)
+        -> NetworkVec (Network i ls ': ns)
+
+newtype Visor a = Visor (NetworkVec (Networks a))
 
 -- | A data set defines a set of samples for some game
 data Dataset a =
   Dataset
     { -- ^ Absolute paths to the images in the data set
       rootDir :: FilePath,
-      parseFilename :: FilePath -> WidgetVec (Widgets a),
+      parseFilename :: FilePath -> LabelVec (Widgets a),
       -- ^ The rectangle to crop the images to. This should be the
       --   largest possible area that only captures the game screen.
       --   Nothing implies the entire image

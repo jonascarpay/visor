@@ -22,7 +22,7 @@ splitDigits x = (d100, d10, d1)
   where (d100, r) = x `divMod` 100
         (d10, d1) = r `divMod` 10
 
-toWidget :: Widget a => WLabel a -> a
+toWidget :: Widget a => WidgetLabel a -> a
 toWidget l = case parseLabel l fromLabel of
                Left str -> error str
                Right a -> a
