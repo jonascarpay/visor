@@ -3,13 +3,10 @@
 module Images where
 
 import Util
+import Static
+import Types
 import Data.Array.Repa hiding ((++))
-import Codec.Picture
-import Codec.Picture.Extra
 import Data.Word
-import System.Random
-
-type FullImage a = Int
 
 {-
 loadImage :: forall a. GameState a => Dataset a -> FilePath -> IO (LabeledImage a)

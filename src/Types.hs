@@ -12,6 +12,7 @@ module Types where
 import Network
 import Util
 import Static
+import Static.Image
 import Network.Label
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
@@ -43,6 +44,7 @@ class Transitions a => Widget a where
   type DataShape a :: [Nat]
   type Width     a :: Nat
   type Height    a :: Nat
+  type Parent    a :: *
 
   -- Widget classifier configuration
   type SampleWidth  a :: Nat
@@ -50,13 +52,17 @@ class Transitions a => Widget a where
   type NetConfig    a :: [*]
 
 type WidgetLabel a = LabelComposite (Length (Positions a)) (DataShape a)
-type WNetwork    a = Network (ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a)
-                          (NetConfig a)
+type WInput      a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
+type WNetwork    a = Network (WInput a) (NetConfig a)
 
 type Networks (gameState :: *) = Networks' (Widgets gameState)
 type family Networks' a :: [*] where
   Networks' '[]       = '[]
   Networks' (w ': ws) = WNetwork w ': Networks' ws
+
+type family Inputs a :: [SMeasure] where
+  Inputs '[] = '[]
+  Inputs (w ': ws) = WInput w ': Inputs ws
 
 data LabelVec (ws :: [*]) where
   LNil  :: LabelVec '[]
@@ -64,6 +70,14 @@ data LabelVec (ws :: [*]) where
         => ! (WidgetLabel a)
         -> ! (LabelVec ws)
         -> LabelVec (a ': ws)
+
+type InputCrops a = ImageVec (Inputs (Widgets a))
+data ImageVec (ms :: [SMeasure]) where
+  INil  :: ImageVec '[]
+  ICons :: Measure s
+        => ! (SArray U s)
+        -> ! (ImageVec ms)
+        -> ImageVec (s ': ms)
 
 data NetworkVec (ws :: [*]) where
   VNil  :: NetworkVec '[]
@@ -106,20 +120,8 @@ instance (Creatable (NetworkVec (Networks game))) => Creatable (Visor game) wher
 -- | A data set defines a set of samples for some game
 data Dataset a =
   Dataset
-    { -- ^ Absolute paths to the images in the data set
-      rootDir :: FilePath,
-      parseFilename :: FilePath -> LabelVec (Widgets a),
-      -- ^ The rectangle to crop the images to. This should be the
-      --   largest possible area that only captures the game screen.
-      --   Nothing implies the entire image
-      cropRect :: Maybe Rect,
-      -- ^ Indicates the number of extra pixels we can crop off
-      --   in all directions. This is used to apply a random
-      --   translation to the image.
-      wiggle :: Int,
-      -- ^ Whether or not to apply random color distortion to the
-      --   sample images
-      distort :: Bool
+    { rootDir :: FilePath -- ^ Absolute paths to the images in the data set
+    , parseFilename :: FilePath -> LabelVec (Widgets a)
     }
 
-data Rect = Rect !Int !Int !Int !Int
+newtype ScreenShot a = ScreenShot BMP

@@ -114,10 +114,7 @@ playerParser = do d100   <- pop
 dolphinShots :: Dataset Melee
 dolphinShots =
   Dataset { rootDir = "/Users/jmc/tmp/"
-          , cropRect = Nothing
           , parseFilename = fromFilename
-          , wiggle = 30
-          , distort = True
           }
 
 fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
