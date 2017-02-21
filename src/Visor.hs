@@ -42,7 +42,7 @@ extractInputs :: forall a m. Monad m => Screenshot a -> m (InputVec a)
 extractInputs img = undefined
 
 extractWidget :: forall a m.
-  ( ValidWidget a , Monad m
+  ( ValidWidget a, Monad m
   ) => Proxy a -> Screenshot (Parent a) -> m (WInput a)
 
 extractWidget Proxy (Screenshot img) = do sarr <- sComputeP$ sFromFunction fn

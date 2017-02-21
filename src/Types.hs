@@ -1,4 +1,6 @@
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
@@ -13,9 +15,9 @@
 
 module Types where
 
+import Util
 import Network
 import Vector
-import Util
 import Static
 import Static.Image
 import Network.Label
@@ -74,6 +76,18 @@ type InputVec   a = Vec WInput   (Widgets a)
 type NetworkVec a = Vec WNetwork (Widgets a)
 
 type Visor game   = NetworkVec game
+
+deriving instance Serialize (LabelComposite (Length (Positions a)) (DataShape a)) => Serialize (WLabel a)
+deriving instance Creatable (LabelComposite (Length (Positions a)) (DataShape a)) => Creatable (WLabel a)
+deriving instance Show      (LabelComposite (Length (Positions a)) (DataShape a)) => Show      (WLabel a)
+
+deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
+deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
+deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
+
+deriving instance Serialize (Network (InputShape a) (NetConfig a)) => Serialize (WNetwork a)
+deriving instance Creatable (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
+deriving instance Show      (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
 
 -- | A data set defines a set of samples for some game
 data Dataset a =
