@@ -6,6 +6,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Types where
 
@@ -14,6 +16,7 @@ import Util
 import Static
 import Static.Image
 import Network.Label
+import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Serialize
@@ -50,6 +53,12 @@ class Transitions a => Widget a where
   type SampleWidth  a :: Nat
   type SampleHeight a :: Nat
   type NetConfig    a :: [*]
+
+type ValidWidget a =
+  ( Widget a, KnownNat (Height a), KnownNat (Width a)
+  , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
+  , SingI (Positions a), Measure (WInput a))
+
 
 type WidgetLabel a = LabelComposite (Length (Positions a)) (DataShape a)
 type WInput      a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
@@ -124,4 +133,4 @@ data Dataset a =
     , parseFilename :: FilePath -> LabelVec (Widgets a)
     }
 
-newtype ScreenShot a = ScreenShot BMP
+newtype Screenshot a = Screenshot BMP

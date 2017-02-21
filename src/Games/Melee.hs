@@ -56,6 +56,7 @@ instance GameState Melee where
 instance Widget Melee where
   type Width     Melee = 140
   type Height    Melee = 96
+  type Parent    Melee = Melee
   type DataShape Melee = '[ 10, 10, 10, 5 ]
   type Positions Melee = '[ '(16,  356)
                           , '(156, 356)
