@@ -12,6 +12,7 @@ module Games.Melee (
 ) where
 
 import Lib
+import Vector
 import Types
 import Network.Label
 import Layers
@@ -51,7 +52,7 @@ instance GameState Melee where
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
-  labels st = toLabel st `LCons` LNil
+  labels st = toLabel st :- Nil
 
 instance Widget Melee where
   type Width     Melee = 140
@@ -77,8 +78,8 @@ instance Widget Melee where
                              ]
 
 
-  toLabel Menu = fill 0
-  toLabel (Ingame p1 s1 p2 s2) = get 1 <-> get 2 <-> get 3 <-> get 4
+  toLabel Menu = WLabel$ fill 0
+  toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
     where get n
             | n == s1   = playerLabel p1
             | n == s2   = playerLabel p2
@@ -118,16 +119,17 @@ dolphinShots =
           , parseFilename = fromFilename
           }
 
+fromFilename :: FilePath -> LabelVec Melee
 fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
                                   "p1", "g", g1, "c", _, "s", read -> s1 :: Int, "p", read -> p1 :: Int,
                                   "p2", "g", g2, "c", _, "s", read -> s2 :: Int, "p", read -> p2 :: Int,
                                   "p3", "g", g3, "c", _, "s", read -> s3 :: Int, "p", read -> p3 :: Int,
                                   "p4", "g", g4, "c", _, "s", read -> s4 :: Int, "p", read -> p4 :: Int] )
-  | psd == "1" = (fill 0) `LCons` LNil
-  | otherwise  = ((get g1 s1 p1) <->
-                  (get g2 s2 p2) <->
-                  (get g3 s3 p3) <->
-                  (get g4 s4 p4)) `LCons` LNil
+  | psd == "1" = WLabel (fill 0) :- Nil
+  | otherwise  = WLabel ((get g1 s1 p1) <->
+                         (get g2 s2 p2) <->
+                         (get g3 s3 p3) <->
+                         (get g4 s4 p4)) :- Nil
 
    where get "0" _ _ = fill 0
          get "1" s p = playerLabel $ PlayerState s p
