@@ -109,9 +109,15 @@ playerParser = do d100   <- pop
                   d10    <- pop
                   d1     <- pop
                   stocks <- pop
-                  let dmg | stocks == 0 = 0
-                          | otherwise = 100 * d100 + 10 * d10 + 1 * d1
-                  return $! PlayerState stocks dmg
+                  let dmg = 100 * d100 + 10 * d10 + 1 * d1
+                  return $! mkPlayerState stocks dmg
+
+mkPlayerState :: Int -> Int -> PlayerState
+mkPlayerState 0 _ = PlayerState 0 0
+mkPlayerState s p
+  | s < 0 || s > 4   = error$ "PlayerState with " ++ show s ++ " stocks"
+  | p < 0 || p > 999 = error$ "PlayerState with " ++ show p ++ " percent"
+  | otherwise      = PlayerState s p
 
 dolphinShots :: Dataset Melee
 dolphinShots =
