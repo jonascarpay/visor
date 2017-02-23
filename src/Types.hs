@@ -31,7 +31,11 @@ class Transitions a where
   (->?) :: a -> a -> Bool
 
 -- | A GameState is a data type that fully describes a games' state.
-class Transitions a => GameState a where
+class ( Transitions a
+      , KnownSymbol (Title a)
+      , KnownNat (ScreenWidth a)
+      , KnownNat (ScreenHeight a)
+      ) => GameState a where
   labels :: a -> LabelVec a
 
   type Title  a       :: Symbol
@@ -41,7 +45,10 @@ class Transitions a => GameState a where
   type ScreenHeight a :: Nat
   type Widgets a      :: [*]
 
-class (ValidWidget a, Transitions a) => Widget a where
+class ( KnownNat (Height a), KnownNat (Width a)
+      , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
+      , SingI (Positions a), Measure (InputShape a), Transitions a
+      ) => Widget a where
   toLabel   :: a -> WLabel a
   fromLabel :: LabelParser a
 
@@ -58,11 +65,6 @@ class (ValidWidget a, Transitions a) => Widget a where
   type NetConfig    a :: [*]
 
 type InputShape a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
-
-type ValidWidget a =
-  ( KnownNat (Height a), KnownNat (Width a)
-  , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
-  , SingI (Positions a), Measure (InputShape a))
 
 -- | A `WLabel a` contains a label for widget `a`
 
