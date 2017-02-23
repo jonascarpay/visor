@@ -36,7 +36,9 @@ class ( Transitions a
       , KnownNat (ScreenWidth a)
       , KnownNat (ScreenHeight a)
       ) => GameState a where
-  labels :: a -> LabelVec a
+
+  labels  :: a -> LabelVec a
+  dataset :: Dataset a
 
   type Title  a       :: Symbol
   type ScreenWidth  a :: Nat -- ^ The width of a screen of this game in pixels.

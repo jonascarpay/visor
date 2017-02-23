@@ -8,7 +8,6 @@
 
 module Games.Melee (
   Melee (..),
-  dolphinShots
 ) where
 
 import Lib
@@ -54,6 +53,7 @@ instance GameState Melee where
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
   labels st = toLabel st :- Nil
+  dataset = dolphinShots
 
 instance Widget Melee where
   type Width     Melee = 140
