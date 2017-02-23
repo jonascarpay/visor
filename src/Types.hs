@@ -37,7 +37,8 @@ class ( Transitions a
       , KnownNat (ScreenHeight a)
       ) => GameState a where
 
-  labels  :: a -> LabelVec a
+  label   :: a -> LabelVec a
+  delabel :: LabelVec a -> a
   dataset :: Dataset a
 
   type Title  a       :: Symbol

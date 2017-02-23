@@ -52,8 +52,11 @@ instance GameState Melee where
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
-  labels st = toLabel st :- Nil
+  label st = toLabel st :- Nil
   dataset = dolphinShots
+  delabel (WLabel l :- Nil) = case parseLabel l (fromLabel :: LabelParser Melee) of
+                                Left err -> error err
+                                Right s  -> s
 
 instance Widget Melee where
   type Width     Melee = 140
