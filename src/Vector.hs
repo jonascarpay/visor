@@ -12,15 +12,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
 
-module Vector (
-  Vec (..),
-  vmap,
-  NVec
-) where
+module Vector
+  ( Vec (..)
+  , vmap
+  , NVec
+  ) where
 
 import Util
 import Data.Functor.Identity
 import Data.Serialize
+import Static.Array
 
 data Vec :: (k -> *) -> [k] -> *
   where Nil  :: Vec fn '[]
@@ -59,17 +60,16 @@ type NVec = Vec Identity
   fmap' f = vmap (fmap f)
 -}
 
-class SMap a b as bs where
-  vmap ::    (fn1 a  ->     fn2 b)
-        -> Vec fn1 as -> Vec fn2 bs
+class VMap a b as bs where
+  vmap :: (fn1 a  ->     fn2 b)
+    -> Vec fn1 as -> Vec fn2 bs
 
-instance SMap a b '[] '[] where
+instance VMap a b '[] '[] where
   vmap :: (fn1 a -> fn2 b) -> Vec fn1 '[] -> Vec fn2 '[]
   vmap _ Nil = Nil
 
-instance SMap a b as bs => SMap a b (a ': as) (b ': bs) where
+instance VMap a b as bs => VMap a b (a ': as) (b ': bs) where
 
   vmap :: (fn1 a -> fn2 b) -> Vec fn1 (a ': as) -> Vec fn2 (b ': bs)
 
   vmap f (x :- xs) = f x :- vmap f xs
-

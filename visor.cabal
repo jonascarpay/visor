@@ -49,6 +49,7 @@ library
                       -fno-warn-unticked-promoted-constructors
                       -O2
   extensions:          BangPatterns
+                     , StrictData
 
 executable visor-app
   hs-source-dirs:      app

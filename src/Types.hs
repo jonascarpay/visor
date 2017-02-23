@@ -1,16 +1,14 @@
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
 
 module Types where
@@ -43,7 +41,7 @@ class Transitions a => GameState a where
   type ScreenHeight a :: Nat
   type Widgets a      :: [*]
 
-class Transitions a => Widget a where
+class (ValidWidget a, Transitions a) => Widget a where
   toLabel   :: a -> WLabel a
   fromLabel :: LabelParser a
 
@@ -62,32 +60,32 @@ class Transitions a => Widget a where
 type InputShape a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
 
 type ValidWidget a =
-  ( Widget a, KnownNat (Height a), KnownNat (Width a)
+  ( KnownNat (Height a), KnownNat (Width a)
   , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
   , SingI (Positions a), Measure (InputShape a))
 
 -- | A `WLabel a` contains a label for widget `a`
+
 newtype WLabel   a = WLabel (LabelComposite (Length (Positions a)) (DataShape a))
-newtype WInput   a = WInput (SArray U (InputShape a))
+deriving instance Serialize (LabelComposite (Length (Positions a)) (DataShape a)) => Serialize (WLabel a)
+deriving instance Creatable (LabelComposite (Length (Positions a)) (DataShape a)) => Creatable (WLabel a)
+deriving instance Show      (LabelComposite (Length (Positions a)) (DataShape a)) => Show      (WLabel a)
+
 newtype WNetwork a = WNetwork (Network (InputShape a) (NetConfig a))
+deriving instance Serialize (Network (InputShape a) (NetConfig a)) => Serialize (WNetwork a)
+deriving instance Creatable (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
+deriving instance Show      (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
+
+newtype WInput a = WInput (SArray U (InputShape a))
+deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
+deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
+deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
 
 type LabelVec   a = Vec WLabel   (Widgets a)
 type InputVec   a = Vec WInput   (Widgets a)
 type NetworkVec a = Vec WNetwork (Widgets a)
 
 type Visor game   = NetworkVec game
-
-deriving instance Serialize (LabelComposite (Length (Positions a)) (DataShape a)) => Serialize (WLabel a)
-deriving instance Creatable (LabelComposite (Length (Positions a)) (DataShape a)) => Creatable (WLabel a)
-deriving instance Show      (LabelComposite (Length (Positions a)) (DataShape a)) => Show      (WLabel a)
-
-deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
-deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
-deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
-
-deriving instance Serialize (Network (InputShape a) (NetConfig a)) => Serialize (WNetwork a)
-deriving instance Creatable (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
-deriving instance Show      (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
 
 -- | A data set defines a set of samples for some game
 data Dataset a =
