@@ -48,6 +48,8 @@ class ( Transitions a
 class ( KnownNat (Height a), KnownNat (Width a)
       , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
       , SingI (Positions a), Measure (InputShape a), Transitions a
+      , SingI (DataShape a)
+      , NOutput (Network (InputShape a) (NetConfig a)) ~ (ZZ ::. Length (Positions a) ::. Sum (DataShape a))
       ) => Widget a where
   toLabel   :: a -> WLabel a
   fromLabel :: LabelParser a

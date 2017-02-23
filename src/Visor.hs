@@ -15,8 +15,10 @@ module Visor
   ) where
 
 import Types
-import Network
 import Vector
+import Network
+import Network.Label
+import qualified Network.Runners as R
 import Util
 import Static
 import Static.Image
@@ -51,8 +53,8 @@ extractWidget (Screenshot img) = WInput <$> sComputeP (sFromFunction fn)
 
 class Extract ws where
   extract' :: Monad m => Screenshot a -> m (Vec WInput ws)
-  forward  :: Monad m => Vec WInput ws -> Vec WNetwork ws -> m (Vec WLabel ws)
-  backward :: Monad m => Vec WInput ws -> Vec WNetwork ws -> Vec WLabel ws -> m Loss
+  forward  :: Monad m => Vec WNetwork ws -> Vec WInput ws -> m (Vec WLabel ws)
+  backward :: Monad m => Vec WNetwork ws -> Vec WInput ws -> Vec WLabel ws -> m Loss
 
 instance Extract '[]
   where extract' _     = return $! Nil
@@ -61,8 +63,13 @@ instance Extract '[]
 
 instance (Widget a, Extract ts) => Extract (a ': ts) where
 
-  extract' shot = do crop <- extractWidget shot
-                     crops <- extract' shot
-                     return$ crop :- crops
+  extract' shot =
+    do crop <- extractWidget shot
+       crops <- extract' shot
+       return$ crop :- crops
 
-
+  forward (WNetwork n:-ns) (WInput x:-xs) =
+    do y  <- R.forward n x
+       ls <- forward ns xs
+       let l = WLabel $ fromArray y
+       return$ l:-ls
