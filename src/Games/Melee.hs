@@ -138,7 +138,7 @@ fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
                          (get g4 s4 p4)) :- Nil
 
    where get "0" _ _ = fill 0
-         get "1" s p = playerLabel $ PlayerState s p
+         get "1" s p = playerLabel $ mkPlayerState s p
 
 fromFilename _ = error "Invalid filename"
 
