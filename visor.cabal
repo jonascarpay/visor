@@ -21,7 +21,6 @@ library
                      , Visor
                      , Games.Melee
                      , Games.MeleeDiagram
-                     , Images
                      , Screen
   build-depends:       base
                      , convoluted

@@ -21,7 +21,6 @@ module Vector
 import Util
 import Data.Functor.Identity
 import Data.Serialize
-import Static.Array
 
 data Vec :: (k -> *) -> [k] -> *
   where Nil  :: Vec fn '[]

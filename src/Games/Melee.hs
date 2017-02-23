@@ -26,9 +26,10 @@ data Melee = Menu
          deriving (Eq, Show)
 
 -- | The state of a player in a game
-data PlayerState = PlayerState { stocks  :: !Int
-                               , percent :: !Int
-                               } deriving (Eq, Show)
+data PlayerState = PlayerState
+  !Int -- ^ Stocks
+  !Int -- ^ Percentage
+  deriving (Eq, Show)
 
 instance Transitions PlayerState where
   PlayerState s p ->? PlayerState s' p'
