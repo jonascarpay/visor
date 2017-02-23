@@ -45,8 +45,9 @@ class ( Transitions a
   type ScreenHeight a :: Nat
   type Widgets a      :: [*]
 
-class ( KnownNat (Height a), KnownNat (Width a)
+class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
       , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
+      , KnownNat (Sum (DataShape a)), KnownNat ((Sum (DataShape a)) :* (Length (Positions a)))
       , SingI (Positions a), Measure (InputShape a), Transitions a
       , SingI (DataShape a)
       , NOutput (Network (InputShape a) (NetConfig a)) ~ (ZZ ::. Length (Positions a) ::. Sum (DataShape a))
