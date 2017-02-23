@@ -11,11 +11,11 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Visor
-  ( forward
-  , trainOnce
+  ( Extract (..)
   ) where
 
 import Types
+import Network
 import Vector
 import Util
 import Static
@@ -24,13 +24,6 @@ import Data.Proxy
 import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 import Data.Array.Repa hiding (extract)
-
-forward :: Monad m
-        => Visor a
-        -> Screenshot a
-        -> SArray U (ZZ ::. 3 ::. ScreenWidth a ::. ScreenHeight a)
-        -> m a
-forward (nvec) img = undefined
 
 trainOnce :: Monad m
           => Visor a
@@ -56,13 +49,20 @@ extractWidget (Screenshot img) = WInput <$> sComputeP (sFromFunction fn)
 
     fn (Z :. n :. d :. y :. x) = let SArray crop = delayedCrops !! n in crop ! (Z :. d :. y :. x)
 
-class Extract ts where
-  extract' :: Monad m => Screenshot a -> m (Vec WInput ts)
+class Extract ws where
+  extract' :: Monad m => Screenshot a -> m (Vec WInput ws)
+  forward  :: Monad m => Vec WInput ws -> Vec WNetwork ws -> m (Vec WLabel ws)
+  backward :: Monad m => Vec WInput ws -> Vec WNetwork ws -> Vec WLabel ws -> m Loss
 
 instance Extract '[]
-  where extract' _ = return Nil
+  where extract' _     = return $! Nil
+        forward  _ _   = return $! Nil
+        backward _ _ _ = return $! (0,0)
 
-instance (Widget a, Extract ts) => Extract (a ': ts)
-  where extract' shot = do crop <- extractWidget shot
-                           crops <- extract' shot
-                           return$ crop :- crops
+instance (Widget a, Extract ts) => Extract (a ': ts) where
+
+  extract' shot = do crop <- extractWidget shot
+                     crops <- extract' shot
+                     return$ crop :- crops
+
+
