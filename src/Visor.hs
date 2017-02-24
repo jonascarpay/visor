@@ -27,8 +27,8 @@ import Data.Singletons.TypeLits
 import Data.Array.Repa hiding (extract)
 
 class WVector ws where
-  extract'  :: Monad m => Screenshot a -> m (Vec WInput ws)
-  forward'  :: Monad m => Vec WNetwork ws -> Vec WInput ws -> m (Vec WLabel ws)
+  extract'   :: Monad m => Screenshot a -> m (Vec WInput ws)
+  forward'   :: Monad m => Vec WNetwork ws -> Vec WInput ws -> m (Vec WLabel ws)
   trainOnce' :: Monad m
              => LearningParameters
              -> Vec WNetwork ws

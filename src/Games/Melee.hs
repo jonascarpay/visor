@@ -18,6 +18,7 @@ import Layers
 import Data.Singletons.Prelude.List
 import Data.List.Split
 import Control.Monad
+import Text.Read as T
 
 -- | Game definition for SSBM.
 data Melee = Menu
@@ -130,19 +131,24 @@ dolphinShots =
           }
 
 fromFilename :: FilePath -> LabelVec Melee
-fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", _,
-                                  "p1", "g", g1, "c", _, "s", read -> s1 :: Int, "p", read -> p1 :: Int,
-                                  "p2", "g", g2, "c", _, "s", read -> s2 :: Int, "p", read -> p2 :: Int,
-                                  "p3", "g", g3, "c", _, "s", read -> s3 :: Int, "p", read -> p3 :: Int,
-                                  "p4", "g", g4, "c", _, "s", read -> s4 :: Int, "p", read -> p4 :: Int] )
-  | psd == "1" = WLabel (fill 0) :- Nil
-  | otherwise  = WLabel ((get g1 s1 p1) <->
-                         (get g2 s2 p2) <->
-                         (get g3 s3 p3) <->
-                         (get g4 s4 p4)) :- Nil
+fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", st,
+                                  "p1", "g", g1, "c", _, "s", read' -> s1, "p", read' -> p1,
+                                  "p2", "g", g2, "c", _, "s", read' -> s2, "p", read' -> p2,
+                                  "p3", "g", g3, "c", _, "s", read' -> s3, "p", read' -> p3,
+                                  "p4", "g", g4, "c", _, "s", read' -> s4, "p", read' . takeWhile (/='.') -> p4] )
+  | psd == "1" || st == "0" = WLabel (fill 0) :- Nil
+  | otherwise = WLabel ((get g1 s1 p1) <->
+                        (get g2 s2 p2) <->
+                        (get g3 s3 p3) <->
+                        (get g4 s4 p4)) :- Nil
 
    where get "0" _ _ = fill 0
          get "1" s p = playerLabel $ mkPlayerState s p
-
 fromFilename _ = error "Invalid filename"
+
+read' :: String -> Int
+read' x = case T.readMaybe x of
+           Just x -> x
+           Nothing -> error$ "error parsing " ++ x
+
 

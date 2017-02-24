@@ -18,6 +18,7 @@ library
   exposed-modules:     Types
                      , Lib
                      , Vector
+                     , IO
                      , Visor
                      , Games.Melee
                      , Games.MeleeDiagram

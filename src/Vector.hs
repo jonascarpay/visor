@@ -33,6 +33,12 @@ infixr 7 :-
 instance Creatable (Vec fn '[]) where
   seeded _ = Nil
 
+instance Show (Vec a '[]) where
+  show _ = "Nil"
+
+instance (Show (f a), Show (Vec f ts)) => Show (Vec f (a ': ts)) where
+  show (x :- xs) = show x ++ " :- " ++ show xs
+
 instance (Creatable (fn a), Creatable (Vec fn as))
   => Creatable (Vec fn (a ': as)) where
   seeded s = seeded s :- seeded s
