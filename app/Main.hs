@@ -27,10 +27,15 @@ main' ["ls"] =
      putStrLn$ show (length paths) ++ " images in dataset"
 
 main' ["label", path] =
-  do v <- (loadVisor :: IO (Visor Game))
+  do v :: Visor Game <- loadVisor
      shot <- readShot path
      y <- feedImage shot v
      putStrLn$ "Label: " ++ show y
      putStrLn$ "Interpretation: " ++ show (delabel y :: Game)
+
+main' ["train"] =
+  do v :: Visor Game <- loadVisor
+     Just v' <- runConduitRes$ datasetSampleSource set .| trainC v .| lastC
+     undefined
 
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l

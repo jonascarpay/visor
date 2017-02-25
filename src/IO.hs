@@ -5,11 +5,13 @@
 module IO
   ( readShot
   , datasetPathSource
-  , shuffleC
   , loadVisor
+  , trainC
+  , datasetSampleSource
   ) where
 
 import Types
+import Visor
 import Util
 import Lib
 import Static.Image
@@ -31,6 +33,11 @@ readShot fp = do ebmp <- readRaw fp
 
 datasetPathSource :: Dataset a -> RTSource FilePath
 datasetPathSource set = sourceDirectoryDeep True (rootDir set) .| filterC ((== ".bmp") . takeExtension)
+
+datasetSampleSource :: Dataset a -> RTSource (Screenshot a, LabelVec a)
+datasetSampleSource set = datasetPathSource set .| shuffleC .| loadC
+  where loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
+                                          yield (shot, parseFilename set $ takeFileName path)
 
 -- | Drain a source of its elements, and yield them in a random order
 shuffleC :: RTConduit a a
@@ -61,3 +68,13 @@ loadVisor = do createDirectoryIfMissing True "data"
     newVisor = do putStrLn$ "Initializing new visor at " ++ path
                   return$ seeded 9
 
+trainC :: ( GameState a
+          , WVector (Widgets a)
+          ) => Visor a -> RTConduit (Screenshot a, LabelVec a) (Visor a)
+trainC visor =
+  do ms <- await
+     case ms of
+       Nothing     -> return ()
+       Just (x, y) -> do (v', ((p,c),l)) <- trainImage visor x y
+                         liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
+                         trainC v'

@@ -13,6 +13,7 @@ module Games.Melee (
 import Lib
 import Vector
 import Types
+import Network
 import Network.Label
 import Layers
 import Data.Singletons.Prelude.List
@@ -82,6 +83,7 @@ instance Widget Melee where
                              , MultiSoftMax (DataShape Melee)
                              ]
 
+  params = Params (LearningParameters 0 0 0)
 
   toLabel Menu = WLabel$ fill 0
   toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
@@ -144,7 +146,8 @@ fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", st,
 
    where get "0" _ _ = fill 0
          get "1" s p = playerLabel $ mkPlayerState s p
-fromFilename _ = error "Invalid filename"
+
+fromFilename s = error$ "Invalid filename: " ++ s
 
 read' :: String -> Int
 read' x = case T.readMaybe x of

@@ -57,6 +57,7 @@ class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
       ) => Widget a where
   toLabel   :: a -> WLabel a
   fromLabel :: LabelParser a
+  params    :: Params a
 
   -- Widget description
   type Positions a :: [(Nat, Nat)]
@@ -69,6 +70,8 @@ class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
   type SampleWidth  a :: Nat
   type SampleHeight a :: Nat
   type NetConfig    a :: [*]
+
+newtype Params a = Params LearningParameters
 
 type InputShape a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
 
