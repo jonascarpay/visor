@@ -34,6 +34,7 @@ library
                      , process
                      , repa
                      , repa-io
+                     , bytestring
                      , cereal
                      , random
                      , conduit-combinators

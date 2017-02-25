@@ -93,7 +93,9 @@ type LabelVec   a = Vec WLabel   (Widgets a)
 type InputVec   a = Vec WInput   (Widgets a)
 type NetworkVec a = Vec WNetwork (Widgets a)
 
-type Visor game   = NetworkVec game
+newtype Visor game = Visor (NetworkVec game)
+deriving instance Serialize (NetworkVec game) => Serialize (Visor game)
+deriving instance Creatable (NetworkVec game) => Creatable (Visor game)
 
 -- | A data set defines a set of samples for some game
 data Dataset a =
