@@ -4,10 +4,11 @@ module Main where
 
 import Types
 import Visor
+import IO
 import Games.Melee
 import System.Environment
+import Control.Monad
 import Conduit
-import IO
 
 type Game = Melee
 
@@ -35,7 +36,12 @@ main' ["label", path] =
 
 main' ["train"] =
   do v :: Visor Game <- loadVisor
-     Just v' <- runConduitRes$ datasetSampleSource set .| trainC v .| lastC
-     undefined
+     Just v' <- runConduitRes$ datasetSampleSource set .| trainC v .| takeC 10 .| lastC
+     saveVisor v'
+
+main' ["makebatch"] =
+
+
+main' ["clean"] = deleteVisor (undefined :: p Game)
 
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l

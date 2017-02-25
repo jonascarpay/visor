@@ -74,16 +74,15 @@ instance Widget Melee where
   type SampleHeight Melee = 32
   type NetConfig    Melee = '[ Convolution 16 3 9 9 24 24
                              , Pool
-                             , Pool
                              , ReLU
                              , Flatten
-                             , FC 576 100
+                             , FC 2304 100
                              , ReLU
                              , FC 100 (Sum (DataShape Melee))
                              , MultiSoftMax (DataShape Melee)
                              ]
 
-  params = Params (LearningParameters 0 0 0)
+  params = Params (LearningParameters 1e-3 0.4 1e-4)
 
   toLabel Menu = WLabel$ fill 0
   toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4

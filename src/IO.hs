@@ -6,11 +6,14 @@ module IO
   ( readShot
   , datasetPathSource
   , loadVisor
+  , saveVisor
+  , deleteVisor
   , trainC
   , datasetSampleSource
   ) where
 
 import Types
+import Vector
 import Visor
 import Util
 import Lib
@@ -35,7 +38,7 @@ datasetPathSource :: Dataset a -> RTSource FilePath
 datasetPathSource set = sourceDirectoryDeep True (rootDir set) .| filterC ((== ".bmp") . takeExtension)
 
 datasetSampleSource :: Dataset a -> RTSource (Screenshot a, LabelVec a)
-datasetSampleSource set = datasetPathSource set .| shuffleC .| loadC
+datasetSampleSource set = datasetPathSource set .| loadC
   where loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
                                           yield (shot, parseFilename set $ takeFileName path)
 
@@ -55,18 +58,34 @@ loadVisor = do createDirectoryIfMissing True "data"
                return visor
   where
     name = symbolVal (Proxy :: Proxy (Title a))
-    dir = "data"
     path = dir </> name
 
     readVisor :: IO (Visor a)
     readVisor = do bs <- BS.readFile path
                    case decode bs of
-                     Left err -> (putStrLn$ "Error decoding visor: " ++ err) >> newVisor
+                     Left err -> error err
                      Right v  -> return v
 
     newVisor :: IO (Visor a)
     newVisor = do putStrLn$ "Initializing new visor at " ++ path
                   return$ seeded 9
+
+saveVisor :: forall a.
+  ( Serialize (Visor a)
+  , GameState a
+  ) => Visor a -> IO ()
+saveVisor v = BS.writeFile path (encode v)
+  where
+    name = symbolVal (Proxy :: Proxy (Title a))
+    path = dir </> name
+
+deleteVisor :: forall a p.
+  ( GameState a
+  ) => p a -> IO ()
+deleteVisor _ = removeFile path
+  where
+    name = symbolVal (Proxy :: Proxy (Title a))
+    path = dir </> name
 
 trainC :: ( GameState a
           , WVector (Widgets a)
@@ -77,4 +96,10 @@ trainC visor =
        Nothing     -> return ()
        Just (x, y) -> do (v', ((p,c),l)) <- trainImage visor x y
                          liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
+                         yield v'
                          trainC v'
+
+batchify :: RTConduit (Vec WInput a) (Vec WInput a)
+batchify = undefined
+
+dir = "data"

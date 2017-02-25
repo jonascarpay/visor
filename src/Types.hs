@@ -87,7 +87,7 @@ deriving instance Serialize (Network (InputShape a) (NetConfig a)) => Serialize 
 deriving instance Creatable (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
 deriving instance Show      (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
 
-newtype WInput a = WInput (SArray U (InputShape a))
+newtype WInput a = WInput   (SArray U (InputShape a))
 deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
 deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
 deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
