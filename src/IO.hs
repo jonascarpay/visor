@@ -21,6 +21,7 @@ import Util
 import Lib
 import Static.Image
 import Conduit
+import Control.Monad
 import System.FilePath
 import System.Posix.Files
 import System.Directory
@@ -78,7 +79,13 @@ saveVisor :: forall a.
   ( Serialize (Visor a)
   , GameState a
   ) => Visor a -> IO ()
-saveVisor v = BS.writeFile path (encode v)
+
+saveVisor v = do exists <- fileExist path
+                 flag <- if exists then do putStrLn$ "Visor found at " ++ path ++ ", delete?[Yn] "
+                                           a <- getLine
+                                           return$ a `notElem` ["n", "N"]
+                                   else return True
+                 when flag $ BS.writeFile path (encode v)
   where
     name = symbolVal (Proxy :: Proxy (Title a))
     path = dir </> name

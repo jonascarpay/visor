@@ -49,6 +49,4 @@ main' ["makebatch"] =
                  .| batchify
                  .| (saveMany "batch" :: RTSink (BatchVec BatchSize Melee))
 
-main' ["clean"] = deleteVisor (undefined :: p Game)
-
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l
