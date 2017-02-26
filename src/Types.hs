@@ -1,4 +1,5 @@
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -53,6 +54,8 @@ class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
       , KnownNat (Sum (DataShape a)), KnownNat ((Sum (DataShape a)) :* (Length (Positions a)))
       , SingI (Positions a), Measure (InputShape a), Transitions a
       , SingI (DataShape a)
+      , KnownNat (SampleWidth a)
+      , KnownNat (SampleHeight a)
       , NOutput (Network (InputShape a) (NetConfig a)) ~ (ZZ ::. Length (Positions a) ::. Sum (DataShape a))
       ) => Widget a where
   toLabel   :: a -> WLabel a
@@ -74,27 +77,34 @@ class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
 newtype Params a = Params LearningParameters
 
 type InputShape a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
+type BatchShape a b = ZZ ::. b :* Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
 
 -- | A `WLabel a` contains a label for widget `a`
 
-newtype WLabel   a = WLabel (LabelComposite (Length (Positions a)) (DataShape a))
+newtype WLabel a = WLabel   (LabelComposite (Length (Positions a)) (DataShape a))
 deriving instance Serialize (LabelComposite (Length (Positions a)) (DataShape a)) => Serialize (WLabel a)
 deriving instance Creatable (LabelComposite (Length (Positions a)) (DataShape a)) => Creatable (WLabel a)
 deriving instance Show      (LabelComposite (Length (Positions a)) (DataShape a)) => Show      (WLabel a)
 
 newtype WNetwork a = WNetwork (Network (InputShape a) (NetConfig a))
-deriving instance Serialize (Network (InputShape a) (NetConfig a)) => Serialize (WNetwork a)
-deriving instance Creatable (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
-deriving instance Show      (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
+deriving instance Serialize   (Network (InputShape a) (NetConfig a)) => Serialize (WNetwork a)
+deriving instance Creatable   (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
+deriving instance Show        (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
 
 newtype WInput a = WInput   (SArray U (InputShape a))
 deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
 deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
 deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
 
+newtype WBatch n a = WBatch (SArray U (BatchShape a n))
+deriving instance Serialize (SArray U (BatchShape a n)) => Serialize (WBatch n a)
+deriving instance Creatable (SArray U (BatchShape a n)) => Creatable (WBatch n a)
+deriving instance Show      (SArray U (BatchShape a n)) => Show      (WBatch n a)
+
 type LabelVec   a = Vec WLabel   (Widgets a)
 type InputVec   a = Vec WInput   (Widgets a)
 type NetworkVec a = Vec WNetwork (Widgets a)
+type BatchVec n a = Vec (WBatch n) (Widgets a)
 
 newtype Visor game = Visor (NetworkVec game)
 deriving instance Serialize (NetworkVec game) => Serialize (Visor game)

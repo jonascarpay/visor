@@ -19,11 +19,12 @@ import Network
 import Network.Label
 import qualified Network.Runners as R
 import Util
-import Static
+import Static as S
 import qualified Static.Image as I
 import Data.Proxy
 import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
+import Data.Singletons.Prelude.List
 import Data.Array.Repa hiding (extract)
 
 feedImage :: (WVector (Widgets a), Monad m) => Screenshot a -> Visor a -> m (Vec WLabel (Widgets a))
@@ -39,7 +40,6 @@ trainImage (Visor v) shot ys =
   do xs <- extract shot
      (v', l) <- trainOnce v xs ys
      return (Visor v', l)
-
 
 class WVector ws where
   extract   :: Monad m => Screenshot a -> m (Vec WInput ws)
@@ -91,3 +91,19 @@ extractWidget (Screenshot img) = WInput <$> sComputeP (sFromFunction fn)
 
     fn (Z :. n :. d :. y :. x) = let SArray crop = delayedCrops !! n in crop ! (Z :. d :. y :. x)
 
+class Stack n ws where
+  stack :: [Vec WInput ws] -> Vec (WBatch n) ws
+
+instance Stack n '[] where
+  stack _ = Nil
+
+instance ( Stack n ws
+         , Widget a
+         , KnownNat (n :* Length (Positions a))
+         ) => Stack n (a ': ws) where
+  stack xs = WBatch (S.sConcat hs) :- stack ts
+    where
+      unvec :: Vec WInput (a ': ws) -> (SArray U (InputShape a), Vec WInput ws)
+      unvec (WInput sarr :- xs) = (sarr, xs)
+
+      (hs, ts) = unzip . fmap unvec $ xs

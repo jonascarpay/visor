@@ -19,7 +19,6 @@ import Layers
 import Data.Singletons.Prelude.List
 import Data.List.Split
 import Control.Monad
-import Text.Read as T
 
 -- | Game definition for SSBM.
 data Melee = Menu
@@ -147,10 +146,4 @@ fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", st,
          get "1" s p = playerLabel $ mkPlayerState s p
 
 fromFilename s = error$ "Invalid filename: " ++ s
-
-read' :: String -> Int
-read' x = case T.readMaybe x of
-           Just x -> x
-           Nothing -> error$ "error parsing " ++ x
-
 

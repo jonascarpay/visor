@@ -1,16 +1,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Main where
 
 import Types
 import Visor
 import IO
+import Lib
 import Games.Melee
 import System.Environment
-import Control.Monad
 import Conduit
 
 type Game = Melee
+type BatchSize = 64
 
 set :: Dataset Melee
 set = dataset
@@ -36,11 +39,15 @@ main' ["label", path] =
 
 main' ["train"] =
   do v :: Visor Game <- loadVisor
-     Just v' <- runConduitRes$ datasetSampleSource set .| trainC v .| takeC 10 .| lastC
+     Just v' <- runConduitRes$ datasetSampleSource set False .| trainC v .| takeC 10 .| lastC
      saveVisor v'
 
 main' ["makebatch"] =
+  do runConduitRes$ datasetSampleSource set True
 
+                 .| mapMC (extract . fst)
+                 .| batchify
+                 .| (saveMany "batch" :: RTSink (BatchVec BatchSize Melee))
 
 main' ["clean"] = deleteVisor (undefined :: p Game)
 

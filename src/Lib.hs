@@ -6,6 +6,7 @@ module Lib where
 import Conduit
 import Types
 import Network.Label
+import Text.Read as T
 
 type RTSource  a   = Source    (ResourceT IO) a
 type RTConduit a b = Conduit a (ResourceT IO) b
@@ -26,3 +27,10 @@ toWidget :: Widget a => WLabel a -> a
 toWidget (WLabel l) = case parseLabel l fromLabel of
                         Left str -> error str
                         Right a -> a
+
+read' :: String -> Int
+read' x = case T.readMaybe x of
+           Just x -> x
+           Nothing -> error$ "error parsing " ++ x
+
+

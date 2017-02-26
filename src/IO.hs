@@ -7,7 +7,9 @@ module IO
   , datasetPathSource
   , loadVisor
   , saveVisor
+  , saveMany
   , deleteVisor
+  , batchify
   , trainC
   , datasetSampleSource
   ) where
@@ -37,8 +39,10 @@ readShot fp = do ebmp <- readRaw fp
 datasetPathSource :: Dataset a -> RTSource FilePath
 datasetPathSource set = sourceDirectoryDeep True (rootDir set) .| filterC ((== ".bmp") . takeExtension)
 
-datasetSampleSource :: Dataset a -> RTSource (Screenshot a, LabelVec a)
-datasetSampleSource set = datasetPathSource set .| loadC
+datasetSampleSource :: Dataset a -> Bool -> RTSource (Screenshot a, LabelVec a)
+datasetSampleSource set shuf = datasetPathSource set
+                            .| (if shuf then shuffleC else awaitForever yield)
+                            .| loadC
   where loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
                                           yield (shot, parseFilename set $ takeFileName path)
 
@@ -99,7 +103,24 @@ trainC visor =
                          yield v'
                          trainC v'
 
-batchify :: RTConduit (Vec WInput a) (Vec WInput a)
-batchify = undefined
+batchify :: forall n ws. (KnownNat n, Stack n ws) => RTConduit (Vec WInput ws) (Vec (WBatch n) ws)
+batchify = do xs <- takeC n .| sinkList
+              yield$ stack xs
+              batchify
+  where
+    n = fromInteger$ natVal (Proxy :: Proxy n)
 
+saveMany :: Serialize a => String -> RTSink a
+saveMany name = do liftIO$ createDirectoryIfMissing True dir'
+                   go (0 :: Int)
+  where dir' = dir </> name
+        go i = do mx <- await
+                  case mx of
+                    Nothing -> return ()
+                    Just x  -> do let path = dir' </> show i
+                                  liftIO . putStrLn$ "Writing " ++ path
+                                  liftIO$ BS.writeFile path (encode x)
+                                  go (i+1)
+
+dir :: FilePath
 dir = "data"
