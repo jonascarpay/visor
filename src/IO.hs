@@ -7,11 +7,14 @@ module IO
   , datasetPathSource
   , loadVisor
   , saveVisor
+  , loadMany
   , saveMany
   , deleteVisor
   , batchify
   , trainC
+  , trainBatchC
   , datasetSampleSource
+  , clear
   ) where
 
 import Types
@@ -110,12 +113,30 @@ trainC visor =
                          yield v'
                          trainC v'
 
-batchify :: forall n ws. (KnownNat n, Stack n ws) => RTConduit (Vec WInput ws) (Vec (WBatch n) ws)
-batchify = do xs <- takeC n .| sinkList
-              yield$ stack xs
-              batchify
+trainBatchC :: ( GameState a
+               , Stack n (Widgets a)
+               , KnownNat n
+               ) => Visor a -> RTConduit (BatchVec n a) (Visor a)
+
+trainBatchC (Visor visor) =
+  do mb <- await
+     case mb of
+       Nothing -> return ()
+       Just b  -> do (v', ((p, c),l)) <- trainBatch visor b
+                     liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
+                     yield (Visor v')
+                     trainBatchC (Visor v')
+
+
+batchify :: forall n a. (KnownNat n, Stack n (Widgets a)) => RTConduit (Screenshot a, LabelVec a) (Vec (WBatch n) (Widgets a))
+batchify = do xs <- takeC n .| extractC .| sinkList
+              case stack xs of
+                Just xs' -> yield xs' >> batchify
+                Nothing  -> return ()
   where
     n = fromInteger$ natVal (Proxy :: Proxy n)
+    extractC = awaitForever$ \(shot, ls) -> do xs <- Visor.extract shot
+                                               yield (xs, ls)
 
 saveMany :: Serialize a => String -> RTSink a
 saveMany name = do liftIO$ createDirectoryIfMissing True dir'
@@ -128,6 +149,19 @@ saveMany name = do liftIO$ createDirectoryIfMissing True dir'
                                   liftIO . putStrLn$ "Writing " ++ path
                                   liftIO$ BS.writeFile path (encode x)
                                   go (i+1)
+
+loadMany :: Serialize a => String -> RTSource a
+loadMany name = do sourceDirectory dir' .| awaitForever load
+  where
+    dir' = dir </> name
+    load path = do bs <- liftIO$ BS.readFile path
+                   let ex = decode bs
+                   case ex of
+                     Left err -> liftIO.putStrLn$ err
+                     Right x  -> yield x
+
+clear :: String -> IO ()
+clear name = removeDirectoryRecursive$ dir </> name
 
 dir :: FilePath
 dir = "data"

@@ -42,9 +42,9 @@ trainImage (Visor v) shot ys =
      return (Visor v', l)
 
 class WVector ws where
-  extract   :: Monad m => Screenshot a -> m (Vec WInput ws)
-  forward   :: Monad m => Vec WNetwork ws -> Vec WInput ws -> m (Vec WLabel ws)
-  trainOnce :: Monad m
+  extract    :: Monad m => Screenshot a -> m (Vec WInput ws)
+  forward    :: Monad m => Vec WNetwork ws -> Vec WInput ws -> m (Vec WLabel ws)
+  trainOnce  :: Monad m
              => Vec WNetwork ws
              -> Vec WInput ws
              -> Vec WLabel ws
@@ -74,6 +74,7 @@ instance (Widget a, WVector ts) => WVector (a ': ts) where
        (ns', ((cs, ts), ls')) <- trainOnce ns xs ls
        return$! (WNetwork n' :- ns', ((c+cs, t+ts), l' + ls'))
 
+
 extractWidget :: forall w s m.
   ( Widget w, Monad m
   ) => Screenshot s -> m (WInput w)
@@ -91,19 +92,45 @@ extractWidget (Screenshot img) = WInput <$> sComputeP (sFromFunction fn)
 
     fn (Z :. n :. d :. y :. x) = let SArray crop = delayedCrops !! n in crop ! (Z :. d :. y :. x)
 
-class Stack n ws where
-  stack :: [Vec WInput ws] -> Vec (WBatch n) ws
+class WVector ws => Stack n ws where
+  stack :: [(Vec WInput ws, Vec WLabel ws)] -> Maybe (Vec (WBatch n) ws)
+  trainBatch :: Monad m
+             => Vec WNetwork ws
+             -> Vec (WBatch n) ws
+             -> m (Vec WNetwork ws, Loss)
 
 instance Stack n '[] where
-  stack _ = Nil
+  stack _ = Just Nil
+  trainBatch  _ _ = return $! (Nil, ((0,0),0))
 
 instance ( Stack n ws
          , Widget a
+         , KnownNat n
          , KnownNat (n :* Length (Positions a))
+         , NOutput (Network (BatchInputShape a n) (NetConfig a)) ~ (BatchOutputShape a n)
+         , Cast (Network (InputShape a) (NetConfig a)) (Network (BatchInputShape a n) (NetConfig a))
+         , Cast (Network (BatchInputShape a n) (NetConfig a)) (Network (InputShape a) (NetConfig a))
          ) => Stack n (a ': ws) where
-  stack xs = WBatch (S.sConcat hs) :- stack ts
-    where
-      unvec :: Vec WInput (a ': ws) -> (SArray U (InputShape a), Vec WInput ws)
-      unvec (WInput sarr :- xs) = (sarr, xs)
 
-      (hs, ts) = unzip . fmap unvec $ xs
+  stack ps
+    | length ps /= n = Nothing
+    | otherwise = (WBatch (S.sConcat xs, S.sConcat ys) :-) <$> stack ts
+
+    where
+      unvec :: (Vec WInput (a ': ws), Vec WLabel (a ': ws))
+            -> ( SArray U (InputShape a)
+               , SArray U (BatchOutputShape a 1)
+               , (Vec WInput ws, Vec WLabel ws)
+               )
+      unvec (WInput sarr :- xs, WLabel l :- ls) = (sarr, toArray l, (xs, ls))
+
+      (xs, ys, ts) = unzip3 . fmap unvec $ ps
+      n = fromInteger$ natVal (Proxy :: Proxy n)
+
+  trainBatch (WNetwork n :- ns) (WBatch (x, y) :- ts) =
+    do let Params lparams = params :: Params a
+           cn = cast n :: Network (BatchInputShape a n) (NetConfig a)
+
+       (n',  ((c,t),  l'))  <- R.trainOnce cn lparams x y
+       (ns', ((cs, ts), ls')) <- trainBatch ns ts
+       return$! (WNetwork (cast n') :- ns', ((c+cs, t+ts), l' + ls'))

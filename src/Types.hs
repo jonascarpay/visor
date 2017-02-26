@@ -77,7 +77,8 @@ class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
 newtype Params a = Params LearningParameters
 
 type InputShape a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
-type BatchShape a b = ZZ ::. b :* Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
+type BatchInputShape  a n = ZZ ::. n :* Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
+type BatchOutputShape a n = ZZ ::. n :* Length (Positions a) ::. Sum (DataShape a)
 
 -- | A `WLabel a` contains a label for widget `a`
 
@@ -96,10 +97,16 @@ deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
 deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
 deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
 
-newtype WBatch n a = WBatch (SArray U (BatchShape a n))
-deriving instance Serialize (SArray U (BatchShape a n)) => Serialize (WBatch n a)
-deriving instance Creatable (SArray U (BatchShape a n)) => Creatable (WBatch n a)
-deriving instance Show      (SArray U (BatchShape a n)) => Show      (WBatch n a)
+newtype WBatch n a = WBatch ( SArray U (BatchInputShape a n)
+                            , SArray U (BatchOutputShape a n))
+
+deriving instance ( Serialize (SArray U (BatchInputShape  a n))
+                  , Serialize (SArray U (BatchOutputShape a n))
+                  ) => Serialize (WBatch n a)
+
+deriving instance ( Show (SArray U (BatchInputShape  a n))
+                  , Show (SArray U (BatchOutputShape a n))
+                  ) => Show (WBatch n a)
 
 type LabelVec   a = Vec WLabel   (Widgets a)
 type InputVec   a = Vec WInput   (Widgets a)

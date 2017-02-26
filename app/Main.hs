@@ -13,7 +13,7 @@ import System.Environment
 import Conduit
 
 type Game = Melee
-type BatchSize = 64
+type BatchSize = 10
 
 set :: Dataset Melee
 set = dataset
@@ -43,10 +43,17 @@ main' ["train"] =
      saveVisor v'
 
 main' ["makebatch"] =
-  do runConduitRes$ datasetSampleSource set True
-
-                 .| mapMC (extract . fst)
+  do clear "batch"
+     runConduitRes$ datasetSampleSource set True
                  .| batchify
                  .| (saveMany "batch" :: RTSink (BatchVec BatchSize Melee))
+
+main' ["trainbatch"] =
+  do v :: Visor Game <- loadVisor
+     Just v' <- runConduitRes$ (loadMany "batch" :: RTSource (BatchVec BatchSize Melee))
+                            .| trainBatchC v
+                            .| takeC 10
+                            .| lastC
+     saveVisor v'
 
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l
