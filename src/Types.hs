@@ -32,8 +32,7 @@ class Transitions a where
   (->?) :: a -> a -> Bool
 
 -- | A GameState is a data type that fully describes a games' state.
-class ( Transitions a
-      , KnownSymbol (Title a)
+class ( KnownSymbol (Title a)
       , KnownNat (ScreenWidth a)
       , KnownNat (ScreenHeight a)
       ) => GameState a where
@@ -52,7 +51,7 @@ class ( Transitions a
 class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
       , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
       , KnownNat (Sum (DataShape a)), KnownNat ((Sum (DataShape a)) :* (Length (Positions a)))
-      , SingI (Positions a), Measure (InputShape a), Transitions a
+      , SingI (Positions a), Measure (InputShape a)
       , SingI (DataShape a)
       , KnownNat (SampleWidth a)
       , KnownNat (SampleHeight a)
