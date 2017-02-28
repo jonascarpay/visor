@@ -36,6 +36,12 @@ instance Creatable (Vec fn '[]) where
 instance Show (Vec a '[]) where
   show _ = "Nil"
 
+instance Eq (Vec a '[]) where
+  _ == _ = True
+
+instance (Eq (f a), Eq (Vec f ts)) => Eq (Vec f (a ': ts)) where
+  (a :- as) == (b :- bs) = a == b && as == bs
+
 instance (Show (f a), Show (Vec f ts)) => Show (Vec f (a ': ts)) where
   show (x :- xs) = show x ++ " :- " ++ show xs
 

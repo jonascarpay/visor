@@ -27,8 +27,8 @@ import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Array.Repa hiding (extract)
 
-feedImage :: (WVector (Widgets a), Monad m) => Screenshot a -> Visor a -> m (LabelVec a)
-feedImage img (Visor visor) = do xs <- extract img
+feedImage :: (WVector (Widgets a), Monad m) => Visor a -> Screenshot a -> m (LabelVec a)
+feedImage (Visor visor) img = do xs <- extract img
                                  LabelVec <$> forward visor xs
 
 trainImage :: (WVector (Widgets a), Monad m)

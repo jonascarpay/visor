@@ -19,6 +19,7 @@ import Layers
 import Data.Singletons.Prelude.List
 import Data.List.Split
 import Control.Monad
+import System.FilePath.Posix
 
 -- | Game definition for SSBM.
 data Melee = Menu
@@ -126,12 +127,12 @@ mkPlayerState s p
   | otherwise      = PlayerState s p
 
 fromFilename :: Path a -> LabelVec Melee
-fromFilename (Path (wordsBy (=='_')
+fromFilename (Path (wordsBy (=='_') . takeBaseName
   -> [ "shot", _, "psd", psd, "st", st
      , "p1", "g", g1, "c", _, "s", read' -> s1, "p", read' -> p1
      , "p2", "g", g2, "c", _, "s", read' -> s2, "p", read' -> p2
      , "p3", "g", g3, "c", _, "s", read' -> s3, "p", read' -> p3
-     , "p4", "g", g4, "c", _, "s", read' -> s4, "p", read' . takeWhile (/='.') -> p4
+     , "p4", "g", g4, "c", _, "s", read' -> s4, "p", read' -> p4
      ] ))
 
   | psd == "1" || st == "0" = LabelVec$ WLabel (fill 0) :- Nil

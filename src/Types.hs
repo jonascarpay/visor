@@ -86,6 +86,7 @@ newtype WLabel w = WLabel   (LabelComposite (Length (Positions w)) (DataShape w)
 deriving instance Serialize (LabelComposite (Length (Positions w)) (DataShape w)) => Serialize (WLabel w)
 deriving instance Creatable (LabelComposite (Length (Positions w)) (DataShape w)) => Creatable (WLabel w)
 deriving instance Show      (LabelComposite (Length (Positions w)) (DataShape w)) => Show      (WLabel w)
+deriving instance Eq        (LabelComposite (Length (Positions w)) (DataShape w)) => Eq        (WLabel w)
 
 newtype WNetwork w = WNetwork (Network (InputShape w) (NetConfig w))
 deriving instance Serialize   (Network (InputShape w) (NetConfig w)) => Serialize (WNetwork w)
@@ -111,6 +112,7 @@ deriving instance ( Show (SArray U (BatchInputShape  w n))
 newtype LabelVec g = LabelVec (Vec WLabel (Widgets g))
 
 deriving instance Show (Vec WLabel (Widgets g)) => Show (LabelVec g)
+deriving instance Eq   (Vec WLabel (Widgets g)) => Eq   (LabelVec g)
 
 type InputVec   g = Vec WInput   (Widgets g)
 type NetworkVec g = Vec WNetwork (Widgets g)

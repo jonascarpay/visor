@@ -35,13 +35,20 @@ main' ["lsparse"] =
      putStrLn$ show (length paths) ++ " images in dataset"
 
 main' ["label"] =
-  do v :: Visor Game <- loadVisor
-     error "to do"
+  do v <- loadVisor
+     runConduitRes$ pathSource .| mapMC (\p -> liftIO $ f v p) .| sinkNull
+       where
+         f :: Visor Game -> Path Game -> IO ()
+         f v p = do fx <- readShot p >>= feedImage v
+                    if fx == parse p
+                       then putStrLn "-"
+                       else do print p
+                               putStrLn$ "Expected: " ++ show (parse p)
+                               putStrLn$ "Actual:   " ++ show fx
 
 main' ["label", path] =
   do v :: Visor Game <- loadVisor
-     shot <- readShot (Path path)
-     y <- feedImage shot v
+     y <- readShot (Path path) >>= feedImage v
      putStrLn$ "Label: " ++ show y
      putStrLn$ "Interpretation: " ++ show (delabel y :: Game)
 
