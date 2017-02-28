@@ -25,7 +25,7 @@ import Data.Proxy
 import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
-import Data.Array.Repa hiding (extract)
+import Data.Array.Repa hiding (extract, (++))
 
 feedImage :: (WVector (Widgets a), Monad m) => Visor a -> Screenshot a -> m (LabelVec a)
 feedImage (Visor visor) img = do xs <- extract img
@@ -44,6 +44,7 @@ trainImage (Visor v) shot ys =
 class WVector ws where
   extract    :: Monad m => Screenshot a -> m (Vec WInput ws)
   forward    :: Monad m => Vec WNetwork ws -> Vec WInput ws -> m (Vec WLabel ws)
+  dumpCrops  :: Int -> FilePath -> Vec WInput ws -> IO ()
   trainOnce  :: Monad m
              => Vec WNetwork ws
              -> Vec WInput ws
@@ -53,6 +54,7 @@ class WVector ws where
 instance WVector '[]
   where extract   _     = return $! Nil
         forward   _ _   = return $! Nil
+        dumpCrops _ _ _ = return ()
         trainOnce _ _ _ = return $! (Nil, ((0,0),0))
 
 instance (Widget a, WVector ts) => WVector (a ': ts) where
@@ -74,6 +76,9 @@ instance (Widget a, WVector ts) => WVector (a ': ts) where
        (ns', ((cs, ts), ls')) <- trainOnce ns xs ls
        return$! (WNetwork n' :- ns', ((c+cs, t+ts), l' + ls'))
 
+  dumpCrops i p (WInput x :- xs) = do x' <- I.sHcat x
+                                      I.saveImg (p ++ "/" ++ show i ++ ".bmp") x'
+                                      dumpCrops (i + 1) p xs
 
 extractWidget :: forall w s m.
   ( Widget w, Monad m
@@ -88,7 +93,7 @@ extractWidget (Screenshot img) = WInput <$> sComputeP (sFromFunction fn)
     wps = fromSing (sing :: Sing (Positions w))
 
     regions = (\ (x,y) -> Rect (fromInteger x/iw) (fromInteger y/ih) (ww/iw) (wh/ih)) <$> wps
-    delayedCrops = (\ !r -> (I.extract img r :: SArray D (ZZ ::. 3 ::. Height w ::. Width w))) <$> regions
+    delayedCrops = (\ !r -> (I.extract img r :: SArray D (ZZ ::. 3 ::. SampleHeight w ::. SampleWidth w))) <$> regions
 
     fn (Z :. n :. d :. y :. x) = let SArray crop = delayedCrops !! n in crop ! (Z :. d :. y :. x)
 

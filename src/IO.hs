@@ -1,10 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module IO
   ( readShot
   , loadVisor
+  , dir
   , saveVisor
   , loadMany
   , pathSource
@@ -168,7 +170,9 @@ loadMany name = do sourceDirectory dir' .| awaitForever load
                      Right x  -> yield x
 
 clear :: String -> IO ()
-clear name = removeDirectoryRecursive$ dir </> name
+clear name = do createDirectoryIfMissing True (dir </> name)
+                removeDirectoryRecursive$ dir </> name
+                createDirectoryIfMissing True (dir </> name)
 
 dir :: FilePath
 dir = "data"

@@ -75,11 +75,11 @@ instance Widget Melee where
 
   type SampleWidth  Melee = 32
   type SampleHeight Melee = 32
-  type NetConfig    Melee = '[ Convolution 64 3 9 9 24 24
+  type NetConfig    Melee = '[ Convolution 16 3 9 9 24 24
                              , Pool
                              , ReLU
                              , Flatten
-                             , FC 9216 (Sum (DataShape Melee))
+                             , FC 2304 (Sum (DataShape Melee))
                              , MultiSoftMax (DataShape Melee)
                              ]
 

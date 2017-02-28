@@ -13,9 +13,10 @@ import Games.Melee
 import System.Environment
 import Control.Monad
 import Conduit
+import System.FilePath
 
 type Game = Melee
-type BatchSize = 15
+type BatchSize = 16
 
 main :: IO ()
 main = getArgs >>= main'
@@ -46,6 +47,11 @@ main' ["label"] =
                                putStrLn$ "Expected: " ++ show (parse p)
                                putStrLn$ "Actual:   " ++ show fx
 
+main' ["crops", path] =
+  do crops :: InputVec Game <- readShot (Path path :: Path Game) >>= extract
+     clear "crops"
+     dumpCrops 0 (dir</>"crops") crops
+
 main' ["label", path] =
   do v :: Visor Game <- loadVisor
      y <- readShot (Path path) >>= feedImage v
@@ -65,9 +71,9 @@ main' ["makebatch"] =
 
 main' ["trainbatch"] =
   do v :: Visor Game <- loadVisor
-     Just v' <- runConduitRes$ forever ((loadMany "batch" :: RTSource (BatchVec BatchSize Game)) .| takeC 1)
+     Just v' <- runConduitRes$ forever (loadMany "batch" :: RTSource (BatchVec BatchSize Game))
                             .| trainBatchC v
-                            .| takeC 100
+                            .| takeC 300
                             .| lastC
      saveVisor v'
 

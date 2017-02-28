@@ -58,7 +58,8 @@ class ( KnownNat (Height w), KnownNat (Width w), KnownNat (Length (Positions w))
       , SingI (DataShape w)
       , KnownNat (SampleWidth w)
       , KnownNat (SampleHeight w)
-      , NOutput (Network (InputShape w) (NetConfig w)) ~ (ZZ ::. Length (Positions w) ::. Sum (DataShape w))
+      , KnownNat (Length (Positions w) :* SampleWidth w)
+      , (NOutput (Network (InputShape w) (NetConfig w))) ~ (ZZ ::. Length (Positions w) ::. Sum (DataShape w))
       ) => Widget w where
   toLabel   :: w -> WLabel w
   fromLabel :: LabelParser w
@@ -78,15 +79,17 @@ class ( KnownNat (Height w), KnownNat (Width w), KnownNat (Length (Positions w))
 
 newtype Params w = Params LearningParameters
 
-type InputShape w = ZZ ::. Length (Positions w) ::. 3 ::. SampleWidth w ::. SampleHeight w
-type BatchInputShape  w n = ZZ ::. n :* Length (Positions w) ::. 3 ::. SampleWidth w ::. SampleHeight w
+type InputShape  w = ZZ ::. Length (Positions w) ::. 3 ::. SampleHeight w ::. SampleWidth w
+type OutputShape w = LabelComposite (Length (Positions w)) (DataShape w)
+
+type BatchInputShape  w n = ZZ ::. n :* Length (Positions w) ::. 3 ::. SampleHeight w ::. SampleWidth w
 type BatchOutputShape w n = ZZ ::. n :* Length (Positions w) ::. Sum (DataShape w)
 
-newtype WLabel w = WLabel   (LabelComposite (Length (Positions w)) (DataShape w))
-deriving instance Serialize (LabelComposite (Length (Positions w)) (DataShape w)) => Serialize (WLabel w)
-deriving instance Creatable (LabelComposite (Length (Positions w)) (DataShape w)) => Creatable (WLabel w)
-deriving instance Show      (LabelComposite (Length (Positions w)) (DataShape w)) => Show      (WLabel w)
-deriving instance Eq        (LabelComposite (Length (Positions w)) (DataShape w)) => Eq        (WLabel w)
+newtype WLabel w = WLabel   (OutputShape w)
+deriving instance Serialize (OutputShape w) => Serialize (WLabel w)
+deriving instance Creatable (OutputShape w) => Creatable (WLabel w)
+deriving instance Show      (OutputShape w) => Show      (WLabel w)
+deriving instance Eq        (OutputShape w) => Eq        (WLabel w)
 
 newtype WNetwork w = WNetwork (Network (InputShape w) (NetConfig w))
 deriving instance Serialize   (Network (InputShape w) (NetConfig w)) => Serialize (WNetwork w)
