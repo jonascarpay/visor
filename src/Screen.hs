@@ -3,7 +3,7 @@
 module Screen where
 
 import Conduit
-import Lib
+import Types
 import Codec.Picture
 import Codec.Picture.Extra
 import System.Directory

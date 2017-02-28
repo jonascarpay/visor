@@ -53,11 +53,14 @@ instance GameState Melee where
   type ScreenWidth  Melee = 584
   type ScreenHeight Melee = 480
   type Widgets      Melee = '[Melee]
-  label st = toLabel st :- Nil
-  dataset = dolphinShots
-  delabel (WLabel l :- Nil) = case parseLabel l (fromLabel :: LabelParser Melee) of
-                                Left err -> error err
-                                Right s  -> s
+  label st = LabelVec$ toLabel st :- Nil
+  delabel (LabelVec (WLabel l :- Nil)) =
+    case parseLabel l (fromLabel :: LabelParser Melee) of
+        Left err -> error err
+        Right s  -> s
+
+  rootDir = Path "/Users/jmc/tmp/"
+  parse = fromFilename
 
 instance Widget Melee where
   type Width     Melee = 140
@@ -71,17 +74,15 @@ instance Widget Melee where
 
   type SampleWidth  Melee = 32
   type SampleHeight Melee = 32
-  type NetConfig    Melee = '[ Convolution 16 3 9 9 24 24
+  type NetConfig    Melee = '[ Convolution 64 3 9 9 24 24
                              , Pool
                              , ReLU
                              , Flatten
-                             , FC 2304 100
-                             , ReLU
-                             , FC 100 (Sum (DataShape Melee))
+                             , FC 9216 (Sum (DataShape Melee))
                              , MultiSoftMax (DataShape Melee)
                              ]
 
-  params = Params (LearningParameters 1e-3 0.4 1e-4)
+  params = Params (LearningParameters 1e-2 0.9 1e-4)
 
   toLabel Menu = WLabel$ fill 0
   toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
@@ -124,20 +125,18 @@ mkPlayerState s p
   | p < 0 || p > 999 = error$ "PlayerState with " ++ show p ++ " percent"
   | otherwise      = PlayerState s p
 
-dolphinShots :: Dataset Melee
-dolphinShots =
-  Dataset { rootDir = "/Users/jmc/tmp/"
-          , parseFilename = fromFilename
-          }
+fromFilename :: Path a -> LabelVec Melee
+fromFilename (Path (wordsBy (=='_')
+  -> [ "shot", _, "psd", psd, "st", st
+     , "p1", "g", g1, "c", _, "s", read' -> s1, "p", read' -> p1
+     , "p2", "g", g2, "c", _, "s", read' -> s2, "p", read' -> p2
+     , "p3", "g", g3, "c", _, "s", read' -> s3, "p", read' -> p3
+     , "p4", "g", g4, "c", _, "s", read' -> s4, "p", read' . takeWhile (/='.') -> p4
+     ] ))
 
-fromFilename :: FilePath -> LabelVec Melee
-fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", st,
-                                  "p1", "g", g1, "c", _, "s", read' -> s1, "p", read' -> p1,
-                                  "p2", "g", g2, "c", _, "s", read' -> s2, "p", read' -> p2,
-                                  "p3", "g", g3, "c", _, "s", read' -> s3, "p", read' -> p3,
-                                  "p4", "g", g4, "c", _, "s", read' -> s4, "p", read' . takeWhile (/='.') -> p4] )
-  | psd == "1" || st == "0" = WLabel (fill 0) :- Nil
-  | otherwise = WLabel ((get g1 s1 p1) <->
+  | psd == "1" || st == "0" = LabelVec$ WLabel (fill 0) :- Nil
+  | otherwise = LabelVec$
+                WLabel ((get g1 s1 p1) <->
                         (get g2 s2 p2) <->
                         (get g3 s3 p3) <->
                         (get g4 s4 p4)) :- Nil
@@ -145,5 +144,5 @@ fromFilename (wordsBy (=='_') -> ["shot", _, "psd", psd, "st", st,
    where get "0" _ _ = fill 0
          get "1" s p = playerLabel $ mkPlayerState s p
 
-fromFilename s = error$ "Invalid filename: " ++ s
+fromFilename (Path p) = error$ "Invalid filename: " ++ p
 

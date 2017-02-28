@@ -58,7 +58,7 @@ executable visor-app
   ghc-options:        -Wall
                       -O2
                       -threaded
-                      -rtsopts -with-rtsopts=N
+                      -rtsopts -with-rtsopts=-N
   main-is:             main.hs
   build-depends:       base
                      , visor

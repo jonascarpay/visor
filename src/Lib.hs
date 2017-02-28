@@ -3,14 +3,10 @@
 
 module Lib where
 
-import Conduit
 import Types
 import Network.Label
 import Text.Read as T
-
-type RTSource  a   = Source    (ResourceT IO) a
-type RTConduit a b = Conduit a (ResourceT IO) b
-type RTSink    a   = Sink    a (ResourceT IO) ()
+import System.FilePath.Posix
 
 divs :: Integral a => a -> a -> Bool
 a `divs` b = b `mod` a == 0
@@ -33,4 +29,11 @@ read' x = case T.readMaybe x of
            Just x -> x
            Nothing -> error$ "error parsing " ++ x
 
+labelPath :: GameState g => Path g -> g
+labelPath = delabel . parse
 
+pmap :: (FilePath -> FilePath) -> Path a -> Path a
+pmap f (Path p) = Path$ f p
+
+showAndLabel :: GameState g => Path g -> String
+showAndLabel p = show (pmap takeBaseName p) ++ "\t\t" ++ show (labelPath p)

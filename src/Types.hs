@@ -24,6 +24,7 @@ import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Serialize
+import Conduit
 
 -- | If x1 and x2 could be values for some x in two
 --   subsequent screen polls, then x1 ->? x2.
@@ -32,95 +33,100 @@ class Transitions a where
   (->?) :: a -> a -> Bool
 
 -- | A GameState is a data type that fully describes a games' state.
-class ( KnownSymbol (Title a)
-      , KnownNat (ScreenWidth a)
-      , KnownNat (ScreenHeight a)
-      ) => GameState a where
+class ( KnownSymbol (Title g)
+      , KnownNat (ScreenWidth g)
+      , KnownNat (ScreenHeight g)
+      , Show g
+      ) => GameState g where
 
-  label   :: a -> LabelVec a
-  delabel :: LabelVec a -> a
-  dataset :: Dataset a
+  label   :: g -> LabelVec g
+  delabel :: LabelVec g -> g
+  rootDir :: Path g
+  parse   :: Path g -> LabelVec g
 
-  type Title  a       :: Symbol
-  type ScreenWidth  a :: Nat -- ^ The width of a screen of this game in pixels.
+  type Title  g       :: Symbol
+  type ScreenWidth  g :: Nat -- ^ The width of a screen of this game in pixels.
                              --   This value and the height are mostly used to
                              --   scale the positions and dimensions of widgets
-  type ScreenHeight a :: Nat
-  type Widgets a      :: [*]
+  type ScreenHeight g :: Nat
+  type Widgets g      :: [*]
 
-class ( KnownNat (Height a), KnownNat (Width a), KnownNat (Length (Positions a))
-      , KnownNat (ScreenWidth (Parent a)), KnownNat (ScreenHeight (Parent a))
-      , KnownNat (Sum (DataShape a)), KnownNat ((Sum (DataShape a)) :* (Length (Positions a)))
-      , SingI (Positions a), Measure (InputShape a)
-      , SingI (DataShape a)
-      , KnownNat (SampleWidth a)
-      , KnownNat (SampleHeight a)
-      , NOutput (Network (InputShape a) (NetConfig a)) ~ (ZZ ::. Length (Positions a) ::. Sum (DataShape a))
-      ) => Widget a where
-  toLabel   :: a -> WLabel a
-  fromLabel :: LabelParser a
-  params    :: Params a
+class ( KnownNat (Height w), KnownNat (Width w), KnownNat (Length (Positions w))
+      , KnownNat (ScreenWidth (Parent w)), KnownNat (ScreenHeight (Parent w))
+      , KnownNat (Sum (DataShape w)), KnownNat ((Sum (DataShape w)) :* (Length (Positions w)))
+      , SingI (Positions w), Measure (InputShape w)
+      , SingI (DataShape w)
+      , KnownNat (SampleWidth w)
+      , KnownNat (SampleHeight w)
+      , NOutput (Network (InputShape w) (NetConfig w)) ~ (ZZ ::. Length (Positions w) ::. Sum (DataShape w))
+      ) => Widget w where
+  toLabel   :: w -> WLabel w
+  fromLabel :: LabelParser w
+  params    :: Params w
 
   -- Widget description
-  type Positions a :: [(Nat, Nat)]
-  type DataShape a :: [Nat]
-  type Width     a :: Nat
-  type Height    a :: Nat
-  type Parent    a :: *
+  type Positions w :: [(Nat, Nat)]
+  type DataShape w :: [Nat]
+  type Width     w :: Nat
+  type Height    w :: Nat
+  type Parent    w :: *
 
   -- Widget classifier configuration
-  type SampleWidth  a :: Nat
-  type SampleHeight a :: Nat
-  type NetConfig    a :: [*]
+  type SampleWidth  w :: Nat
+  type SampleHeight w :: Nat
+  type NetConfig    w :: [*]
 
-newtype Params a = Params LearningParameters
+newtype Params w = Params LearningParameters
 
-type InputShape a = ZZ ::. Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
-type BatchInputShape  a n = ZZ ::. n :* Length (Positions a) ::. 3 ::. SampleWidth a ::. SampleHeight a
-type BatchOutputShape a n = ZZ ::. n :* Length (Positions a) ::. Sum (DataShape a)
+type InputShape w = ZZ ::. Length (Positions w) ::. 3 ::. SampleWidth w ::. SampleHeight w
+type BatchInputShape  w n = ZZ ::. n :* Length (Positions w) ::. 3 ::. SampleWidth w ::. SampleHeight w
+type BatchOutputShape w n = ZZ ::. n :* Length (Positions w) ::. Sum (DataShape w)
 
--- | A `WLabel a` contains a label for widget `a`
+newtype WLabel w = WLabel   (LabelComposite (Length (Positions w)) (DataShape w))
+deriving instance Serialize (LabelComposite (Length (Positions w)) (DataShape w)) => Serialize (WLabel w)
+deriving instance Creatable (LabelComposite (Length (Positions w)) (DataShape w)) => Creatable (WLabel w)
+deriving instance Show      (LabelComposite (Length (Positions w)) (DataShape w)) => Show      (WLabel w)
 
-newtype WLabel a = WLabel   (LabelComposite (Length (Positions a)) (DataShape a))
-deriving instance Serialize (LabelComposite (Length (Positions a)) (DataShape a)) => Serialize (WLabel a)
-deriving instance Creatable (LabelComposite (Length (Positions a)) (DataShape a)) => Creatable (WLabel a)
-deriving instance Show      (LabelComposite (Length (Positions a)) (DataShape a)) => Show      (WLabel a)
+newtype WNetwork w = WNetwork (Network (InputShape w) (NetConfig w))
+deriving instance Serialize   (Network (InputShape w) (NetConfig w)) => Serialize (WNetwork w)
+deriving instance Creatable   (Network (InputShape w) (NetConfig w)) => Creatable (WNetwork w)
+deriving instance Show        (Network (InputShape w) (NetConfig w)) => Show      (WNetwork w)
 
-newtype WNetwork a = WNetwork (Network (InputShape a) (NetConfig a))
-deriving instance Serialize   (Network (InputShape a) (NetConfig a)) => Serialize (WNetwork a)
-deriving instance Creatable   (Network (InputShape a) (NetConfig a)) => Creatable (WNetwork a)
-deriving instance Show        (Network (InputShape a) (NetConfig a)) => Show      (WNetwork a)
+newtype WInput w = WInput   (SArray U (InputShape w))
+deriving instance Serialize (SArray U (InputShape w)) => Serialize (WInput w)
+deriving instance Creatable (SArray U (InputShape w)) => Creatable (WInput w)
+deriving instance Show      (SArray U (InputShape w)) => Show      (WInput w)
 
-newtype WInput a = WInput   (SArray U (InputShape a))
-deriving instance Serialize (SArray U (InputShape a)) => Serialize (WInput a)
-deriving instance Creatable (SArray U (InputShape a)) => Creatable (WInput a)
-deriving instance Show      (SArray U (InputShape a)) => Show      (WInput a)
+newtype WBatch n w = WBatch ( SArray U (BatchInputShape w n)
+                            , SArray U (BatchOutputShape w n))
 
-newtype WBatch n a = WBatch ( SArray U (BatchInputShape a n)
-                            , SArray U (BatchOutputShape a n))
+deriving instance ( Serialize (SArray U (BatchInputShape  w n))
+                  , Serialize (SArray U (BatchOutputShape w n))
+                  ) => Serialize (WBatch n w)
 
-deriving instance ( Serialize (SArray U (BatchInputShape  a n))
-                  , Serialize (SArray U (BatchOutputShape a n))
-                  ) => Serialize (WBatch n a)
+deriving instance ( Show (SArray U (BatchInputShape  w n))
+                  , Show (SArray U (BatchOutputShape w n))
+                  ) => Show (WBatch n w)
 
-deriving instance ( Show (SArray U (BatchInputShape  a n))
-                  , Show (SArray U (BatchOutputShape a n))
-                  ) => Show (WBatch n a)
+newtype LabelVec g = LabelVec (Vec WLabel (Widgets g))
 
-type LabelVec   a = Vec WLabel   (Widgets a)
-type InputVec   a = Vec WInput   (Widgets a)
-type NetworkVec a = Vec WNetwork (Widgets a)
-type BatchVec n a = Vec (WBatch n) (Widgets a)
+deriving instance Show (Vec WLabel (Widgets g)) => Show (LabelVec g)
+
+type InputVec   g = Vec WInput   (Widgets g)
+type NetworkVec g = Vec WNetwork (Widgets g)
+type BatchVec n g = Vec (WBatch n) (Widgets g)
+type BatchC n g = RTConduit (Screenshot g, LabelVec g) (Vec (WBatch n) (Widgets g))
 
 newtype Visor game = Visor (NetworkVec game)
 deriving instance Serialize (NetworkVec game) => Serialize (Visor game)
 deriving instance Creatable (NetworkVec game) => Creatable (Visor game)
 
--- | A data set defines a set of samples for some game
-data Dataset a =
-  Dataset
-    { rootDir :: FilePath -- ^ Absolute paths to the images in the data set
-    , parseFilename :: FilePath -> LabelVec a
-    }
+newtype Screenshot g = Screenshot BMP
+newtype Path g = Path {unpath :: FilePath}
+instance Show (Path g) where show (Path p) = p
 
-newtype Screenshot a = Screenshot BMP
+type RTSource  a   = Source    (ResourceT IO) a
+type RTConduit a b = Conduit a (ResourceT IO) b
+type RTSink    a   = Sink    a (ResourceT IO) ()
+
+

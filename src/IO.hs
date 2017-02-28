@@ -4,10 +4,11 @@
 
 module IO
   ( readShot
-  , datasetPathSource
   , loadVisor
   , saveVisor
   , loadMany
+  , pathSource
+  , pmap
   , saveMany
   , deleteVisor
   , batchify
@@ -18,10 +19,9 @@ module IO
   ) where
 
 import Types
-import Vector
+import Lib
 import Visor
 import Util
-import Lib
 import Static.Image
 import Conduit
 import Control.Monad
@@ -34,21 +34,27 @@ import Data.Proxy
 import qualified Data.ByteString as BS
 import Data.Serialize
 
-readShot :: FilePath -> IO (Screenshot a)
-readShot fp = do ebmp <- readRaw fp
-                 case ebmp of
-                   Left err -> error err
-                   Right bmp -> return (Screenshot bmp)
+readShot :: Path a -> IO (Screenshot a)
+readShot (Path fp) = do ebmp <- readRaw fp
+                        case ebmp of
+                          Left err -> error err
+                          Right bmp -> return (Screenshot bmp)
 
-datasetPathSource :: Dataset a -> RTSource FilePath
-datasetPathSource set = sourceDirectoryDeep True (rootDir set) .| filterC ((== ".bmp") . takeExtension)
+pathSource :: forall a. GameState a => RTSource (Path a)
+pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
+          .| filterC ((== ".bmp") . takeExtension)
+          .| mapC Path
 
-datasetSampleSource :: Dataset a -> Bool -> RTSource (Screenshot a, LabelVec a)
-datasetSampleSource set shuf = datasetPathSource set
-                            .| (if shuf then shuffleC else awaitForever yield)
-                            .| loadC
-  where loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
-                                          yield (shot, parseFilename set $ takeFileName path)
+datasetSampleSource :: GameState a => Bool -> RTSource (Screenshot a, LabelVec a)
+datasetSampleSource shuf = pathSource
+                        .| (if shuf then shuffleC else awaitForever yield)
+                        .| loadC
+
+loadC :: GameState a => RTConduit (Path a) (Screenshot a, LabelVec a)
+loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
+                                  yield (shot, parse $ pmap takeFileName path)
+
+
 
 -- | Drain a source of its elements, and yield them in a random order
 shuffleC :: RTConduit a a
@@ -108,35 +114,36 @@ trainC visor =
   do ms <- await
      case ms of
        Nothing     -> return ()
-       Just (x, y) -> do (v', ((p,c),l)) <- trainImage visor x y
-                         liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
-                         yield v'
-                         trainC v'
+       Just (x, LabelVec y) ->
+         do (v', ((p,c),l)) <- trainImage visor x y
+            liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
+            yield v'
+            trainC v'
 
-trainBatchC :: ( GameState a
-               , Stack n (Widgets a)
-               , KnownNat n
+trainBatchC :: ( Stack n (Widgets a)
                ) => Visor a -> RTConduit (BatchVec n a) (Visor a)
 
-trainBatchC (Visor visor) =
-  do mb <- await
-     case mb of
-       Nothing -> return ()
-       Just b  -> do (v', ((p, c),l)) <- trainBatch visor b
-                     liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
-                     yield (Visor v')
-                     trainBatchC (Visor v')
+trainBatchC (Visor visor) = go visor 1000
+  where
+    go v l' =
+      do mb <- await
+         case mb of
+           Nothing -> return ()
+           Just b  -> do (v', ((p, c),l)) <- trainBatch v b
+                         liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\t\tLoss: " ++ show l ++ "\t\tDLoss: " ++ show (l - l')
+                         yield (Visor v')
+                         go v' l
 
-
-batchify :: forall n a. (KnownNat n, Stack n (Widgets a)) => RTConduit (Screenshot a, LabelVec a) (Vec (WBatch n) (Widgets a))
+batchify :: forall n a. (KnownNat n, Stack n (Widgets a)) => BatchC n a
 batchify = do xs <- takeC n .| extractC .| sinkList
               case stack xs of
                 Just xs' -> yield xs' >> batchify
                 Nothing  -> return ()
   where
     n = fromInteger$ natVal (Proxy :: Proxy n)
-    extractC = awaitForever$ \(shot, ls) -> do xs <- Visor.extract shot
-                                               yield (xs, ls)
+    extractC = awaitForever$ \(shot, LabelVec ls) ->
+      do xs <- Visor.extract shot
+         yield (xs, ls)
 
 saveMany :: Serialize a => String -> RTSink a
 saveMany name = do liftIO$ createDirectoryIfMissing True dir'
