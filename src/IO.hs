@@ -9,6 +9,7 @@ module IO
   , loadVisor
   , dir
   , saveVisor
+  , saveVisorContinuous
   , saveKernels
   , loadMany
   , pathSource
@@ -91,19 +92,28 @@ loadVisor = do createDirectoryIfMissing True "data"
 
     newVisor :: IO (Visor a)
     newVisor = do putStrLn$ "Initializing new visor at " ++ path
-                  return$ seeded 99
+                  return$ seeded 9
 
 saveVisor :: forall a.
   ( Serialize (Visor a)
   , GameState a
   ) => Visor a -> IO ()
-
 saveVisor v = do exists <- fileExist path
                  flag <- if exists then do putStrLn$ "Visor found at " ++ path ++ ", delete?[Yn] "
                                            a <- getLine
                                            return$ a `notElem` ["n", "N"]
                                    else return True
                  when flag $ BS.writeFile path (encode v)
+  where
+    name = symbolVal (Proxy :: Proxy (Title a))
+    path = dir </> name
+
+saveVisorContinuous :: forall a.
+  ( Serialize (Visor a)
+  , GameState a
+  ) => RTSink (Visor a)
+
+saveVisorContinuous = awaitForever $ liftIO . BS.writeFile path . encode
   where
     name = symbolVal (Proxy :: Proxy (Title a))
     path = dir </> name
@@ -150,10 +160,8 @@ trainBatchC (Visor visor) = go visor 0
                                         . shows c
                                         . showString "\tloss: "
                                         . showEFloat (Just 4) l
-                                        . showString "\tdloss: "
-                                        . showEFloat (Just 2) (l - l')
-                                        . showString "\tl'/l: "
-                                        . showFFloat (Just 3) (l'/l) $ ""
+                                        . showString "\tr: "
+                                        . showFFloat (Just 3) (1 - l/l') $ ""
                          yield (Visor v')
                          go v' l
 

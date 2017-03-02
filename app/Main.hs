@@ -16,7 +16,7 @@ import Conduit
 import System.FilePath
 
 type Game = Melee
-type BatchSize = 16
+type BatchSize = 64
 
 main :: IO ()
 main = getArgs >>= main'
@@ -60,26 +60,35 @@ main' ["crops", path] =
 
 main' ["train"] =
   do v :: Visor Game <- loadVisor
-     Just v' <- runConduitRes$ forever (datasetSampleSource True) .| trainC v .| takeC 10000 .| lastC
+     Just v' <- runConduitRes$ forever (datasetSampleSource True) .| trainC v .| takeC 100 .| lastC
      saveVisor v'
 
 main' ["makebatch"] =
   do clear "batch"
      runConduitRes$ datasetSampleSource True
                  .| (batchify :: BatchC BatchSize Game)
-                 .| takeC 1
                  .| (saveMany "batch")
 
 main' ["trainbatch"] =
   do v :: Visor Game <- loadVisor
+     runConduitRes$ forever (loadMany "batch" :: RTSource (BatchVec BatchSize Game))
+                 .| trainBatchC v
+                 .| saveVisorContinuous
+
+
+main' ["trainbatch",n] =
+  do v :: Visor Game <- loadVisor
      Just v' <- runConduitRes$ forever (loadMany "batch" :: RTSource (BatchVec BatchSize Game))
                             .| trainBatchC v
-                            .| takeC 100
+                            .| takeC (read n)
                             .| lastC
      saveVisor v'
 
-main' ["kernels"] =
-  do v :: Visor Game <- loadVisor
-     saveKernels v
+
+
+
+{-main' ["kernels"] =-}
+  {-do v :: Visor Game <- loadVisor-}
+     {-saveKernels v-}
 
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l
