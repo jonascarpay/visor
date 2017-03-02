@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,6 +9,7 @@ module IO
   , loadVisor
   , dir
   , saveVisor
+  , saveKernels
   , loadMany
   , pathSource
   , pmap
@@ -23,8 +25,11 @@ module IO
 import Types
 import Lib
 import Visor
+import Vector
 import Util
-import Static.Image
+import Network
+import Layers.Convolution
+import qualified Static.Image as I
 import Conduit
 import Control.Monad
 import System.FilePath
@@ -32,12 +37,14 @@ import System.Posix.Files
 import System.Directory
 import System.Random.Shuffle
 import Data.Singletons.TypeLits
+import Data.Singletons.Prelude.List
 import Data.Proxy
 import qualified Data.ByteString as BS
 import Data.Serialize
+import Numeric
 
 readShot :: Path a -> IO (Screenshot a)
-readShot (Path fp) = do ebmp <- readRaw fp
+readShot (Path fp) = do ebmp <- I.readRaw fp
                         case ebmp of
                           Left err -> error err
                           Right bmp -> return (Screenshot bmp)
@@ -53,7 +60,7 @@ datasetSampleSource shuf = pathSource
                         .| loadC
 
 loadC :: GameState a => RTConduit (Path a) (Screenshot a, LabelVec a)
-loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
+loadC = awaitForever$ \path -> do shot <- liftIO$ print path >> readShot path
                                   yield (shot, parse $ pmap takeFileName path)
 
 
@@ -84,7 +91,7 @@ loadVisor = do createDirectoryIfMissing True "data"
 
     newVisor :: IO (Visor a)
     newVisor = do putStrLn$ "Initializing new visor at " ++ path
-                  return$ seeded 9
+                  return$ seeded 99
 
 saveVisor :: forall a.
   ( Serialize (Visor a)
@@ -118,21 +125,35 @@ trainC visor =
        Nothing     -> return ()
        Just (x, LabelVec y) ->
          do (v', ((p,c),l)) <- trainImage visor x y
-            liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\tLoss: " ++ show l
+            liftIO.putStrLn$ showString "Correct: "
+                           . shows p
+                           . showString "/"
+                           . shows c
+                           . showString "\tLoss: "
+                           . showEFloat (Just 5) l $""
             yield v'
             trainC v'
 
 trainBatchC :: ( Stack n (Widgets a)
                ) => Visor a -> RTConduit (BatchVec n a) (Visor a)
 
-trainBatchC (Visor visor) = go visor 1000
+trainBatchC (Visor visor) = go visor 0
   where
     go v l' =
       do mb <- await
          case mb of
            Nothing -> return ()
            Just b  -> do (v', ((p, c),l)) <- trainBatch v b
-                         liftIO.putStrLn$ "Correct: " ++ show p ++ "/" ++ show c ++ "\t\tLoss: " ++ show l ++ "\t\tDLoss: " ++ show (l - l')
+                         liftIO.putStrLn$ showString "correct: "
+                                        . shows p
+                                        . showString "/"
+                                        . shows c
+                                        . showString "\tloss: "
+                                        . showEFloat (Just 4) l
+                                        . showString "\tdloss: "
+                                        . showEFloat (Just 2) (l - l')
+                                        . showString "\tl'/l: "
+                                        . showFFloat (Just 3) (l'/l) $ ""
                          yield (Visor v')
                          go v' l
 
@@ -173,6 +194,13 @@ clear :: String -> IO ()
 clear name = do createDirectoryIfMissing True (dir </> name)
                 removeDirectoryRecursive$ dir </> name
                 createDirectoryIfMissing True (dir </> name)
+
+saveKernels :: (Head (NetConfig (Head (Widgets g))) ~ Convolution a 3 b c d e, GameState g)
+            => Visor g -> IO ()
+saveKernels (Visor v) = do clear "krns"
+                           case v of
+                             WNetwork (Convolution k _ _ `NCons` _) :- _ -> I.saveMany (dir</>"krns/") k
+                             _ -> undefined
 
 dir :: FilePath
 dir = "data"

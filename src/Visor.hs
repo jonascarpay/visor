@@ -26,6 +26,7 @@ import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Array.Repa hiding (extract, (++))
+import Debug.Trace
 
 feedImage :: (WVector (Widgets a), Monad m) => Visor a -> Screenshot a -> m (LabelVec a)
 feedImage (Visor visor) img = do xs <- extract img
@@ -67,6 +68,7 @@ instance (Widget a, WVector ts) => WVector (a ': ts) where
   forward (WNetwork n :- ns) (WInput x :- xs) =
     do y  <- R.forward n x
        ls <- forward ns xs
+       trace (show y) $ return ()
        let l = WLabel $ fromArray y
        return$ l:-ls
 
@@ -77,7 +79,7 @@ instance (Widget a, WVector ts) => WVector (a ': ts) where
        return$! (WNetwork n' :- ns', ((c+cs, t+ts), l' + ls'))
 
   dumpCrops i p (WInput x :- xs) = do x' <- I.sHcat x
-                                      I.saveImg (p ++ "/" ++ show i ++ ".bmp") x'
+                                      I.saveImg (p ++ "/" ++ show i) x'
                                       dumpCrops (i + 1) p xs
 
 extractWidget :: forall w s m.

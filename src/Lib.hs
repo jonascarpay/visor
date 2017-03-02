@@ -7,6 +7,7 @@ import Types
 import Network.Label
 import Text.Read as T
 import System.FilePath.Posix
+import Numeric
 
 divs :: Integral a => a -> a -> Bool
 a `divs` b = b `mod` a == 0
@@ -37,3 +38,6 @@ pmap f (Path p) = Path$ f p
 
 showAndLabel :: GameState g => Path g -> String
 showAndLabel p = show (pmap takeBaseName p) ++ "\t\t" ++ show (labelPath p)
+
+showE :: Double -> ShowS
+showE = showEFloat (Just 4)

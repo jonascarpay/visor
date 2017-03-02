@@ -47,34 +47,39 @@ main' ["label"] =
                                putStrLn$ "Expected: " ++ show (parse p)
                                putStrLn$ "Actual:   " ++ show fx
 
-main' ["crops", path] =
-  do crops :: InputVec Game <- readShot (Path path :: Path Game) >>= extract
-     clear "crops"
-     dumpCrops 0 (dir</>"crops") crops
-
 main' ["label", path] =
   do v :: Visor Game <- loadVisor
      y <- readShot (Path path) >>= feedImage v
      putStrLn$ "Label: " ++ show y
      putStrLn$ "Interpretation: " ++ show (delabel y :: Game)
 
+main' ["crops", path] =
+  do crops :: InputVec Game <- readShot (Path path :: Path Game) >>= extract
+     clear "crops"
+     dumpCrops 0 (dir</>"crops") crops
+
 main' ["train"] =
   do v :: Visor Game <- loadVisor
-     Just v' <- runConduitRes$ datasetSampleSource False .| trainC v .| takeC 10 .| lastC
+     Just v' <- runConduitRes$ forever (datasetSampleSource True) .| trainC v .| takeC 10000 .| lastC
      saveVisor v'
 
 main' ["makebatch"] =
   do clear "batch"
      runConduitRes$ datasetSampleSource True
                  .| (batchify :: BatchC BatchSize Game)
+                 .| takeC 1
                  .| (saveMany "batch")
 
 main' ["trainbatch"] =
   do v :: Visor Game <- loadVisor
      Just v' <- runConduitRes$ forever (loadMany "batch" :: RTSource (BatchVec BatchSize Game))
                             .| trainBatchC v
-                            .| takeC 300
+                            .| takeC 100
                             .| lastC
      saveVisor v'
+
+main' ["kernels"] =
+  do v :: Visor Game <- loadVisor
+     saveKernels v
 
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l

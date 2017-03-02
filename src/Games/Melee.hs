@@ -65,7 +65,7 @@ instance GameState Melee where
 
 instance Widget Melee where
   type Width     Melee = 140
-  type Height    Melee = 96
+  type Height    Melee = 120
   type Parent    Melee = Melee
   type DataShape Melee = '[ 10, 10, 10, 5 ]
   type Positions Melee = '[ '(16,  356)
@@ -75,15 +75,17 @@ instance Widget Melee where
 
   type SampleWidth  Melee = 32
   type SampleHeight Melee = 32
-  type NetConfig    Melee = '[ Convolution 16 3 9 9 24 24
+  type NetConfig    Melee = '[ Convolution 20 3 9 9 24 24
                              , Pool
                              , ReLU
                              , Flatten
-                             , FC 2304 (Sum (DataShape Melee))
+                             , FC 2880 100
+                             , ReLU
+                             , FC 100 (Sum (DataShape Melee))
                              , MultiSoftMax (DataShape Melee)
                              ]
 
-  params = Params (LearningParameters 1e-2 0.9 1e-4)
+  params = Params (LearningParameters 1e-5 0.9 1e-3)
 
   toLabel Menu = WLabel$ fill 0
   toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
@@ -127,7 +129,7 @@ mkPlayerState s p
   | otherwise      = PlayerState s p
 
 fromFilename :: Path a -> LabelVec Melee
-fromFilename (Path (wordsBy (=='_') . takeBaseName
+fromFilename (Path (wordsBy (=='_') . takeWhile (/='.') . takeBaseName
   -> [ "shot", _, "psd", psd, "st", st
      , "p1", "g", g1, "c", _, "s", read' -> s1, "p", read' -> p1
      , "p2", "g", g2, "c", _, "s", read' -> s2, "p", read' -> p2
