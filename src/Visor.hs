@@ -26,7 +26,6 @@ import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Array.Repa hiding (extract, (++))
-import Debug.Trace
 
 feedImage :: (WVector (Widgets a), Monad m) => Visor a -> Screenshot a -> m (LabelVec a)
 feedImage (Visor visor) img = do xs <- extract img
@@ -35,9 +34,9 @@ feedImage (Visor visor) img = do xs <- extract img
 trainImage :: (WVector (Widgets a), Monad m)
            => Visor a
            -> Screenshot a
-           -> Vec WLabel (Widgets a)
+           -> LabelVec a
            -> m (Visor a, Loss)
-trainImage (Visor v) shot ys =
+trainImage (Visor v) shot (LabelVec ys) =
   do xs <- extract shot
      (v', l) <- trainOnce v xs ys
      return (Visor v', l)
@@ -68,7 +67,6 @@ instance (Widget a, WVector ts) => WVector (a ': ts) where
   forward (WNetwork n :- ns) (WInput x :- xs) =
     do y  <- R.forward n x
        ls <- forward ns xs
-       trace (show y) $ return ()
        let l = WLabel $ fromArray y
        return$ l:-ls
 

@@ -14,9 +14,10 @@ import System.Environment
 import Control.Monad
 import Conduit
 import System.FilePath
+import Numeric
 
 type Game = Melee
-type BatchSize = 64
+type BatchSize = 32
 
 main :: IO ()
 main = getArgs >>= main'
@@ -37,7 +38,7 @@ main' ["lsparse"] =
 
 main' ["label"] =
   do v <- loadVisor
-     runConduitRes$ pathSource .| mapMC (\p -> liftIO $ f v p) .| sinkNull
+     runConduitRes$ pathSource .| mapMC (liftIO . f v) .| sinkNull
        where
          f :: Visor Game -> Path Game -> IO ()
          f v p = do fx <- readShot p >>= feedImage v
@@ -52,6 +53,18 @@ main' ["label", path] =
      y <- readShot (Path path) >>= feedImage v
      putStrLn$ "Label: " ++ show y
      putStrLn$ "Interpretation: " ++ show (delabel y :: Game)
+
+main' ["losses", read -> threshold] =
+  do v <- loadVisor
+     runConduitRes$ pathSource .| mapMC (liftIO . f v) .| sinkNull
+       where
+         f :: Visor Game -> Path Game -> IO ()
+         f v p = do shot <- readShot p
+                    (_,(_,l)) <- trainImage v shot (parse p)
+                    when (l > threshold) $ putStrLn . showEFloat (Just 3) l
+                                                    . showString " "
+                                                    . shows p
+                                                    $ ""
 
 main' ["crops", path] =
   do crops :: InputVec Game <- readShot (Path path :: Path Game) >>= extract
@@ -87,8 +100,8 @@ main' ["trainbatch",n] =
 
 
 
-{-main' ["kernels"] =-}
-  {-do v :: Visor Game <- loadVisor-}
-     {-saveKernels v-}
+main' ["kernels"] =
+  do v :: Visor Game <- loadVisor
+     saveKernels v
 
 main' l = putStrLn$ "Unrecognized argument list: " ++ unwords l

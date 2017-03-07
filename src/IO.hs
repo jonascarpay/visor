@@ -61,7 +61,7 @@ datasetSampleSource shuf = pathSource
                         .| loadC
 
 loadC :: GameState a => RTConduit (Path a) (Screenshot a, LabelVec a)
-loadC = awaitForever$ \path -> do shot <- liftIO$ print path >> readShot path
+loadC = awaitForever$ \path -> do shot <- liftIO$ readShot path
                                   yield (shot, parse $ pmap takeFileName path)
 
 
@@ -133,7 +133,7 @@ trainC visor =
   do ms <- await
      case ms of
        Nothing     -> return ()
-       Just (x, LabelVec y) ->
+       Just (x, y) ->
          do (v', ((p,c),l)) <- trainImage visor x y
             liftIO.putStrLn$ showString "Correct: "
                            . shows p
