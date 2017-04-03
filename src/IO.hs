@@ -7,6 +7,7 @@
 module IO
   ( readShot
   , loadVisor
+  , screenShotSource
   , dir
   , saveVisor
   , saveVisorContinuous
@@ -38,6 +39,8 @@ import System.FilePath
 import System.Posix.Files
 import System.Directory
 import System.Random.Shuffle
+import System.Process
+import Data.Array.Repa.IO.BMP
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Proxy
@@ -50,6 +53,15 @@ readShot (Path fp) = do ebmp <- I.readRaw fp
                         case ebmp of
                           Left err -> error$ err ++ " " ++ fp
                           Right bmp -> return (Screenshot bmp)
+
+screenShotSource :: Int -> Int -> Int -> Int -> RTSource (Screenshot a)
+screenShotSource x y w h = forever$ liftIO takeshot >>= yield
+ where
+   cmd = "screencapture -xm -R" ++ show x ++ ',':show y ++ ',':show w ++ ',':show h ++ " -t bmp out.bmp"
+   takeshot = do _ <- system cmd
+                 Right img <- readImageFromBMP "out.bmp"
+                 removeFile "out.bmp"
+                 return (Screenshot img)
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
