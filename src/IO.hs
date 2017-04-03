@@ -21,6 +21,7 @@ module IO
   , trainBatchC
   , datasetSampleSource
   , clear
+  , shuffleC
   ) where
 
 import Types
@@ -47,7 +48,7 @@ import Numeric
 readShot :: Path a -> IO (Screenshot a)
 readShot (Path fp) = do ebmp <- I.readRaw fp
                         case ebmp of
-                          Left err -> error err
+                          Left err -> error$ err ++ " " ++ fp
                           Right bmp -> return (Screenshot bmp)
 
 pathSource :: forall a. GameState a => RTSource (Path a)
@@ -147,23 +148,37 @@ trainC visor =
 trainBatchC :: ( Stack n (Widgets a)
                ) => Visor a -> RTConduit (BatchVec n a) (Visor a)
 
-trainBatchC (Visor visor) = go visor 0
+trainBatchC (Visor visor) = go visor [] []
   where
-    go v l' =
+    go v ls ps =
       do mb <- await
          case mb of
            Nothing -> return ()
            Just b  -> do (v', ((p, c),l)) <- trainBatch v b
-                         liftIO.putStrLn$ showString "correct: "
+                         let ls' = take 20 (l:ls)
+                             ps' = take 20 (p:ps)
+                         liftIO.putStrLn$ showEFloat (Just 2) (median' ls')
+                                        . showString " ("
+                                        . showEFloat (Just 2) (minimum ls')
+                                        . showString " .. "
+                                        . showEFloat (Just 2) (maximum ls')
+                                        . showString ")\t"
+
+                                        . shows (median  ps')
+                                        . showString " ("
+                                        . shows (minimum ps')
+                                        . showString " .. "
+                                        . shows (maximum ps')
+                                        . showString ")\t("
+
                                         . shows p
                                         . showString "/"
                                         . shows c
-                                        . showString "\tloss: "
+                                        . showString ", "
                                         . showEFloat (Just 4) l
-                                        . showString "\tr: "
-                                        . showFFloat (Just 3) (1 - l/l') $ ""
+                                        $ ")"
                          yield (Visor v')
-                         go v' l
+                         go v' ls' ps'
 
 batchify :: forall n a. (KnownNat n, Stack n (Widgets a)) => BatchC n a
 batchify = do xs <- takeC n .| extractC .| sinkList

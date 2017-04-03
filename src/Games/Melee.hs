@@ -60,7 +60,7 @@ instance GameState Melee where
         Left err -> error err
         Right s  -> s
 
-  rootDir = Path "/Users/jmc/tmp/"
+  rootDir = Path "/Users/joni/tmp/"
   parse = fromFilename
 
 instance Widget Melee where
@@ -73,19 +73,21 @@ instance Widget Melee where
                           , '(294, 356)
                           , '(432, 356) ]
 
-  type SampleWidth  Melee = 32
-  type SampleHeight Melee = 32
-  type NetConfig    Melee = '[ Convolution 32 3 9 9 24 24
+  type SampleWidth  Melee = 42
+  type SampleHeight Melee = 42
+  type NetConfig    Melee = '[ Convolution 12 3 5 5 38 38
                              , Pool
                              , ReLU
-                             , Flatten
-                             , FC 4608 300
+                             , Convolution 32 12 8 8 12 12
                              , ReLU
-                             , FC 300 (Sum (DataShape Melee))
+                             , Flatten
+                             , FC 4608 1024
+                             , ReLU
+                             , FC 1024 (Sum (DataShape Melee))
                              , MultiSoftMax (DataShape Melee)
                              ]
 
-  params = Params (LearningParameters 1e-2 0.9 1e-3)
+  params = Params (LearningParameters 1e-4 0.9 1e-7)
 
   toLabel Menu = WLabel$ fill 0
   toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4

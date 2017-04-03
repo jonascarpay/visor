@@ -8,6 +8,7 @@ import Network.Label
 import Text.Read as T
 import System.FilePath.Posix
 import Numeric
+import Data.List
 
 divs :: Integral a => a -> a -> Bool
 a `divs` b = b `mod` a == 0
@@ -41,3 +42,19 @@ showAndLabel p = show (pmap takeBaseName p) ++ "\t\t" ++ show (labelPath p)
 
 showE :: Double -> ShowS
 showE = showEFloat (Just 4)
+
+median :: Ord a => [a] -> a
+median [] = undefined
+median [x] = x
+median xs = let i = length xs `div` 2
+             in sort xs !! i
+
+median' :: [Double] -> Double
+median' [] = undefined
+median' [x] = x
+median' xs = let l = length xs
+                 i = l `div` 2
+                 s = sort xs
+              in if odd l
+                    then s !! i
+                    else (s !! i + s !! (i-1)) / 2

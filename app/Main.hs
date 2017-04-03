@@ -17,7 +17,7 @@ import System.FilePath
 import Numeric
 
 type Game = Melee
-type BatchSize = 32
+type BatchSize = 16
 
 main :: IO ()
 main = getArgs >>= main'
@@ -38,7 +38,7 @@ main' ["lsparse"] =
 
 main' ["label"] =
   do v <- loadVisor
-     runConduitRes$ pathSource .| mapMC (liftIO . f v) .| sinkNull
+     runConduitRes$ pathSource .| shuffleC .| mapMC (liftIO . f v) .| sinkNull
        where
          f :: Visor Game -> Path Game -> IO ()
          f v p = do fx <- readShot p >>= feedImage v
@@ -96,9 +96,6 @@ main' ["trainbatch",n] =
                             .| takeC (read n)
                             .| lastC
      saveVisor v'
-
-
-
 
 main' ["kernels"] =
   do v :: Visor Game <- loadVisor
