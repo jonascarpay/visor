@@ -100,12 +100,8 @@ main' ["trainbatch",n] =
 main' ["watch", read' -> x, read' -> y, read' -> w, read' -> h] =
   do v :: Visor Game <- loadVisor
      runConduitRes$ screenShotSource x y w h
-                 .| mapMC feedImage
-                 .| sinkNull
-       where
-         f :: Visor Game -> Screenshot Game -> IO ()
-         f v img = do fx <- feedImage v img
-                      print (delabel fx :: Game)
+                 .| mapMC (feedImage v)
+                 .| watchSink
 
 main' ["kernels"] =
   do v :: Visor Game <- loadVisor

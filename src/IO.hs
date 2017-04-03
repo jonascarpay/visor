@@ -9,6 +9,7 @@ module IO
   , loadVisor
   , screenShotSource
   , dir
+  , watchSink
   , saveVisor
   , saveVisorContinuous
   , saveKernels
@@ -62,6 +63,22 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  Right img <- readImageFromBMP "out.bmp"
                  removeFile "out.bmp"
                  return (Screenshot img)
+
+watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
+watchSink = go [] []
+  where
+    bufsize = 3 :: Int
+    go log buf = do Just lbl <- await
+                    let st = delabel lbl :: a
+                        buf' = take bufsize $ st : buf
+                        log' = case log of
+                                 []                   -> [st]
+                                 l:_ | l ->? st       -> st:log
+                                     | all (==st) buf -> st:log
+                                     | otherwise      -> log
+                    liftIO . print . head $ log'
+                    go log' buf'
+
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
