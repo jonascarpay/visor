@@ -43,6 +43,7 @@ class ( KnownSymbol (Title g)
   delabel :: LabelVec g -> g
   rootDir :: Path g
   parse   :: Path g -> LabelVec g
+  pretty  :: g -> String
 
   type Title  g       :: Symbol
   type ScreenWidth  g :: Nat -- ^ The width of a screen of this game in pixels.

@@ -62,6 +62,13 @@ instance GameState Melee where
 
   rootDir = Path "/Users/joni/tmp/"
   parse = fromFilename
+  pretty Menu = "Menu"
+  pretty (Ingame (PlayerState s1 p1) q1 (PlayerState s2 p2) q2)
+    = "Ingame" ++ "\tP1: " ++ show p1 ++ "% " ++ stockstring s1 ++ " "
+               ++ "\tP2: " ++ show p2 ++ "% " ++ stockstring s2 ++ " "
+               ++ "\t slots " ++ show q1 ++ "," ++ show q2
+    where
+      stockstring n = replicate n 'O' ++ replicate (4-n) ' '
 
 instance Widget Melee where
   type Width     Melee = 140
