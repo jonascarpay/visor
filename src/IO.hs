@@ -65,7 +65,7 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  return (Screenshot img)
 
 denoiseC :: Transitions a => RTConduit a [a]
-denoiseC = myFold foldf mempty .| mapC fst
+denoiseC = myFold mempty
   where
 
     mend h@(log, buf)
@@ -77,20 +77,18 @@ denoiseC = myFold foldf mempty .| mapC fst
       where logtail = drop (length buf) log
             bufsize = 5
 
-    myFold f s = do mx <- await
-                    case mx of
-                      Nothing -> return ()
-                      Just x  ->
-                        do let !s' = f s x
-                           yield s'
-                           myFold f s'
+    myFold s = do mx <- await
+                  case mx of
+                    Nothing -> return ()
+                    Just x  ->
+                      do let !s' = foldf s x
+                         yield (fst s')
+                         myFold s'
 
-    foldf ([] ,_     ) !st            =      ([st]  , mempty)
-    foldf (l:(!t),_  ) !st | l ->? st =      (st:l:t, mempty)
-    foldf (log,b:(!t)) !st | b ->? st = mend (log   , st:b:t)
-    foldf (!log,_    ) !st            = mend (log   , [st]  )
-
-
+    foldf ([],     _     ) !st            =      ([st],   mempty)
+    foldf (l:(!t), _     ) !st | l ->? st =      (st:l:t, mempty)
+    foldf (log,    b:(!t)) !st | b ->? st = mend (log,    st:b:t)
+    foldf (!log,   _     ) !st            = mend (log,    [st]  )
 
 watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
 watchSink = mapC delabel .| denoiseC .| sinkf
