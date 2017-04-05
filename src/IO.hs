@@ -64,18 +64,18 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  removeFile "out.bmp"
                  return (Screenshot img)
 
-denoiseC :: Transitions a => RTConduit a [a]
-denoiseC = myFold mempty
+denoiseC :: Transitions a => Int -> RTConduit a [a]
+denoiseC bufsize = myFold mempty
   where
 
     mend h@(log, buf)
       | null buf                  = h
-      | length buf >= length log  = (buf, [])
-      | length buf >= bufsize     = (buf ++ log, [])
+      | buflen >= length log      = (buf, [])
+      | buflen >= bufsize         = (buf ++ log, [])
       | head logtail ->? last buf = (buf ++ logtail, [])
       | otherwise                 = h
-      where logtail = drop (length buf) log
-            bufsize = 5
+      where logtail = drop buflen log
+            buflen = length buf
 
     myFold s = do mx <- await
                   case mx of
@@ -91,8 +91,7 @@ denoiseC = myFold mempty
     foldf (!log,   _     ) !st            = mend (log,    [st]  )
 
 watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
-watchSink = mapC delabel .| denoiseC .| sinkf
-  where sinkf = awaitForever $ \log -> liftIO . putStrLn . pretty . head $ log
+watchSink = mapC delabel .| denoiseC 5 .| mapMC (liftIO . putStr . pretty . head) .| sinkNull
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
