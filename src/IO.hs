@@ -70,9 +70,11 @@ watchSink = go mempty mempty
     mend h@(log, buf)
       | null buf                  = h
       | length buf >= length log  = (buf, [])
+      | length buf >= bufsize     = (buf ++ log, [])
       | head logtail ->? last buf = (buf ++ logtail, [])
       | otherwise                 = h
       where logtail = drop (length buf) log
+            bufsize = 5
 
     go log buf = do Just lbl <- await
                     let st = delabel lbl :: a

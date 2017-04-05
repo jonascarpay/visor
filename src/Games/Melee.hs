@@ -41,12 +41,8 @@ instance Transitions PlayerState where
 instance Transitions Melee where
   Menu ->? Menu = True
   Menu ->? Ingame (PlayerState 4 0) _ (PlayerState 4 0) _ = True
-
-  Ingame (PlayerState 0 0) _ _ _ ->? Menu = True
-  Ingame _ _ (PlayerState 0 0) _ ->? Menu = True
   Ingame p1 s1 p2 s2 ->? Ingame p1' s1' p2' s2' = and [ s1 ==  s1', s2 ==  s2'
                                                       , p1 ->? p1', p2 ->? p2' ]
-
   _ ->? _ = False
 
 instance GameState Melee where
@@ -64,9 +60,8 @@ instance GameState Melee where
   parse = fromFilename
   pretty Menu = "Menu"
   pretty (Ingame (PlayerState s1 p1) q1 (PlayerState s2 p2) q2)
-    = "Ingame" ++ "\tP1: " ++ show p1 ++ "% " ++ stockstring s1 ++ " "
-               ++ "\tP2: " ++ show p2 ++ "% " ++ stockstring s2 ++ " "
-               ++ "\t slots " ++ show q1 ++ "," ++ show q2
+    =   "P" ++ show q1 ++ ": " ++ stockstring s1 ++ "  " ++ show p1 ++ "%" ++
+    "\t\tP" ++ show q2 ++ ": " ++ stockstring s2 ++ "  " ++ show p2 ++ "%"
     where
       stockstring n = replicate n 'O' ++ replicate (4-n) ' '
 
