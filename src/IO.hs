@@ -65,20 +65,25 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  return (Screenshot img)
 
 watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
-watchSink = go [] []
+watchSink = go mempty mempty
   where
-    bufsize = 3 :: Int
+    mend h@(log, buf)
+      | null buf                  = h
+      | length buf >= length log  = (buf, [])
+      | head logtail ->? last buf = (buf ++ logtail, [])
+      | otherwise                 = h
+      where logtail = drop (length buf) log
+
     go log buf = do Just lbl <- await
                     let st = delabel lbl :: a
-                        buf' = take bufsize $ st : buf
-                        log' = case log of
-                                 []                   -> [st]
-                                 l:_ | l ->? st       -> st:log
-                                     | all (==st) buf -> st:log
-                                     | otherwise      -> log
-                    liftIO . print . head $ log'
+                        (log',buf') =
+                          case (log, buf) of
+                            ([],_)               -> ([st], mempty)
+                            (l:_,_)   | l ->? st -> (st:log, mempty)
+                            (log,b:_) | b ->? st -> mend (log, st:buf)
+                            _                    -> mend (log, [st])
+                    liftIO . putStrLn . pretty . head $ log'
                     go log' buf'
-
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
