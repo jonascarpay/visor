@@ -21,7 +21,7 @@ library
                      , IO
                      , Visor
                      , Games.Melee
-                     , Games.MeleeDiagram
+                     , Games.Melee.Conduits
   build-depends:       base
                      , convoluted
                      , singletons

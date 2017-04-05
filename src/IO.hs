@@ -64,9 +64,10 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  removeFile "out.bmp"
                  return (Screenshot img)
 
-watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
-watchSink = go mempty mempty
+denoiseC :: Transitions a => RTConduit a [a]
+denoiseC = myFold foldf mempty .| mapC fst
   where
+
     mend h@(log, buf)
       | null buf                  = h
       | length buf >= length log  = (buf, [])
@@ -76,16 +77,24 @@ watchSink = go mempty mempty
       where logtail = drop (length buf) log
             bufsize = 5
 
-    go log buf = do Just lbl <- await
-                    let st = delabel lbl :: a
-                        (log',buf') =
-                          case (log, buf) of
-                            ([],_)               -> ([st], mempty)
-                            (l:_,_)   | l ->? st -> (st:log, mempty)
-                            (log,b:_) | b ->? st -> mend (log, st:buf)
-                            _                    -> mend (log, [st])
-                    liftIO . putStrLn . pretty . head $ log'
-                    go log' buf'
+    myFold f s = do mx <- await
+                    case mx of
+                      Nothing -> return ()
+                      Just x  ->
+                        do let !s' = f s x
+                           yield s'
+                           myFold f s'
+
+    foldf ([] ,_     ) !st            =      ([st]  , mempty)
+    foldf (l:(!t),_  ) !st | l ->? st =      (st:l:t, mempty)
+    foldf (log,b:(!t)) !st | b ->? st = mend (log   , st:b:t)
+    foldf (!log,_    ) !st            = mend (log   , [st]  )
+
+
+
+watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
+watchSink = mapC delabel .| denoiseC .| sinkf
+  where sinkf = awaitForever $ \log -> liftIO . putStrLn . pretty . head $ log
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
