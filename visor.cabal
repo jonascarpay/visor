@@ -19,6 +19,7 @@ library
                      , Lib
                      , Vector
                      , IO
+                     , Buffer
                      , Visor
                      , Games.Melee
                      , Games.Melee.Conduits

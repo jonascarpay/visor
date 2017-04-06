@@ -32,6 +32,7 @@ import Visor
 import Vector
 import Util
 import Network
+import Buffer
 import Layers.Convolution
 import qualified Static.Image as I
 import Conduit
@@ -64,34 +65,8 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  removeFile "out.bmp"
                  return (Screenshot img)
 
-denoiseC :: Transitions a => Int -> RTConduit a [a]
-denoiseC bufsize = myFold mempty
-  where
-
-    mend h@(log, buf)
-      | null buf                  = h
-      | buflen >= length log      = (buf, [])
-      | buflen >= bufsize         = (buf ++ log, [])
-      | head logtail ->? last buf = (buf ++ logtail, [])
-      | otherwise                 = h
-      where logtail = drop buflen log
-            buflen = length buf
-
-    myFold s = do mx <- await
-                  case mx of
-                    Nothing -> return ()
-                    Just x  ->
-                      do let !s' = foldf s x
-                         yield (fst s')
-                         myFold s'
-
-    foldf ([],     _     ) !st            =      ([st],   mempty)
-    foldf (l:(!t), _     ) !st | l ->? st =      (st:l:t, mempty)
-    foldf (log,    b:(!t)) !st | b ->? st = mend (log,    st:b:t)
-    foldf (!log,   _     ) !st            = mend (log,    [st]  )
-
-watchSink :: forall a. (Transitions a, GameState a) => RTSink (LabelVec a)
-watchSink = mapC delabel .| denoiseC 5 .| mapMC (liftIO . putStr . pretty . head) .| sinkNull
+watchSink :: (Transitions a, GameState a) => RTSink (LabelVec a)
+watchSink = mapC delabel .| denoiseC 5 .| printBufHeadC .| sinkNull
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
