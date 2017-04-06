@@ -10,10 +10,6 @@ instance Monoid (Buffer a) where
   mempty = Buffer []
   Buffer a `mappend` Buffer b = Buffer (a `mappend` b)
 
-newtype BufParser game a = BufParser (Buffer game -> (a, Buffer game))
-
-
-
 bufHead (Buffer [])    = Nothing
 bufHead (Buffer (h:_)) = Just h
 
