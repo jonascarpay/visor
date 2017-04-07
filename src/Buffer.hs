@@ -1,21 +1,28 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Buffer where
 
 import Conduit
 import Types
 import Data.Maybe
+import Data.Singletons.TypeLits
+import Data.Proxy
 
-newtype Buffer game = Buffer [game]
+newtype Buffer (size :: Nat) game = Buffer [game]
 
-instance Monoid (Buffer a) where
+instance Monoid (Buffer s a) where
   mempty = Buffer []
   Buffer a `mappend` Buffer b = Buffer (a `mappend` b)
 
 bufHead (Buffer [])    = Nothing
 bufHead (Buffer (h:_)) = Just h
 
-denoiseC :: Transitions a => Int -> RTConduit a (Buffer a)
-denoiseC bufsize = myFold mempty .| mapC Buffer
+denoiseC :: forall a n. (KnownNat n, Transitions a) => RTConduit a (Buffer n a)
+denoiseC = myFold mempty .| mapC Buffer
   where
+    bufsize = fromIntegral$ natVal (Proxy :: Proxy n)
 
     mend h@(log, buf)
       | null buf                  = h
@@ -39,10 +46,10 @@ denoiseC bufsize = myFold mempty .| mapC Buffer
     foldf (log,    b:(!t)) !st | b ->? st = mend (log,    st:b:t)
     foldf (!log,   _     ) !st            = mend (log,    [st]  )
 
-watchC :: (Transitions a, GameState a) => RTConduit (LabelVec a) (Buffer a)
-watchC = mapC delabel .| denoiseC 5 .| printBufHeadC
+watchC :: (KnownNat s, Transitions a, GameState a) => RTConduit (LabelVec a) (Buffer s a)
+watchC = mapC delabel .| denoiseC .| printBufHeadC
 
-printBufHeadC :: GameState a => RTConduit (Buffer a) (Buffer a)
+printBufHeadC :: GameState a => RTConduit (Buffer s a) (Buffer s a)
 printBufHeadC = awaitForever $ \buf ->
   do liftIO . putStrLn . fromMaybe "" . fmap pretty . bufHead $ buf
      yield buf

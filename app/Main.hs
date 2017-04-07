@@ -103,8 +103,9 @@ main' ["watch", read' -> x, read' -> y, read' -> w, read' -> h] =
   do v :: Visor Game <- loadVisor
      runConduitRes$ screenShotSource x y w h
                  .| mapMC (feedImage v)
-                 -- .| watchC
-                 .| mapC delabel .| mapMC (liftIO . putStrLn . pretty)
+                 .| watchC
+                 -- .| mapC delabel .| mapMC (liftIO . putStrLn . pretty)
+                 .| onGameEnd 5 undefined
                  .| sinkNull
 
 main' ["kernels"] =
