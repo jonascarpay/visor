@@ -6,9 +6,9 @@ module Buffer where
 
 import Conduit
 import Types
-import Data.Maybe
 import Data.Singletons.TypeLits
 import Data.Proxy
+import Safe
 
 newtype Buffer (size :: Nat) game = Buffer [game]
 
@@ -16,8 +16,14 @@ instance Monoid (Buffer s a) where
   mempty = Buffer []
   Buffer a `mappend` Buffer b = Buffer (a `mappend` b)
 
-bufHead (Buffer [])    = Nothing
-bufHead (Buffer (h:_)) = Just h
+bufHeadRaw :: Buffer s a -> Maybe a
+bufHeadRaw (Buffer [])    = Nothing
+bufHeadRaw (Buffer (h:_)) = Just h
+
+bufHead :: forall s a. KnownNat s => Buffer s a -> Maybe a
+bufHead (Buffer buf) = buf `atMay` bufsize
+  where
+    bufsize = fromIntegral$ natVal (Proxy :: Proxy s)
 
 denoiseC :: forall a n. (KnownNat n, Transitions a) => RTConduit a (Buffer n a)
 denoiseC = myFold mempty .| mapC Buffer
@@ -51,6 +57,6 @@ watchC = mapC delabel .| denoiseC .| printBufHeadC
 
 printBufHeadC :: GameState a => RTConduit (Buffer s a) (Buffer s a)
 printBufHeadC = awaitForever $ \buf ->
-  do liftIO . putStrLn . fromMaybe "" . fmap pretty . bufHead $ buf
+  do liftIO . putStrLn . maybe "" pretty . bufHeadRaw $ buf
      yield buf
 

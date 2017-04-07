@@ -28,6 +28,7 @@ library
                      , singletons
                      , vector
                      , directory
+                     , safe
                      , filepath
                      , split
                      , unix
