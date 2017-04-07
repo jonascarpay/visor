@@ -25,24 +25,32 @@ import System.FilePath.Posix
 -- | Game definition for SSBM.
 data Melee = Menu
            | Ingame !PlayerState !Int !PlayerState !Int
+           | Win !PlayerState !Int
          deriving (Eq, Show)
 
 -- | The state of a player in a game
 data PlayerState = PlayerState
-  !Int -- ^ Stocks
-  !Int -- ^ Percentage
-  deriving (Eq, Show)
+  { stocks :: !Int  -- ^ Stocks
+  , percent :: !Int -- ^ Percentage
+  } deriving (Eq, Show)
 
 instance Transitions PlayerState where
   PlayerState s p ->? PlayerState s' p'
-    | s' == s && p' >= p = True
-    | p  >  0 && p' == 0 = s' == s - 1
-    | otherwise          = False
+    | s' == s && p' >= p && p' - p < 80 = True
+    | p  >  0 && p' == 0                = s' == s - 1
+    | otherwise                         = False
 
 instance Transitions Melee where
   Menu ->? Menu = True
   Menu ->? Ingame (PlayerState 4 0) _ (PlayerState 4 0) _ = True
-  Ingame p1 s1 p2 s2 ->? Ingame p1' s1' p2' s2' = and [ s1 ==  s1', s2 ==  s2'
+
+  Win p1 q1 ->? Win p2 q2 = p1 == p2 && q1 == q2
+  Win _ _   ->? Menu      = True
+
+  Ingame p1 q1 p2 q2 ->? Win p q
+    | stocks p1 == 1 && p == p2 && q == q2 = True
+    | stocks p2 == 1 && p == p1 && q == q1 = True
+  Ingame p1 q1 p2 q2 ->? Ingame p1' q1' p2' q2' = and [ q1 ==  q1', q2 ==  q2'
                                                       , p1 ->? p1', p2 ->? p2' ]
   _ ->? _ = False
 
@@ -59,7 +67,9 @@ instance GameState Melee where
 
   rootDir = Path "/Users/joni/tmp/"
   parse = fromFilename
+
   pretty Menu = "Menu"
+  pretty (Win (PlayerState s p) q) = "Player " ++ show q ++ " wins with " ++ show s ++ "  " ++ show p
   pretty (Ingame (PlayerState s1 p1) q1 (PlayerState s2 p2) q2)
     =   "P" ++ show q1 ++ ": " ++ stockstring s1 ++ "  " ++ show p1 ++ "%" ++
     "\t\tP" ++ show q2 ++ ": " ++ stockstring s2 ++ "  " ++ show p2 ++ "%"
@@ -93,16 +103,17 @@ instance Widget Melee where
   params = Params (LearningParameters 1e-4 0.9 1e-7)
 
   toLabel Menu = WLabel$ fill 0
-  toLabel (Ingame p1 s1 p2 s2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
+  toLabel (Ingame p1 q1 p2 q2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
     where get n
-            | n == s1   = playerLabel p1
-            | n == s2   = playerLabel p2
+            | n == q1   = playerLabel p1
+            | n == q2   = playerLabel p2
             | otherwise = fill 0
 
   fromLabel = do players <- replicateM 4 playerParser
                  case count ingame players of
-                   2 -> let [(p1, s1), (p2, s2)] = filter (ingame.fst) $ zip players [1..]
-                         in return$! Ingame p1 s1 p2 s2
+                   2 -> let [(p1, q1), (p2, q2)] = filter (ingame.fst) $ zip players [1..]
+                         in return$! Ingame p1 q1 p2 q2
+                   1 -> return$! let (p,q) = head (filter (ingame.fst) $ zip players [1..]) in Win p q
                    _ -> return Menu
 
 ingame :: PlayerState -> Bool

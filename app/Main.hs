@@ -82,7 +82,7 @@ main' ["makebatch"] =
   do clear "batch"
      runConduitRes$ datasetSampleSource True
                  .| (batchify :: BatchC BatchSize Game)
-                 .| (saveMany "batch")
+                 .| saveMany "batch"
 
 main' ["trainbatch"] =
   do v :: Visor Game <- loadVisor
@@ -103,7 +103,8 @@ main' ["watch", read' -> x, read' -> y, read' -> w, read' -> h] =
   do v :: Visor Game <- loadVisor
      runConduitRes$ screenShotSource x y w h
                  .| mapMC (feedImage v)
-                 .| mapMC (liftIO . putStrLn . show)
+                 -- .| watchC
+                 .| mapC delabel .| mapMC (liftIO . putStrLn . pretty)
                  .| sinkNull
 
 main' ["kernels"] =

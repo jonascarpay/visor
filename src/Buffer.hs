@@ -20,8 +20,8 @@ denoiseC bufsize = myFold mempty .| mapC Buffer
     mend h@(log, buf)
       | null buf                  = h
       | buflen >= length log      = (buf,[])
-      | buflen >= bufsize         = ((buf ++ log), [])
-      | head logtail ->? last buf = ((buf ++ logtail), [])
+      | buflen >= bufsize         = (buf ++ log, [])
+      | head logtail ->? last buf = (buf ++ logtail, [])
       | otherwise                 = h
       where logtail = drop buflen log
             buflen = length buf
