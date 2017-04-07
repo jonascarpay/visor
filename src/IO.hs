@@ -9,7 +9,6 @@ module IO
   , loadVisor
   , screenShotSource
   , dir
-  , watchSink
   , saveVisor
   , saveVisorContinuous
   , saveKernels
@@ -32,7 +31,6 @@ import Visor
 import Vector
 import Util
 import Network
-import Buffer
 import Layers.Convolution
 import qualified Static.Image as I
 import Conduit
@@ -64,9 +62,6 @@ screenShotSource x y w h = forever$ liftIO takeshot >>= yield
                  Right img <- readImageFromBMP "out.bmp"
                  removeFile "out.bmp"
                  return (Screenshot img)
-
-watchSink :: (Transitions a, GameState a) => RTSink (LabelVec a)
-watchSink = mapC delabel .| denoiseC 5 .| printBufHeadC .| sinkNull
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))

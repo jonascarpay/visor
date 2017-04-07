@@ -39,8 +39,11 @@ denoiseC bufsize = myFold mempty .| mapC Buffer
     foldf (log,    b:(!t)) !st | b ->? st = mend (log,    st:b:t)
     foldf (!log,   _     ) !st            = mend (log,    [st]  )
 
+watchC :: (Transitions a, GameState a) => RTConduit (LabelVec a) (Buffer a)
+watchC = mapC delabel .| denoiseC 5 .| printBufHeadC
+
 printBufHeadC :: GameState a => RTConduit (Buffer a) (Buffer a)
 printBufHeadC = awaitForever $ \buf ->
-  do liftIO . print . fromMaybe "" . fmap pretty . bufHead $ buf
+  do liftIO . putStrLn . fromMaybe "" . fmap pretty . bufHead $ buf
      yield buf
 

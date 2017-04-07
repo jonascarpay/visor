@@ -8,6 +8,7 @@
 
 module Games.Melee (
   Melee (..),
+  PlayerState (..),
 ) where
 
 import Lib
