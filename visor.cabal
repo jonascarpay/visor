@@ -34,6 +34,7 @@ library
                      , process
                      , repa
                      , repa-io
+                     , Rasterific
                      , bytestring
                      , cereal
                      , random
