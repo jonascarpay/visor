@@ -32,18 +32,19 @@ import Conduit
 class Eq a => Transitions a where
   (->?) :: a -> a -> Bool
 
+class Pretty a where
+  pretty :: a -> String
 -- | A GameState is a data type that fully describes a games' state.
 class ( KnownSymbol (Title g)
       , KnownNat (ScreenWidth g)
       , KnownNat (ScreenHeight g)
-      , Show g
+      , Show g, Pretty g
       ) => GameState g where
 
   label   :: g -> LabelVec g
   delabel :: LabelVec g -> g
   rootDir :: Path g
   parse   :: Path g -> LabelVec g
-  pretty  :: g -> String
 
   type Title  g       :: Symbol
   type ScreenWidth  g :: Nat -- ^ The width of a screen of this game in pixels.

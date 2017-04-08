@@ -52,7 +52,8 @@ denoiseC = myFold mempty .| mapC Buffer
     foldf (log,    b:(!t)) !st | b ->? st = mend (log,    st:b:t)
     foldf (!log,   _     ) !st            = mend (log,    [st]  )
 
-watchC :: (KnownNat s, Transitions a, GameState a) => RTConduit (LabelVec a) (Buffer s a)
+type Watch s a = RTConduit (LabelVec a) (Buffer s a)
+watchC :: (KnownNat s, Transitions a, GameState a) => Watch s a
 watchC = mapC delabel .| denoiseC .| printBufHeadC
 
 printBufHeadC :: GameState a => RTConduit (Buffer s a) (Buffer s a)

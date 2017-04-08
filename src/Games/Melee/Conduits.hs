@@ -21,13 +21,13 @@ onGameEnd handler = go False
                       (False, Just buf) ->
                         if maybe False isStartFrame (bufHead buf)
                          then liftIO (putStrLn "Starting game") >> go True
-                         else liftIO (putStr "F") >> go False
+                         else go False
                       (True, Just buf) ->
                         if maybe True isEndFrame (bufHead buf)
                          then do liftIO$ putStrLn "Game over"
                                  liftIO$ handler (extractGame buf)
                                  go False
-                         else liftIO (putStr "T") >> go False
+                         else liftIO (putStr "\129302 ") >> go True
 
 extractGame :: MeleeB s -> MeleeGame
 extractGame = undefined

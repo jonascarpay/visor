@@ -34,6 +34,11 @@ data PlayerState = PlayerState
   , percent :: !Int -- ^ Percentage
   } deriving (Eq, Show)
 
+instance Pretty PlayerState where
+  pretty (PlayerState s p) = stockstring s ++ " " ++ show p ++ "%"
+    where
+      stockstring n = replicate n 'O' ++ replicate (4-n) ' '
+
 instance Transitions PlayerState where
   PlayerState s p ->? PlayerState s' p'
     | s' == s && p' >= p && p' - p < 80 = True
@@ -68,13 +73,12 @@ instance GameState Melee where
   rootDir = Path "/Users/joni/tmp/"
   parse = fromFilename
 
+instance Pretty Melee where
   pretty Menu = "Menu"
-  pretty (Win (PlayerState s p) q) = "Player " ++ show q ++ " wins with " ++ show s ++ "  " ++ show p
-  pretty (Ingame (PlayerState s1 p1) q1 (PlayerState s2 p2) q2)
-    =   "P" ++ show q1 ++ ": " ++ stockstring s1 ++ "  " ++ show p1 ++ "%" ++
-    "\t\tP" ++ show q2 ++ ": " ++ stockstring s2 ++ "  " ++ show p2 ++ "%"
-    where
-      stockstring n = replicate n 'O' ++ replicate (4-n) ' '
+  pretty (Win p q) = "Player " ++ show q ++ " wins with " ++ pretty p
+  pretty (Ingame p1 q1 p2 q2)
+    =     "P" ++ show q1 ++ ": " ++ pretty p1 ++
+      "\t\tP" ++ show q2 ++ ": " ++ pretty p2
 
 instance Widget Melee where
   type Width     Melee = 140
