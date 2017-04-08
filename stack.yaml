@@ -1,8 +1,8 @@
 resolver: lts-7.16
 packages:
-- location: ../convoluted
-   #git: https://github.com/jonascarpay/convoluted.git
-   #commit: 03af796c95db5f69f5959ee78d9dff13a927c7c1
+- location:
+   git: https://github.com/jonascarpay/convoluted.git
+   commit: 32727873437df6398f151aa7d3dbe9293adbcf48
   extra-dep: true
 - '.'
 extra-deps:
