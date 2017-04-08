@@ -15,7 +15,6 @@ import System.Environment
 import Control.Monad
 import Conduit
 import System.FilePath
-import Numeric
 import Buffer
 
 type Game = Melee
@@ -56,18 +55,6 @@ main' ["label", path] =
      putStrLn$ "Label: " ++ show y
      putStrLn$ "Interpretation: " ++ show (delabel y :: Game)
 
-main' ["losses", read -> threshold] =
-  do v <- loadVisor
-     runConduitRes$ pathSource .| mapMC (liftIO . f v) .| sinkNull
-       where
-         f :: Visor Game -> Path Game -> IO ()
-         f v p = do shot <- readShot p
-                    (_,(_,l)) <- trainImage v shot (parse p)
-                    when (l > threshold) $ putStrLn . showEFloat (Just 3) l
-                                                    . showString " "
-                                                    . shows p
-                                                    $ ""
-
 main' ["crops", path] =
   do crops :: InputVec Game <- readShot (Path path :: Path Game) >>= extract
      clear "crops"
@@ -103,10 +90,11 @@ main' ["watch", read' -> x, read' -> y, read' -> w, read' -> h] =
   do v :: Visor Game <- loadVisor
      runConduitRes$ screenShotSource x y w h
                  .| mapMC (feedImage v)
-                 .| (watchC :: Watch 5 Melee)
-                 -- .| mapC delabel .| mapMC (liftIO . putStrLn . pretty)
-                 .| onGameEnd renderGame
-                 .| sinkNull
+                 .| mapC delabel
+                 .| bufferedFilter 5
+                 .| ioC (putStrLn . pretty)
+                 .| collectGame
+                 .| gameGraph
 
 main' ["kernels"] =
   do v :: Visor Game <- loadVisor

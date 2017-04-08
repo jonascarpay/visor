@@ -1,3 +1,4 @@
+
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -21,6 +22,7 @@ import Data.Singletons.Prelude.List
 import Data.List.Split
 import Control.Monad
 import System.FilePath.Posix
+import Buffer
 
 -- | Game definition for SSBM.
 data Melee = Menu
@@ -46,10 +48,11 @@ instance Transitions PlayerState where
     | otherwise                         = False
 
 instance Transitions Melee where
+  a ->? b | a == b = True
+
   Menu ->? Menu = True
   Menu ->? Ingame (PlayerState 4 0) _ (PlayerState 4 0) _ = True
 
-  Win p1 q1 ->? Win p2 q2 = p1 == p2 && q1 == q2
   Win _ _   ->? Menu      = True
 
   Ingame p1 q1 p2 q2 ->? Win p q

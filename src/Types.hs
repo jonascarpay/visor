@@ -26,12 +26,6 @@ import Data.Singletons.Prelude.List
 import Data.Serialize
 import Conduit
 
--- | If x1 and x2 could be values for some x in two
---   subsequent screen polls, then x1 ->? x2.
---   This is used for discarding bad classifications in noisy streams.
-class Eq a => Transitions a where
-  (->?) :: a -> a -> Bool
-
 class Pretty a where
   pretty :: a -> String
 -- | A GameState is a data type that fully describes a games' state.

@@ -13,6 +13,7 @@ module IO
   , saveVisorContinuous
   , saveKernels
   , loadMany
+  , ioC
   , pathSource
   , pmap
   , saveMany
@@ -67,6 +68,10 @@ pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
           .| filterC ((== ".bmp") . takeExtension)
           .| mapC Path
+
+ioC :: (a -> IO ()) -> RTConduit a a
+ioC f = awaitForever$ \x -> do liftIO$ f x
+                               yield x
 
 datasetSampleSource :: GameState a => Bool -> RTSource (Screenshot a, LabelVec a)
 datasetSampleSource shuf = pathSource

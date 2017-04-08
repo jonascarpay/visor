@@ -1,63 +1,43 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Buffer where
 
 import Conduit
 import Types
-import Data.Singletons.TypeLits
-import Data.Proxy
 import Safe
 
-newtype Buffer (size :: Nat) game = Buffer [game]
+-- | If x1 and x2 could be values for some x in two
+--   subsequent screen polls, then x1 ->? x2.
+--   This is used for discarding bad classifications in noisy streams.
+class Eq a => Transitions a where
+  (->?) :: a -> a -> Bool
 
-instance Monoid (Buffer s a) where
-  mempty = Buffer []
-  Buffer a `mappend` Buffer b = Buffer (a `mappend` b)
-
-bufHeadRaw :: Buffer s a -> Maybe a
-bufHeadRaw (Buffer [])    = Nothing
-bufHeadRaw (Buffer (h:_)) = Just h
-
-bufHead :: forall s a. KnownNat s => Buffer s a -> Maybe a
-bufHead (Buffer buf) = buf `atMay` bufsize
+type Buffer a = ([a],[a])
+bufferedFilter :: forall a. Transitions a => Int -> RTConduit a a
+bufferedFilter bufsize = go mempty
   where
-    bufsize = fromIntegral$ natVal (Proxy :: Proxy s)
+    go s = do mx <- await
+              case mx of
+                Nothing -> return ()
+                Just x  ->
+                  do let (mx, s') = buffer x s
+                     yieldMany mx
+                     go s'
 
-denoiseC :: forall a n. (KnownNat n, Transitions a) => RTConduit a (Buffer n a)
-denoiseC = myFold mempty .| mapC Buffer
-  where
-    bufsize = fromIntegral$ natVal (Proxy :: Proxy n)
+    buffer :: a -> Buffer a-> (Maybe a, Buffer a)
+    buffer st ([], _)
+      = (Nothing, ([st],[]))
+    buffer st (log@(h:_), buf)
+      | h ->? st = (log `atMay` (bufsize-1), (log', []))
+      | null buf || not (head buf ->? st) = (Nothing, mend log [st])
+      | fullBuf buf = (Just$ last buf, (buf',[]))
+      | otherwise   = (Nothing, mend log buf')
+      where
+        fullBuf buf = length buf == bufsize
+        buf' = take bufsize$ st:buf
+        log' = take bufsize$ st:log
 
-    mend h@(log, buf)
-      | null buf                  = h
-      | buflen >= length log      = (buf,[])
-      | buflen >= bufsize         = (buf ++ log, [])
-      | head logtail ->? last buf = (buf ++ logtail, [])
-      | otherwise                 = h
-      where logtail = drop buflen log
-            buflen = length buf
-
-    myFold s = do mx <- await
-                  case mx of
-                    Nothing -> return ()
-                    Just x  ->
-                      do let !s' = foldf s x
-                         yield (fst s')
-                         myFold s'
-
-    foldf ([],     _     ) !st            =      ([st],   [])
-    foldf (l:(!t), _     ) !st | l ->? st =      (st:l:t, [])
-    foldf (log,    b:(!t)) !st | b ->? st = mend (log,    st:b:t)
-    foldf (!log,   _     ) !st            = mend (log,    [st]  )
-
-type Watch s a = RTConduit (LabelVec a) (Buffer s a)
-watchC :: (KnownNat s, Transitions a, GameState a) => Watch s a
-watchC = mapC delabel .| denoiseC .| printBufHeadC
-
-printBufHeadC :: GameState a => RTConduit (Buffer s a) (Buffer s a)
-printBufHeadC = awaitForever $ \buf ->
-  do liftIO . putStrLn . maybe "" pretty . bufHeadRaw $ buf
-     yield buf
-
+    mend log buf | length log <= length buf = (buf, [])
+    mend log [] = (log, [])
+    mend log buf | (log !! length buf) ->? last buf = (buf ++ drop (length buf) log, [])
+    mend log buf = (log, buf)
