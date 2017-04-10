@@ -58,3 +58,7 @@ median' xs = let l = length xs
               in if odd l
                     then s !! i
                     else (s !! i + s !! (i-1)) / 2
+
+roundF x = fromInteger (round   x :: Integer)
+ceilF  x = fromInteger (ceiling x :: Integer)
+floorF x = fromInteger (floor   x :: Integer)
