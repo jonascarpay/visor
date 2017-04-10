@@ -2,11 +2,14 @@ module Games.Melee.Graphic where
 
 import Games.Melee
 import Types
-import Graphics.Rasterific
-import Graphics.Rasterific.Texture
-import Codec.Picture( PixelRGBA8( .. ), writePng )
+
 import Data.Foldable (traverse_)
 import Conduit
+
+import Graphics.Rasterific
+import Graphics.Rasterific.Texture
+import Graphics.Text.TrueType (loadFontFile)
+import Codec.Picture (PixelRGBA8( .. ), writePng)
 
 data BarFold = BF
   { n :: Float
@@ -14,19 +17,22 @@ data BarFold = BF
   , p1s :: Int
   , p1p :: Int
   , p1dp :: Int
-  , p1energy :: Float
   , p2death :: Maybe Int
   , p2s :: Int
   , p2p :: Int
   , p2dp :: Int
-  , p2energy :: Float
   }
 
 type MeleeGame = [Melee]
 
 gameGraph :: MeleeGame -> IO ()
 gameGraph (w@(Win (PlayerState ws wp) wq):game') =
-    do writePng "output.png" img
+  do efont <- loadFontFile "data/fonts/A-OTF-FolkPro-Regular.otf"
+     let font = case efont of
+                  Left err   -> error err
+                  Right font -> font
+
+     writePng "output.png" (img font)
   where
     game = reverse game'
     pcts = map (\(Ingame (PlayerState _ p1) _ (PlayerState _ p2) _)
@@ -67,52 +73,35 @@ gameGraph (w@(Win (PlayerState ws wp) wq):game') =
 
     foldbars Nothing (_:t) =
       b' : foldbars (Just b') t
-        where b' = BF 0 Nothing 4 0 0 0 Nothing 4 0 0 0
+        where b' = BF 0 Nothing 4 0 0 Nothing 4 0 0
 
-    foldbars (Just (BF n _ s1 p1 _ e1 _ s2 p2 _ e2)) [] =
+    foldbars (Just (BF n _ s1 p1 _ _ s2 p2 _)) [] =
       [if wq == p1q
-          then BF (n+1) Nothing   s1 p1 0 0 (Just p2) s2 p2 0 0
-          else BF (n+1) (Just p1) s1 p1 0 0 Nothing   s2 p2 0 0
+          then BF (n+1) Nothing   s1 p1 0 (Just p2) s2 p2 0
+          else BF (n+1) (Just p1) s1 p1 0 Nothing   s2 p2 0
       ]
 
     foldbars
-      (Just (BF n _ s1 p1 _ e1 _ s2 p2 _ e2))
+      (Just (BF n _ s1 p1 _ _ s2 p2 _))
       (Ingame (PlayerState s1' p1') _ (PlayerState s2' p2') _:t) =
         b' : foldbars (Just b') t
-          where b' = BF (n+1) d1' s1' p1' dp1' e1' d2' s2' p2' dp2' e2'
+          where b' = BF (n+1) d1' s1' p1' dp1' d2' s2' p2' dp2'
                 d1' = if s1 == s1' then Nothing else Just p1
                 d2' = if s2 == s2' then Nothing else Just p2
                 dp1' = p1' - p1
                 dp2' = p2' - p2
-                e1' | p1 /= p1' = 0
-                    | p2 /= p2' = 1
-                    | otherwise = e1 * friction
-                e2' | p2 /= p2' = 0
-                    | p1 /= p1' = 1
-                    | otherwise = e2 * friction
-
 
     drawBar :: BarFold -> Drawing PixelRGBA8 ()
-    drawBar (BF n d1 s1 p1 dp1 e1 d2 s2 p2 dp2 e2) = do
+    drawBar (BF n d1 s1 p1 dp1 d2 s2 p2 dp2) = do
       -- p1
       withTexture (uniformTexture p1Color) . fill$
         rectangle (V2 x (baseY-yOffset))
                   w (negate h1)
 
-      -- e1
-      withTexture (uniformTexture (p1e e2)) . fill$
-        rectangle (V2 x (baseY-h1-yOffset))
-                  w (dh1-eHeight)
-
       -- p2
       withTexture (uniformTexture p2Color) . fill$
         rectangle (V2 x (baseY+yOffset))
                   w h2
-
-      -- e2
-      withTexture (uniformTexture (p2e e1)) . fill$
-        rectangle (V2 x (baseY+h2+yOffset))
-                  w (eHeight-dh2)
 
       withTexture (uniformTexture markerColor)$
         do case d1 of Nothing -> mempty
@@ -128,7 +117,7 @@ gameGraph (w@(Win (PlayerState ws wp) wq):game') =
         x   = xOffset+n*barWidth
         w   = barWidth + 3
 
-    img =
+    img font =
       do renderDrawing imageWidth imageHeight bgColor $ traverse_ drawBar bars
 
 testGraph :: IO ()
