@@ -23,6 +23,7 @@ library
                      , Visor
                      , Games.Melee
                      , Games.Melee.Conduits
+                     , Games.Melee.Graphic
   build-depends:       base
                      , convoluted
                      , singletons
@@ -30,6 +31,7 @@ library
                      , directory
                      , safe
                      , filepath
+                     , FontyFruity
                      , split
                      , unix
                      , process

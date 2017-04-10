@@ -94,7 +94,8 @@ main' ["watch", read' -> x, read' -> y, read' -> w, read' -> h] =
                  .| bufferedFilter 5
                  .| ioC (putStrLn . pretty)
                  .| collectGame
-                 .| gameGraph
+                 .| mapMC (liftIO . gameGraph)
+                 .| sinkNull
 
 main' ["kernels"] =
   do v :: Visor Game <- loadVisor

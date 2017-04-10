@@ -110,6 +110,10 @@ instance Widget Melee where
   params = Params (LearningParameters 1e-4 0.9 1e-7)
 
   toLabel Menu = WLabel$ fill 0
+  toLabel (Win p q) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
+    where get n
+            | n == q   = playerLabel p
+            | otherwise = fill 0
   toLabel (Ingame p1 q1 p2 q2) = WLabel$ get 1 <-> get 2 <-> get 3 <-> get 4
     where get n
             | n == q1   = playerLabel p1
@@ -162,13 +166,14 @@ fromFilename (Path (wordsBy (=='_') . takeWhile (/='.') . takeBaseName
 
   | psd == "1" || st == "0" = LabelVec$ WLabel (fill 0) :- Nil
   | otherwise = LabelVec$
-                WLabel ((get g1 s1 p1) <->
-                        (get g2 s2 p2) <->
-                        (get g3 s3 p3) <->
-                        (get g4 s4 p4)) :- Nil
+                WLabel (get g1 s1 p1 <->
+                        get g2 s2 p2 <->
+                        get g3 s3 p3 <->
+                        get g4 s4 p4) :- Nil
 
    where get "0" _ _ = fill 0
          get "1" s p = playerLabel $ mkPlayerState s p
+         get  _  _ _ = error "Error while parsing filename"
 
 fromFilename (Path p) = error$ "Invalid filename: " ++ p
 
