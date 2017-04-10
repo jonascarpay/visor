@@ -1,4 +1,6 @@
 .DS_STORE
+output.png
+
 visor-app.prof
 data/*
 tags
