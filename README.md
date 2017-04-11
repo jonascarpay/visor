@@ -30,3 +30,7 @@ It requires the univers font to be present in `data/fonts`, which you will have 
 ### Usage
 You will typically want to run `visor-app watch x y w h`, where (x,y) is the top left corner of the screen, and w and h are its width and height.
 Different commands can be found in `app/Main.hs`.
+
+The following image clarifies what is meant by the x, y, w, and h cooridnates in the screen.
+
+![clarification of coordinates](https://cloud.githubusercontent.com/assets/5967501/24888264/d16c2b04-1e27-11e7-88b4-941ac4d62c3c.png)
