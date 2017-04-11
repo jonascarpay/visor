@@ -19,7 +19,7 @@ Visor is written in Haskell and uses the `stack` build system.
 The numerical part depends on an installation of llvm 3.7.
 You will probably have to run (some permutation of) the following commands:
 ```
-brew install stack llvm37
+brew install haskell-stack llvm37
 ln -s /usr/local/bin/opt-3.7 /usr/local/bin/opt
 ln -s /usr/local/bin/llc-3.7 /usr/local/bin/llc
 ```
