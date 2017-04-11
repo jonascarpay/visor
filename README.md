@@ -10,7 +10,7 @@ Furthermore, the data set I'm using to train the network is still relatively sma
 
 That said, contributions are very welcome!
 
-For more information, see reddit link
+For more information, see https://www.reddit.com/r/smashbros/comments/64ntqe/visor_live_melee_stats_for_everyone/
 
 ### Building
 Due to the way capturing the screen is implemented, visor can currently only be used on OS X.
