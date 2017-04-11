@@ -27,7 +27,6 @@ library
   build-depends:       base
                      , convoluted
                      , singletons
-                     , vector
                      , directory
                      , safe
                      , filepath
@@ -40,13 +39,9 @@ library
                      , Rasterific
                      , bytestring
                      , cereal
-                     , random
                      , conduit-combinators
-                     , conduit-extra
                      , cereal-conduit
-                     , deepseq
                      , JuicyPixels
-                     , JuicyPixels-extra
                      , random-shuffle
   ghc-options:        -Wall
                       -fno-warn-name-shadowing
@@ -66,13 +61,9 @@ executable visor-app
   main-is:             main.hs
   build-depends:       base
                      , visor
-                     , hmatrix
-                     , QuickCheck
                      , conduit-combinators
-                     , stm-conduit
                      , filepath
                      , directory
-                     , bytestring
                      , cereal
 
 test-suite visor-spec
