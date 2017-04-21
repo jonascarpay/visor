@@ -28,8 +28,11 @@ You might have to run `stack setup` at some point during the process.
 It requires the univers font to be present in `data/fonts`, which you will have to provide yourself.
 
 ### Usage
-You will typically want to run `visor-app watch x y w h`, where (x,y) is the top left corner of the screen, and w and h are its width and height.
+You will typically want to run `visor-app watch x y w h`, where (x,y) is the top left corner of the screen, and w and h are its width and height (see below).
 Different commands can be found in `app/Main.hs`.
+By default, it will use all available processor cores.
+Often, this will not be what you want, especially if you have a large number of available cores.
+Add `+RTS -N1` to use 1 core, or replace 1 by however many you want to use.
 
 The following image clarifies what is meant by the x, y, w, and h cooridnates in the screen.
 
