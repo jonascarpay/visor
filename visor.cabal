@@ -65,21 +65,3 @@ executable visor-app
                      , filepath
                      , directory
                      , cereal
-
-test-suite visor-spec
-  type:                exitcode-stdio-1.0
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  ghc-options:        -Wall
-                      -fno-warn-name-shadowing
-                      -fno-warn-orphans
-                      -fno-warn-missing-signatures
-                      -fno-warn-unticked-promoted-constructors
-                      -O2
-                      -threaded
-  hs-source-dirs:      spec
-  build-depends:       base
-                     , visor
-                     , QuickCheck
-                     , repa
-                     , cereal
