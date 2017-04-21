@@ -73,7 +73,7 @@ averageF xs = fromIntegral (sum xs) / fromIntegral (length xs)
 
 gameGraph :: MeleeGame -> IO ()
 gameGraph full'@(Win _ wq:game') =
-  do efont <- loadFontFile "data/fonts/39335_UniversCondensed.ttf"
+  do efont <- loadFontFile "data/fonts/Roboto-Regular.ttf"
      let font = case efont of
                   Left err   -> error err
                   Right font -> font
@@ -162,16 +162,16 @@ gameGraph full'@(Win _ wq:game') =
       renderDrawing imageWidth imageHeight bgColor$
         do traverse_ (drawBar font) bars
            withTexture (uniformTexture markerColor)$ do
-              printTextAt font (PointSize 12) (V2 400 (fromIntegral$ imageHeight - 20))
+              printTextAt font (PointSize 10) (V2 390 (fromIntegral$ imageHeight - 20))
                 "github.com/jonascarpay/visor"
 
-              let size  = 18
+              let size  = 14
                   lx    = 120
                   col1x = 350
                   col2x = 420
                   printText = printTextAt font (PointSize size)
 
-              printTextAt font (PointSize 24) (V2 205 50) "MATCH REPORT"
+              printTextAt font (PointSize 20) (V2 lx 50) "MATCH REPORT"
 
               printText (V2 col1x 95) ("P" ++ show p1q)
               printText (V2 col2x 95) ("P" ++ show p2q)
