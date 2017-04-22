@@ -15,7 +15,7 @@ That said, contributions are very welcome!
 For more information, see https://www.reddit.com/r/smashbros/comments/64ntqe/visor_live_melee_stats_for_everyone/
 
 ### Quick start
-Download visor from the [releases page](https://github.com/jonascarpay/visor/releases), unzip, cd into the folder, and run `visor-app watch x y w h` (see Usage section below).
+Download visor from the [releases page](https://github.com/jonascarpay/visor/releases), unzip, cd into the folder, and run `./visor-app watch x y w h` (see Usage section below).
 
 ### Building
 Visor is written in Haskell and uses the `stack` build system.
