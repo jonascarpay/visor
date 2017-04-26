@@ -32,7 +32,6 @@ library
                      , filepath
                      , FontyFruity
                      , split
-                     , unix
                      , process
                      , repa
                      , repa-io

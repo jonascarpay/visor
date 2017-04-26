@@ -37,7 +37,6 @@ import qualified Static.Image as I
 import Conduit
 import Control.Monad
 import System.FilePath
-import System.Posix.Files
 import System.Directory
 import System.Random.Shuffle
 import System.Process
@@ -95,7 +94,7 @@ loadVisor :: forall a.
   , GameState a
   ) => IO (Visor a)
 loadVisor = do createDirectoryIfMissing True "data"
-               exists <- fileExist path
+               exists <- doesPathExist path
                visor <- if exists then readVisor else newVisor
                return visor
   where
@@ -116,7 +115,7 @@ saveVisor :: forall a.
   ( Serialize (Visor a)
   , GameState a
   ) => Visor a -> IO ()
-saveVisor v = do exists <- fileExist path
+saveVisor v = do exists <- doesPathExist path
                  flag <- if exists then do putStrLn$ "Visor found at " ++ path ++ ", delete?[Yn] "
                                            a <- getLine
                                            return$ a `notElem` ["n", "N"]
