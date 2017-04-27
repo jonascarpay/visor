@@ -22,8 +22,10 @@ type BatchSize = 16
 main :: IO ()
 main = getArgs >>= main'
 
+main' :: [String] -> IO ()
 main' ["watch", read' -> x, read' -> y, read' -> w, read' -> h] =
   do v :: Visor Game <- loadVisor
+     -- error "main"
      runConduitRes$ screenShotSource x y w h
                  .| mapMC (feedImage v)
                  .| mapC delabel

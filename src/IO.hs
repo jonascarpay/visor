@@ -32,6 +32,7 @@ import Visor
 import Vector
 import Util
 import Network
+import Screenshot
 import Layers.Convolution
 import qualified Static.Image as I
 import Conduit
@@ -39,8 +40,6 @@ import Control.Monad
 import System.FilePath
 import System.Directory
 import System.Random.Shuffle
-import System.Process
-import Data.Array.Repa.IO.BMP
 import Data.Singletons.TypeLits
 import Data.Singletons.Prelude.List
 import Data.Proxy
@@ -53,15 +52,6 @@ readShot (Path fp) = do ebmp <- I.readRaw fp
                         case ebmp of
                           Left err -> error$ err ++ " " ++ fp
                           Right bmp -> return (Screenshot bmp)
-
-screenShotSource :: Int -> Int -> Int -> Int -> RTSource (Screenshot a)
-screenShotSource x y w h = forever$ liftIO takeshot >>= yield
- where
-   cmd = "screencapture -xm -R" ++ show x ++ ',':show y ++ ',':show w ++ ',':show h ++ " -t bmp out.bmp"
-   takeshot = do _ <- system cmd
-                 Right img <- readImageFromBMP "out.bmp"
-                 removeFile "out.bmp"
-                 return (Screenshot img)
 
 pathSource :: forall a. GameState a => RTSource (Path a)
 pathSource = sourceDirectoryDeep True (unpath (rootDir :: Path a))
@@ -93,16 +83,14 @@ loadVisor :: forall a.
   ( Creatable (Visor a)
   , GameState a
   ) => IO (Visor a)
-loadVisor = do createDirectoryIfMissing True "data"
-               exists <- doesPathExist path
-               visor <- if exists then readVisor else newVisor
-               return visor
+loadVisor = do exists <- doesPathExist path
+               if exists then readVisor else newVisor
   where
     name = symbolVal (Proxy :: Proxy (Title a))
     path = dir </> name
 
     readVisor :: IO (Visor a)
-    readVisor = do bs <- BS.readFile path
+    readVisor = do !bs <- BS.readFile path
                    case decode bs of
                      Left err -> error err
                      Right v  -> return v

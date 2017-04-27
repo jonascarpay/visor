@@ -11,13 +11,10 @@ import Visor
 import Lib
 import IO
 import Games.Melee
-import Games.Melee.Conduits
-import Games.Melee.Graphic
 import System.Environment
 import Control.Monad
 import Conduit
 import System.FilePath
-import Buffer
 
 type Game = Melee
 type BatchSize = 16
